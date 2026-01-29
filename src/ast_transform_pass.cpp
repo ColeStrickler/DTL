@@ -200,7 +200,7 @@ ASTNode *DTL::ArrayIndexNode::TransformPass(int currDepth, int RequiredDepth, ui
     }
     else
     {
-        printf("ArrayIndexNode::TransformPass\n");
+        //printf("ArrayIndexNode::TransformPass\n");
         auto ilnode = new IntLitNode(pos(), 0);
         auto dummyAdd = new PlusNode(pos(), this, ilnode);
         dummyAdd->setPassThrough();
@@ -228,7 +228,7 @@ ASTNode* DTL::IntLitNode::TransformPass(int currDepth, int RequiredDepth, uint8_
     {
         auto ilnode = new IntLitNode(pos(), 0);
         auto dummyAdd = new PlusNode(pos(), this, ilnode);
-        printf("intlit dummy 0x%x\n", ilnode);
+       // printf("intlit dummy 0x%x\n", ilnode);
         dummyAdd->setPassThrough();
         dummyAdd = static_cast<PlusNode*>(dummyAdd->TransformPass(currDepth, RequiredDepth, opt_flags));
         return dummyAdd;
@@ -250,7 +250,7 @@ ASTNode *DTL::IDNode::TransformPass(int currDepth, int RequiredDepth, uint8_t op
     }
     else
     {
-        printf("ID pushdown\n");
+       // printf("ID pushdown\n");
         auto ilnode = new IntLitNode(pos(), 0);
         auto dummyAdd = new PlusNode(pos(),  static_cast<ExpNode*>(this->TransformPass(currDepth+1, RequiredDepth, opt_flags)), ilnode);
         dummyAdd->setPassThrough();
@@ -271,7 +271,7 @@ ASTNode *DTL::PlusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t 
     bool greedy_add = (opt_flags & DTL_OPT_ADDGREEDY != 0);
     // no need to push too many pass throughs too base level --> possibly do this optimization with times as well
     if (n1 && n2 && bDepth && greedy_add) {
-        printf("PlusNode pushdown\n");
+        //printf("PlusNode pushdown\n");
         auto ilnode = new IntLitNode(pos(), 0);
         auto dummyAdd = new PlusNode(pos(), myExp1, myExp2);
         myExp1 = dummyAdd;
@@ -280,7 +280,7 @@ ASTNode *DTL::PlusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t 
         dummyAdd->TransformPass(currDepth+1, RequiredDepth, opt_flags);
         return this;
     }
-    printf("plusnode walk\n");
+   // printf("plusnode walk\n");
     myExp1 = static_cast<ExpNode*>(myExp1->TransformPass(currDepth+1, RequiredDepth, opt_flags));
     if (!isPassThrough()) // we do not need to push zeros to the bottom
         myExp2 = static_cast<ExpNode*>(myExp2->TransformPass(currDepth+1, RequiredDepth, opt_flags));
@@ -306,7 +306,7 @@ ASTNode *DTL::TimesNode::TransformPass(int currDepth, int RequiredDepth, uint8_t
         auto ilnode = new IntLitNode(pos(), 0);
         auto dummyPlus = new PlusNode(pos(), (ExpNode*)this->TransformPass(currDepth+1, RequiredDepth, opt_flags), ilnode);
         dummyPlus->setPassThrough();
-        printf("times dummy 0x%x\n", ilnode);
+        //printf("times dummy 0x%x\n", ilnode);
         //myExp1 = nullptr;
         //myExp2 = nullptr;
         ;

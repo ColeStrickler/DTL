@@ -24,7 +24,7 @@ public:
             In pass 2 we coalesce the constants
         */
         prog = (ProgramNode*)prog->ConstCoalesce(coalesce_pass, 0);
-        printf("starting pass 2\n");
+       // printf("starting pass 2\n");
         auto progret = prog->ConstCoalesce(coalesce_pass, 1);
 
         delete coalesce_pass;

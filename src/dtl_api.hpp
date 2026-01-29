@@ -63,7 +63,7 @@ class EphemeralRegion
 public:
     EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat);
     ~EphemeralRegion();
-
+    EphemeralRegion* Clone(int new_config);
     /*
         We want methods for: access, delete, locking, update
 
@@ -186,10 +186,11 @@ public:
     BuddyNode* GetLeft();
     BuddyNode* GetRight();
     void SetInUse();
-    void SetFree();
+    int SetFree();
     bool isFree();
     bool isRoot();
     void Coalesce();
+    
 
     void DebugPrint();
 
@@ -199,7 +200,7 @@ public:
 private:
     uint64_t m_TrackedOffset;
     uint64_t m_TrackedSize;
-    bool m_IsFree;
+    int m_IsFree; // this is now an int, so we can make use of cloning, pointing multiple ephemeral regions to same place
     BuddyNode* m_LeftChild;
     BuddyNode* m_RightChild;
     BuddyNode* m_Parent;
@@ -217,7 +218,7 @@ public:
     ~BuddyAllocator();
     void FreeNode(uint64_t offset);  
     uint64_t AllocNode(uint64_t size_needed);
-
+    void FindAndIncNode(uint64_t offset);
 
     void DebugPrintTree();
 
@@ -266,7 +267,9 @@ public:
     */
 
     EphemeralRegion* AllocEphemeralRegion(uint64_t size_needed);
+    EphemeralRegion* CloneEphemeralRegion(EphemeralRegion* ephemeralRegion);
     void FreeEphemeralRegion(EphemeralRegion* ephemeralRegion);
+
 
     uint64_t GetError();
     AGUHardwareStat* GetHWStat();

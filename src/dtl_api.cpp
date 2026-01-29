@@ -86,7 +86,7 @@ DTL::API::API(AGUHardwareStat *hwStat, uint64_t realBackingStart, uint64_t realB
 
 
     auto control_region_size = hwStat->nMaxConfigs*0x1000;
-    printf("AGUControlRegionSize: 0x%x\n", control_region_size);
+   // printf("AGUControlRegionSize: 0x%x\n", control_region_size);
     AGUControlRegionBaseAddress = (uint64_t)mmap(NULL, control_region_size, PROT_READ | PROT_WRITE, MAP_SHARED, m_AGUControlRegionfd, AGU_CONFIG_BASE);
     if (AGUControlRegionBaseAddress == (uint64_t)MAP_FAILED)
     {
@@ -231,7 +231,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         We allocate a region offset from the buddy allocator
     */
     uint64_t region_offset = AllocateRegion(size_needed);
-    printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
+    //printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
     if (region_offset == BUDDY_ALLOC_FAILURE)
     {
         SetError(BUDDY_ALLOC_FAILURE);
@@ -244,9 +244,21 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         SetError(CONFIG_ALLOC_FAILURE);
         return nullptr;
     }
-    printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
+  //  printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
     auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat);
     return ephemeral;
+}
+
+DTL::EphemeralRegion *DTL::API::CloneEphemeralRegion(EphemeralRegion *ephemeralRegion) {
+    m_BuddyAllocator->FindAndIncNode(ephemeralRegion->GetRegionOffset()); // find node, inc in use
+    int config = AllocateConfig(); // we must use a new configuration when cloning to avoid overwriting old one
+    if (config == -1)
+    {
+        SetError(CONFIG_ALLOC_FAILURE);
+        return nullptr;
+    }
+
+    return ephemeralRegion->Clone(config);
 }
 
 void DTL::API::FreeEphemeralRegion(EphemeralRegion *ephemeralRegion)
@@ -280,6 +292,7 @@ int DTL::API::AllocateConfig() {
         {
             m_ConfigBitmap |= (1ULL << i);
             printf("Allocating config %d\n", i);
+            assert(i < hwStat->nMaxConfigs);
             return i;
         }
     }
@@ -339,17 +352,21 @@ DTL::BuddyNode *DTL::BuddyNode::GetRight()
 
 void DTL::BuddyNode::SetInUse() 
 {
-    m_IsFree = false;
+    assert(m_IsFree >= 0);
+    m_IsFree++;
 }
 
-void DTL::BuddyNode::SetFree() 
+int DTL::BuddyNode::SetFree() 
 {
-    m_IsFree = true;
+    m_IsFree--;
+    assert(m_IsFree >= 0);
+    return m_IsFree;
 }
 
 bool DTL::BuddyNode::isFree() 
 {
-    return m_IsFree;
+    assert(m_IsFree >= 0);
+    return m_IsFree == 0;
 }
 
 bool DTL::BuddyNode::isRoot() 
@@ -433,9 +450,9 @@ void DTL::BuddyAllocator::FreeNode(uint64_t offset)
     assert(node->GetRight() == nullptr || node->GetRight()->isFree());
  //   printf("[FreeNode] offset 0x%x, size 0x%x, in_use %d\n", node->GetTrackedOffset(), node->GetTrackedSize(), !node->isFree());
 
-    node->SetFree();
-    node->Coalesce();
-    
+    int isFree = node->SetFree();
+    if (node->isFree()) // We increment for shared regions. We must check even after SetFree()
+        node->Coalesce();
 }
 
 uint64_t DTL::BuddyAllocator::AllocNode(uint64_t size_needed) {
@@ -446,6 +463,17 @@ uint64_t DTL::BuddyAllocator::AllocNode(uint64_t size_needed) {
 
   uint64_t AllocatedOffset = FindAndAllocFreeNode(size, m_RootNode);
   return AllocatedOffset;
+}
+
+void DTL::BuddyAllocator::FindAndIncNode(uint64_t offset)
+{
+    BuddyNode* node = FindNode(offset, m_RootNode);
+    assert(node != nullptr);
+    assert(node->GetLeft() == nullptr || node->GetLeft()->isFree());
+    assert(node->GetRight() == nullptr || node->GetRight()->isFree());
+    assert(!node->isFree()); // only ahoulds be done on nodes already in use
+
+    node->SetInUse();
 }
 
 void DTL::BuddyAllocator::DebugPrintTree() 
@@ -627,7 +655,10 @@ DTL::EphemeralRegion::~EphemeralRegion()
     close(m_DTURuntimeDriverfd);
 }
 
-
+DTL::EphemeralRegion *DTL::EphemeralRegion::Clone(int new_config)
+{
+    return new EphemeralRegion(GetRegionOffset(), m_RegionSize, new_config, m_PhysBackingStart, hwStat);
+}
 
 int DTL::EphemeralRegion::Sync() {
   RemapPARequest req;
@@ -642,7 +673,7 @@ int DTL::EphemeralRegion::Sync() {
                           m_CurrentEphemeralPhysicalAddr);
     //printf("new PA 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
   } else
-    printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
+        printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
 
   return ret;
 }

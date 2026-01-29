@@ -183,7 +183,7 @@ ASTNode *DTL::LessEqNode::ConstFold(ConstantFoldPass* foldpass)
 
 void DTL::ConstantFoldPass::IncFoldCount()
 {
-    printf("IncFold!\n");
+   // printf("IncFold!\n");
     m_FoldCount++;
 }
 

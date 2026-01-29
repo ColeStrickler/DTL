@@ -111,11 +111,11 @@ void DTL::ArrayIndexNode::resourceAllocation(ResourceAllocation *ralloc, int dep
     int array_id = ra->GetConstArrayRegRoutingIndex(myID->getName());
     assert(array_id != -1);
 
-    printf("array_id %d\n", array_id);
+    //printf("array_id %d\n", array_id);
     // Ensure we do not already have a binding
     assert(ralloc->BindArrayIndex(array_id, index_id));
 
-    printf("ArrayIndexNode depth %d\n");
+   // printf("ArrayIndexNode depth %d\n");
     out->MapNodeFuncUnit(this, array_id, depth);
 
 
@@ -367,7 +367,7 @@ void DTL::AGULayer::DoControlWrites(uint64_t baseaddr, int numOutStmt, int layer
 std::string DTL::AGULayer::PrintDigraph(int layer) const
 {
     std::string ret;
-    printf("inputRouting.size() %d\n", inputRouting.size());
+   // printf("inputRouting.size() %d\n", inputRouting.size());
     for (auto& unit: inputRouting)
         ret += unit->toString(layer);
 
@@ -474,7 +474,7 @@ void DTL::ResourceAllocation::DoControlWrites(uint64_t baseaddr)
         auto& outstmt = OutStatementRouting[i];
         outstmt->DoControlWrites(baseaddr, i);
         hwStat->VarOutMap.clear(); // I believe we can clear this since each out statement will use different resources
-        printf("her!!e\n");
+       // printf("her!!e\n");
     }
 }
 
@@ -489,10 +489,10 @@ void DTL::ResourceAllocation::PrintControlWrites(const std::string &file,uint64_
     for (int i = 0; i < OutStatementRouting.size(); i++)
     {
         auto& outstmt = OutStatementRouting[i];
-        printf("here\n");
+       // printf("here\n");
         out += outstmt->PrintControlWrites(baseaddr, i);
         hwStat->VarOutMap.clear(); // I believe we can clear this since each out statement will use different resources
-        printf("her!!e\n");
+        //printf("her!!e\n");
     }
     outfile << out;
     outfile.close();

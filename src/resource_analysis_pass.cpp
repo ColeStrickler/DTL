@@ -22,7 +22,7 @@ void DTL::ConstDeclNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 
     if (ra->GetConstRegMapping(myID->getName()) == -1)
     {
-        printf("ConstDecl\n");
+       // printf("ConstDecl\n");
         ra->UseNewConst();
         ra->RegMapConst(myID->getName(), ra, myVal->GetVal()); // assign constants a register number
     }
@@ -88,7 +88,7 @@ void DTL::IntLitNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
     if (ra->GetConstRegMapping(std::to_string(myNum)) == -1)
     {
         ra->UseNewConst();
-        printf("IntLit %d 0x%x\n", myNum, this);
+       // printf("IntLit %d 0x%x\n", myNum, this);
         ra->RegMapConst(std::to_string(myNum), ra, myNum); // assign constants a register number
     }
 }
