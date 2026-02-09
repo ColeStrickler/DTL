@@ -88,6 +88,9 @@ public:
         bytesMagic = 16;
         bytesCell = bytes_cell;
         bytesLayer = bytesCell * (nAdd + nMult + nPassThrough);
+        
+        idxBit = log2ceil(nAdd+nMult+nPassThrough); // We do not need +1, because we are zero indexed
+
 
         bytesOutStatement = (nLayers+1) * bytesLayer; // layer at beginning at at the end
         totalConfigRegionBits = nOutStatements * bytesOutStatement;
@@ -160,9 +163,9 @@ public:
     
     void DoConstRegWrite(uint64_t baseAddress, int constRegNum, int constRegvalue, uint32_t byte_width)
     {
-       
+       printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
         uint64_t addr_ = baseAddress + GetConstantRegsOffset(byte_width) + constRegNum*byte_width;
-      //   printf("DoConstRegWrite() 0x%x\n", addr_);
+         
         assert(byte_width == 4);
         WRITE_UINT32(addr_, constRegvalue);
     }
@@ -185,8 +188,8 @@ public:
 
     std::string PrintConstArrayWrite(uint64_t baseAddress, ConstArray& constArray, uint32_t byte_width)
     {
-        //printf("here\n");
-        uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width) + constArray.reg_num*(nConstArraySize*byte_width + 8);
+        //printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
+        uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width);// + constArray.reg_num*(nConstArraySize*byte_width + 8);
 
         std::string ret;
         for (int i = 0; i < constArray.values.size(); i++)
@@ -209,7 +212,8 @@ public:
 
     void DoConstArrayWrite(uint64_t baseAddress, ConstArray& constArray, uint32_t byte_width)
     {
-        uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width) + constArray.reg_num*(nConstArraySize*byte_width + 8);
+         printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
+        uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width);// + constArray.reg_num*(nConstArraySize*byte_width + 8);
 
         std::string ret;
         for (int i = 0; i < constArray.values.size(); i++)
@@ -218,12 +222,14 @@ public:
             assert(i < nConstArraySize);
             uint64_t write_value_ = cval;
             uint64_t addr = baddr + i*byte_width;
+            printf("ConstArrayWrite 0x%llx, 0x%x\n", addr, write_value_);
             WRITE_UINT32(addr, write_value_);
         }
 
 
         // we need the index reg number
         uint64_t addr = baddr + byte_width*nConstArraySize;
+        printf("ConstArray IndexSel 0x%x value %d\n", GetConstArrayOffset(byte_width)+byte_width*nConstArraySize, constArray.index_reg_num);
         WRITE_UINT8(addr, static_cast<uint8_t>(constArray.index_reg_num));
     }
 
@@ -244,21 +250,34 @@ public:
            std::to_string(layerByteOffset) + "_" +
            std::to_string(cellByteOffset) + "_" +
            std::to_string(outStatementOffset);
-
+        auto idx_str = std::to_string(layer) + "_" + std::to_string(outRegNumber);
 
         int cell_index = VarOutMap[hash_str];
+        
         uint64_t offset = layerByteOffset + cellByteOffset + outStatementOffset + cell_index;
-       // printf("DoControlWrite() 0x%x +0x%x\n", baseAddress, offset);
+        printf("DoControlWrite() 0x%x +0x%x\n", baseAddress, offset);
         VarOutMap[hash_str]++;
+        //std::cout << hash_str << "\n";
+        
+        int routingIdx = IdxOutMap[idx_str];
+        IdxOutMap[idx_str]++;
+
         assert(VarOutMap[hash_str] <= bytesCell); // this maps to maxVarOut
-        WRITE_UINT8(baseAddress+offset, static_cast<unsigned char>(outRegNumber));
+        assert(IdxOutMap[idx_str] <= bytesCell); 
+
+
+        unsigned char write_val = static_cast<unsigned char>(outRegNumber);
+        write_val |= (routingIdx << idxBit);
+
+
+        WRITE_UINT8(baseAddress+offset, write_val);
     }
 
     std::string PrintControlWrite(uint64_t baseAddress, int numOutStatement, int layer, int inRegNumber, int outRegNumber)
     {
         if (outRegNumber == 255 || inRegNumber == 255) // added this --> fixed the array issue
             return "";
-        //printf("controlWrite  [layer %d] %d->%d\n", layer, inRegNumber, outRegNumber);
+        
         
 
         unsigned int layerByteOffset = layer * bytesLayer;
@@ -271,22 +290,32 @@ public:
            std::to_string(cellByteOffset) + "_" +
            std::to_string(outStatementOffset);
 
-
+        auto idx_str = std::to_string(layer) + "_" + std::to_string(outRegNumber);
         int cell_index = VarOutMap[hash_str];
         uint64_t offset = layerByteOffset + cellByteOffset + outStatementOffset + cell_index;
         std::string addr = to_hex(baseAddress + offset);
         VarOutMap[hash_str]++;
+        
+        int routingIdx = IdxOutMap[idx_str];
+        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
+        IdxOutMap[idx_str]++;
         assert(VarOutMap[hash_str] <= bytesCell); // this maps to maxVarOut
+        assert(IdxOutMap[idx_str] <= bytesCell); 
 
+
+        unsigned char write_val = static_cast<unsigned char>(outRegNumber);
+        write_val |= (routingIdx << idxBit);
+        printf("write_val %d\n", write_val);
 
         //printf("0x%x, 0x%x, 0x%x, 0x%x\n", layerByteOffset, cellByteOffset, outStatementOffset, cell_index);
         //printf("0x%x nOut %d, layer %d, inReg %d, outReg %d 0x%x\n", baseAddress, numOutStatement, layer, inRegNumber, outRegNumber, offset);
-        std::string write_value = std::to_string(static_cast<unsigned char>(outRegNumber));
+        std::string write_value = std::to_string(static_cast<unsigned char>(write_val));
 
         return "WRITE_UINT8(" + addr + ", " + write_value + ");\n";  
     }
 
     std::unordered_map<std::string, int> VarOutMap;
+    std::unordered_map<std::string, int> IdxOutMap;
 
 
 
@@ -350,7 +379,7 @@ public:
         return ret;
     }
 
-    
+    int idxBit; // routing idx
     int bytesMagic;
     int bytesCell;
     int bytesLayer;
@@ -826,7 +855,7 @@ public:
         */
         assert(a != -1 && b != -1);
         int unit = currentOut->RequestMultUnit(layer, a, b);
-       //  printf("[mult layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+        printf("[mult layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
         currentOut->MapNodeFuncUnit(multNode, unit, layer);
     }
 
@@ -843,7 +872,7 @@ public:
         */
         assert(a != -1 && b != -1);
         int unit = currentOut->RequestAddUnit(layer, a, b);
-       // printf("[add layer%d], a %d::%d, b %d::%d ---> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+        printf("[add layer%d], a %d::%d, b %d::%d ---> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
         currentOut->MapNodeFuncUnit(plusNode, unit, layer);
     }
 
@@ -857,7 +886,7 @@ public:
         */
         assert(a != -1);
         int unit = currentOut->RequestPassThrough(layer, a);
-      //  printf("[passthru layer%d] passthru a %d::%d ---> %d\n", layer, a, fromA->myTag, unit);
+        printf("[passthru layer%d] passthru a %d::%d ---> %d\n", layer, a, fromA->myTag, unit);
         currentOut->MapNodeFuncUnit(plusNode, unit, layer);
     }
 

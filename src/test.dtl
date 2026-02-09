@@ -1,5 +1,5 @@
+int col_offsets = {4, 32, 48};
 int row_size = 64;
-int col_offsets = {4, 16, 64};
 
 
 for (int i = 0; i < 43690; i++)
@@ -9,3 +9,5 @@ for (int i = 0; i < 43690; i++)
         out = i*row_size + col_offsets[j];
     }
 }
+
+

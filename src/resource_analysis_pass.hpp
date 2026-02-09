@@ -162,10 +162,10 @@ public:
 		return resourceAnalysis;
 
 	}
-
-	static void RegMapConst(std::string node_name, ResourceAnalysis* ra, int value)
+	int constReg = 0;
+	int constRegArray = 0;
+	void RegMapConst(std::string node_name, ResourceAnalysis* ra, int value)
 	{
-		static int constReg = 0;
 		//printf("Regmappingconst %d\n", value);
 		ra->ConstRegMapping.insert(std::make_pair(node_name,constReg));
 		ra->ReverseConstRegMapping.insert(std::make_pair(constReg, node_name));
@@ -173,10 +173,8 @@ public:
 		constReg++;
 	}
 
-	static void RegMapConstArray(std::string node_name, ResourceAnalysis* ra)
+	void RegMapConstArray(std::string node_name, ResourceAnalysis* ra)
 	{
-		static int constRegArray = 0;
-
 		ra->ConstArrayRegMapping.insert(std::make_pair(node_name, constRegArray));
 		ra->ReverseConstArrayRegMapping.insert(std::make_pair(constRegArray, node_name));
 		//ra->ConstValueMap.insert(std::make_pair(constReg, value));

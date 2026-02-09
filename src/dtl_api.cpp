@@ -85,7 +85,7 @@ DTL::API::API(AGUHardwareStat *hwStat, uint64_t realBackingStart, uint64_t realB
 
 
 
-    auto control_region_size = hwStat->nMaxConfigs*0x1000;
+    auto control_region_size = 16*0x1000;
    // printf("AGUControlRegionSize: 0x%x\n", control_region_size);
     AGUControlRegionBaseAddress = (uint64_t)mmap(NULL, control_region_size, PROT_READ | PROT_WRITE, MAP_SHARED, m_AGUControlRegionfd, AGU_CONFIG_BASE);
     if (AGUControlRegionBaseAddress == (uint64_t)MAP_FAILED)
@@ -193,7 +193,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     }
 
     hwStat->VarOutMap.clear(); // otherwise we we will get subsequent collisions
-
+    hwStat->IdxOutMap.clear();
     return true;
 }
 
@@ -203,7 +203,7 @@ bool DTL::API::ProgramHardware(EphemeralRegion* region)
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
 
-    //printf("DTU_CONFIG_OFFSET(0x%x)\n", DTU_CONFIG_OFFSET(region->GetConfig()));
+    printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
     ralloc->DoInitStateRegisters(config_n_base);
    // printf("FinishInitStateRegs\n");
     ralloc->DoControlWrites(config_n_base);
@@ -231,7 +231,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         We allocate a region offset from the buddy allocator
     */
     uint64_t region_offset = AllocateRegion(size_needed);
-    //printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
+    printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
     if (region_offset == BUDDY_ALLOC_FAILURE)
     {
         SetError(BUDDY_ALLOC_FAILURE);
@@ -244,7 +244,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         SetError(CONFIG_ALLOC_FAILURE);
         return nullptr;
     }
-  //  printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
+   printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
     auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat);
     return ephemeral;
 }
@@ -279,6 +279,7 @@ uint64_t DTL::API::AllocateRegion(uint64_t size)
 {
   assert(size <= m_RealBackingSize);
   uint64_t received_size = next_power_of_two(size);
+  printf("AllocRegion() receivedSize %lld\n", received_size);
   return m_BuddyAllocator->AllocNode(size);
 }
 
@@ -322,8 +323,8 @@ void DTL::API::SetAGUControlRegionBaseAddr(uint64_t newControlBaseAddr)
 DTL::BuddyNode::BuddyNode(uint64_t TrackedSize, uint64_t TrackedOffset, BuddyNode* parent) 
     : m_TrackedSize(TrackedSize), m_TrackedOffset(TrackedOffset), m_Parent(parent)
 {
-    SetFree();
-
+    //SetFree();
+    m_IsFree = 0;
     m_LeftChild = nullptr;
     m_RightChild = nullptr;
 }
@@ -358,8 +359,10 @@ void DTL::BuddyNode::SetInUse()
 
 int DTL::BuddyNode::SetFree() 
 {
-    m_IsFree--;
-    assert(m_IsFree >= 0);
+    
+    //printf("isFree %d\n", m_IsFree);
+    m_IsFree = std::max(0, m_IsFree - 1);
+
     return m_IsFree;
 }
 
@@ -399,7 +402,7 @@ void DTL::BuddyNode::Coalesce()
 
         //printf("[Coalesce() Free Node] offset 0x%x, size 0x%x, in_use %d\n", m_TrackedOffset, m_TrackedSize, !m_IsFree);
         SetFree();
-        if (!isRoot())
+        if (!isRoot() && isFree())
         {
            // printf("coalesce parent!\n");
             m_Parent->Coalesce();
@@ -460,7 +463,7 @@ uint64_t DTL::BuddyAllocator::AllocNode(uint64_t size_needed) {
     auto size  = std::max(size_needed, (uint64_t)(0x100000ULL));
     if (!is_power_of_two(size))
         size = next_power_of_two(size);
-
+    printf("AllocNode 0x%llx", size);
   uint64_t AllocatedOffset = FindAndAllocFreeNode(size, m_RootNode);
   return AllocatedOffset;
 }
@@ -576,6 +579,7 @@ DTL::BuddyNode *DTL::BuddyAllocator::FindNode(uint64_t offset, BuddyNode* currNo
 DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat)
     : m_RegionOffset(region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start), m_RegionSize(region_size), hwStat(hwStat)
 {
+    printf("EphemeralRegion()\n");
     m_Regionfd = open_fd("/dev/mem");
     assert(m_Regionfd != -1);
     m_DTURuntimeDriverfd = open_fd(DEVICE_FILE);
@@ -593,10 +597,10 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
     assert(m_DTUConfigRegion != nullptr && m_DTUConfigRegion != MAP_FAILED);
 
 
-    UPDATE_CONFIG_SIZE(m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionSize);
+    UPDATE_CONFIG_SIZE((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionSize);
 
    // printf("m_PhysBackingStart 0x%llx, region_offset 0x%x\n, region_size 0x%x\n", m_PhysBackingStart, region_offset, region_size);
-    UPDATE_CONFIG_START(m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionOffset + m_PhysBackingStart);
+    UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionOffset + m_PhysBackingStart);
     /*
         We just allocate a region of adequate size and then remap it
 

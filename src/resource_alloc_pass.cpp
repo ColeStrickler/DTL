@@ -474,6 +474,7 @@ void DTL::ResourceAllocation::DoControlWrites(uint64_t baseaddr)
         auto& outstmt = OutStatementRouting[i];
         outstmt->DoControlWrites(baseaddr, i);
         hwStat->VarOutMap.clear(); // I believe we can clear this since each out statement will use different resources
+        hwStat->IdxOutMap.clear();
        // printf("her!!e\n");
     }
 }
@@ -492,6 +493,7 @@ void DTL::ResourceAllocation::PrintControlWrites(const std::string &file,uint64_
        // printf("here\n");
         out += outstmt->PrintControlWrites(baseaddr, i);
         hwStat->VarOutMap.clear(); // I believe we can clear this since each out statement will use different resources
+        hwStat->IdxOutMap.clear();
         //printf("her!!e\n");
     }
     outfile << out;
@@ -519,6 +521,7 @@ void DTL::AGUHardwareStat::DoForLoopWrite(uint64_t baseAddress, LoopReg &reg, ui
         These are implemented backwards in the hardware to facilitate the unroll unit
     */
     addr = baseAddress + GetMagicRegsOffset(byte_width) + ((nForLoopRegisters-1-reg.reg_num)*bytesMagic);
+    printf("Start MagicReg 0x%x, 0x%x\n", GetMagicRegsOffset(byte_width), GetMagicRegsOffset(byte_width) + ((nForLoopRegisters-1-reg.reg_num)*bytesMagic));
     auto write_value64 = static_cast<uint64_t>(reg.hwDivMagic.M);
     WRITE_UINT64(addr, write_value64);
     addr += 0x8;
