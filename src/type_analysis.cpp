@@ -253,6 +253,35 @@ void DTL::PlusNode::typeAnalysis(TypeAnalysis* ta)
 		ta->nodeType(this, BasicType::INT());
 }
 
+void DTL::MinusNode::typeAnalysis(TypeAnalysis *ta)
+{
+	myExp1->typeAnalysis(ta);
+	myExp2->typeAnalysis(ta);
+
+	auto t1 = ta->nodeType(myExp1);
+	auto t2 = ta->nodeType(myExp2);
+
+	bool ok = true;
+	
+	if (!t1->isInt())
+	{
+		ta->errMathOpd(myExp1->pos());
+		ta->nodeType(this, ErrorType::produce());
+		ok = false;
+	}
+
+	if (!t2->isInt())
+	{
+		ta->errMathOpd(myExp2->pos());
+		ta->nodeType(this, ErrorType::produce());
+		ok = false;
+	}
+
+	if (ok)
+		ta->nodeType(this, BasicType::INT());
+}
+
+
 
 void DTL::TimesNode::typeAnalysis(TypeAnalysis* ta)
 {

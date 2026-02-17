@@ -59,7 +59,8 @@ namespace DTL
 		OUTSTMTNODE,
 		CONSTARRAYDECLNODE,
 		ARRAYINDEXNODE,
-		UNARYEXPNODE
+		UNARYEXPNODE,
+		MINUSNODE
 	};
 
 	class ASTNode
@@ -584,6 +585,28 @@ namespace DTL
 		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
 		// virtual Opd * flatten(Procedure * prog) override;
 	};
+
+	class MinusNode : public BinaryExpNode
+	{
+	public:
+		MinusNode(const Position *p, ExpNode *e1In, ExpNode *e2In)
+			: BinaryExpNode(p, e1In, e2In) { myTag = NODETAG::MINUSNODE; }
+		// virtual bool nameAnalysis(SymbolTable * symTab) override;
+		// void unparse(std::ostream& out, int indent) override;
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int Collapse(ResourceAllocation *ralloc);
+		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) override;
+		virtual int GetMaxDepth();
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		// virtual Opd * flatten(Procedure * prog) override;
+	};
+
+
+
 
 	class LessNode : public BinaryExpNode
 	{

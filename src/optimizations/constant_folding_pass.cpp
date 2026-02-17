@@ -162,6 +162,43 @@ ASTNode *DTL::TimesNode::ConstFold(ConstantFoldPass* foldpass)
     return this;
 }
 
+ASTNode *DTL::MinusNode::ConstFold(DTL::ConstantFoldPass *foldpass) {
+    auto left = myExp1->ConstFold(foldpass);
+    auto right = myExp2->ConstFold(foldpass);
+
+
+    if (left->getTag() == DTL::NODETAG::INTLITNODE && right->getTag() == DTL::NODETAG::INTLITNODE)
+    {
+        foldpass->IncFoldCount();
+        auto lnode = reinterpret_cast<IntLitNode*>(left);
+        auto rnode = reinterpret_cast<IntLitNode*>(right);
+
+        auto lnode_val = lnode->GetVal();
+        auto rnode_val = rnode->GetVal();
+
+        /*
+            These nodes have no children, and one of them can be reused
+        */
+       lnode->myNum = lnode_val - rnode_val;
+       delete rnode; // delete rnode
+       /*
+            Delete current node
+
+            This should be fine and completely safe since we are only working on references internal to the AST
+       */
+       delete this; 
+       return lnode;     
+    }
+
+
+
+    myExp1 = (ExpNode*)left;
+    myExp2 = (ExpNode*)right;
+    return this;
+}
+
+
+
 
 ASTNode *DTL::LessNode::ConstFold(ConstantFoldPass* foldpass) 
 {

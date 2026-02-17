@@ -67,14 +67,14 @@ struct ConstArray
 };
 
 
-
+// probably want to make a parameters struct to pass in
 class AGUHardwareStat
 {
 public:
     AGUHardwareStat(int nAdd, int nMult, int nLayers, int nConst, int nForLoop, int nPassThrough, int nOutStatements, int nConstArray, int bytes_cell = 2) :\
         nLayerAddUnits(nAdd), nLayerMultUnits(nMult), nConstRegisters(nConst), nForLoopRegisters(nForLoop),\
         nLayers(nLayers), nLayerPassThrough(nPassThrough), nOutStatements(nOutStatements), nConstArray(nConstArray),\
-        nConstArraySize(32), nMaxConfigs(1)
+        nConstArraySize(32), nMaxConfigs(1), nLayerSubUnits(4)
     {
         
         /*
@@ -87,9 +87,9 @@ public:
         */
         bytesMagic = 16;
         bytesCell = bytes_cell;
-        bytesLayer = bytesCell * (nAdd + nMult + nPassThrough);
+        bytesLayer = bytesCell * (nAdd + nMult + nPassThrough + nLayerSubUnits);
         
-        idxBit = log2ceil(nAdd+nMult+nPassThrough); // We do not need +1, because we are zero indexed
+        idxBit = log2ceil(nAdd+nMult+nPassThrough+nLayerSubUnits+1); // We do not need +1, because we are zero indexed
 
 
         bytesOutStatement = (nLayers+1) * bytesLayer; // layer at beginning at at the end
@@ -124,7 +124,7 @@ public:
 
     inline uint64_t GetLoopRegsOffset() const
     {
-        return static_cast<uint64_t>(nOutStatements*(nLayers+1)*(nLayerPassThrough+nLayerMultUnits+nLayerAddUnits)*bytesCell);
+        return static_cast<uint64_t>(nOutStatements*(nLayers+1)*(nLayerPassThrough+nLayerMultUnits+nLayerAddUnits+nLayerSubUnits)*bytesCell);
     }
 
     inline uint64_t GetLoopIncRegsOffset(uint32_t byteWidth) const
@@ -268,7 +268,7 @@ public:
 
         unsigned char write_val = static_cast<unsigned char>(outRegNumber);
         write_val |= (routingIdx << idxBit);
-
+        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
 
         WRITE_UINT8(baseAddress+offset, write_val);
     }
@@ -331,6 +331,13 @@ public:
             printf("%d <= %d\n", rsrc->nMultNeeded, nLayerMultUnits);
             std::cerr << "(rsrc->nMultNeeded <= nLayerMultUnits)\n"; goto end;
         }
+
+        ret = (rsrc->nSubNeeded <= nLayerSubUnits);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nSubNeeded, nLayerSubUnits);
+            std::cerr << "(rsrc->nSubNeeded <= nLayerSubUnits)\n"; goto end;
+        }
+
         ret = (rsrc->ForLoopsNeeded <= nForLoopRegisters);
         if (!ret) {
             printf("%d <= %d\n", rsrc->ForLoopsNeeded, nForLoopRegisters);
@@ -387,6 +394,7 @@ public:
     int totalConfigRegionBits;
     int bits_outStatement;
 
+    int nLayerSubUnits;
     int nLayerAddUnits;
     int nLayerMultUnits;
     int nLayers;
@@ -491,14 +499,31 @@ public:
     virtual std::string toString(int layer) override;
 };
 
+class SubUnit : public FuncUnit
+{
+public:
+    SubUnit(int regAssignment, int inputA, int inputB) : FuncUnit(regAssignment, inputA, inputB)
+    {
+
+    }
+
+    ~SubUnit()
+    {
+        
+    }
+
+    virtual std::string toString(int layer) override;
+};
+
+
 
 
 
 class AGULayer
 {
 public:
-    AGULayer(int nAddUnits, int nMultUnits, int nPassThru) : maxAddUnit(nAddUnits), maxMultUnit(nMultUnits), maxPassThrough(nPassThru), \
-        usedPassThrough(0), usedAddUnit(0), usedMultUnit(0)
+    AGULayer(int nAddUnits, int nMultUnits, int nPassThru, int nSubUnits) : maxAddUnit(nAddUnits), maxMultUnit(nMultUnits), maxPassThrough(nPassThru), maxSubUnit(nSubUnits), \
+        usedPassThrough(0), usedAddUnit(0), usedMultUnit(0), usedSubUnit(0)
     {
     }
 
@@ -516,6 +541,17 @@ public:
         MapFuncUnit(unit);
         return maxAddUnit + maxMultUnit + mapping;
     }
+
+
+     int MapSubUnit(SubUnit* unit)
+    {
+        int mapping = usedSubUnit;
+        usedSubUnit++;
+        assert(usedSubUnit <= maxSubUnit);
+        MapFuncUnit(unit);
+        return maxAddUnit + maxMultUnit +  maxPassThrough + mapping;
+    }
+
 
 
     int MapAddUnit(AddUnit* unit)
@@ -557,6 +593,12 @@ public:
     {
         return maxAddUnit + maxMultUnit + usedPassThrough;
     }
+
+    int getNextSubUnit() const
+    {
+        return maxAddUnit + maxMultUnit + maxPassThrough + usedSubUnit;
+    }
+
     std::vector<FuncUnit*> inputRouting;
 
     std::string PrintControlWrites(uint64_t baseaddr, int numOutStmt, int layer, AGUHardwareStat* hwstat);
@@ -567,9 +609,11 @@ private:
     int maxAddUnit;
     int maxMultUnit;
     int maxPassThrough;
+    int maxSubUnit;
     int usedAddUnit;
     int usedMultUnit;
     int usedPassThrough;
+    int usedSubUnit;
 };
 
 
@@ -581,8 +625,9 @@ private:
 class OutStmtRouting
 {
 public:
-    OutStmtRouting(int layerAddUnits, int layerMultUnits, int nPassThru, int nLayers, AGUHardwareStat* hwStat) : \
-        LayerAddUnitCount(layerAddUnits), LayerMultUnitCount(layerMultUnits), LayerPassThruCount(nPassThru), LayerCount(nLayers), hwStat(hwStat)
+    OutStmtRouting(int layerAddUnits, int layerMultUnits, int nPassThru, int nSubUnit, int nLayers, AGUHardwareStat* hwStat) : \
+        LayerAddUnitCount(layerAddUnits), LayerMultUnitCount(layerMultUnits), LayerPassThruCount(nPassThru), \
+        LayerSubUnitCount(nSubUnit), LayerCount(nLayers), hwStat(hwStat)
     {
         
     }
@@ -601,7 +646,16 @@ public:
     {
         auto it = LayerRouting.find(layer);
         if (it == LayerRouting.end())
-            LayerRouting.insert(std::make_pair(layer, new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount)));
+            LayerRouting.insert(std::make_pair(layer, new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount)));
+    }
+
+
+    int RequestSubUnit(int layer, int inputMapA, int inputMapB)
+    {
+        assert(layer >= 0 && layer < LayerCount);
+        CreateLayerIfNeeded(layer);
+        auto& routing = LayerRouting[layer];
+        return routing->MapSubUnit(new SubUnit(routing->getNextSubUnit(), inputMapA, inputMapB));
     }
 
 
@@ -675,7 +729,7 @@ public:
         LayerRouting = newLayerRouting;
         while(m < LayerCount+1)
         {
-            LayerRouting[m] = new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount);
+            LayerRouting[m] = new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
             unit = RequestPassThrough(m, unit);
             m++;
         }
@@ -702,6 +756,7 @@ private:
     int LayerAddUnitCount;
     int LayerMultUnitCount;
     int LayerPassThruCount;
+    int LayerSubUnitCount;
     int LayerCount;
 };
 
@@ -839,7 +894,7 @@ public:
     void NewOutStatement()
     {
         assert(OutStatementRouting.size() <= hwStat->nOutStatements);
-        OutStatementRouting.push_back(new OutStmtRouting(hwStat->nLayerAddUnits, hwStat->nLayerMultUnits, hwStat->nLayerPassThrough, hwStat->nLayers, hwStat));
+        OutStatementRouting.push_back(new OutStmtRouting(hwStat->nLayerAddUnits, hwStat->nLayerMultUnits, hwStat->nLayerPassThrough, hwStat->nLayerSubUnits, hwStat->nLayers, hwStat));
     }
 
     
@@ -859,13 +914,34 @@ public:
         currentOut->MapNodeFuncUnit(multNode, unit, layer);
     }
 
+
+    void SubUnit(int layer, ASTNode* minusNode, ASTNode* fromA, ASTNode* fromB)
+    {
+        auto currentOut = GetCurrentOutStatement();
+
+        int a = currentOut->GetNodeFuncUnitMapping(fromA);
+        int b = currentOut->GetNodeFuncUnitMapping(fromB);
+
+        
+        /*
+            This should never occur. All units should be mapped somewhere. 
+        */
+        assert(a != -1 && b != -1);
+
+        int unit = currentOut->RequestSubUnit(layer, a, b);
+        printf("[sub layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+        currentOut->MapNodeFuncUnit(minusNode, unit, layer);
+    }
+
+
+
     void AddUnit(int layer, ASTNode* plusNode, ASTNode* fromA, ASTNode* fromB)
     {
         auto currentOut = GetCurrentOutStatement();
 
         int a = currentOut->GetNodeFuncUnitMapping(fromA);
         int b = currentOut->GetNodeFuncUnitMapping(fromB);
-        
+
         
         /*
             This should never occur. All units should be mapped somewhere. 

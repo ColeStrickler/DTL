@@ -447,6 +447,7 @@ namespace DTL {
       // COMMA
       // LBRACKET
       // RBRACKET
+      // MINUS
       char dummy10[sizeof (DTL::Token *)];
 
       // type
@@ -519,7 +520,8 @@ namespace DTL {
     OUT = 273,                     // OUT
     COMMA = 274,                   // COMMA
     LBRACKET = 275,                // LBRACKET
-    RBRACKET = 276                 // RBRACKET
+    RBRACKET = 276,                // RBRACKET
+    MINUS = 277                    // MINUS
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -536,7 +538,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 22, ///< Number of tokens.
+        YYNTOKENS = 23, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -560,22 +562,23 @@ namespace DTL {
         S_COMMA = 19,                            // COMMA
         S_LBRACKET = 20,                         // LBRACKET
         S_RBRACKET = 21,                         // RBRACKET
-        S_YYACCEPT = 22,                         // $accept
-        S_program = 23,                          // program
-        S_constdecls = 24,                       // constdecls
-        S_constdecl = 25,                        // constdecl
-        S_intlist = 26,                          // intlist
-        S_forstatement = 27,                     // forstatement
-        S_outstatements = 28,                    // outstatements
-        S_outstatement = 29,                     // outstatement
-        S_type = 30,                             // type
-        S_expr = 31,                             // expr
-        S_unarystmt = 32,                        // unarystmt
-        S_term = 33,                             // term
-        S_factor = 34,                           // factor
-        S_intlit = 35,                           // intlit
-        S_loc = 36,                              // loc
-        S_id = 37                                // id
+        S_MINUS = 22,                            // MINUS
+        S_YYACCEPT = 23,                         // $accept
+        S_program = 24,                          // program
+        S_constdecls = 25,                       // constdecls
+        S_constdecl = 26,                        // constdecl
+        S_intlist = 27,                          // intlist
+        S_forstatement = 28,                     // forstatement
+        S_outstatements = 29,                    // outstatements
+        S_outstatement = 30,                     // outstatement
+        S_type = 31,                             // type
+        S_expr = 32,                             // expr
+        S_unarystmt = 33,                        // unarystmt
+        S_term = 34,                             // term
+        S_factor = 35,                           // factor
+        S_intlit = 36,                           // intlit
+        S_loc = 37,                              // loc
+        S_id = 38                                // id
       };
     };
 
@@ -667,6 +670,7 @@ namespace DTL {
       case symbol_kind::S_COMMA: // COMMA
       case symbol_kind::S_LBRACKET: // LBRACKET
       case symbol_kind::S_RBRACKET: // RBRACKET
+      case symbol_kind::S_MINUS: // MINUS
         value.move< DTL::Token * > (std::move (that.value));
         break;
 
@@ -941,6 +945,7 @@ switch (yykind)
       case symbol_kind::S_COMMA: // COMMA
       case symbol_kind::S_LBRACKET: // LBRACKET
       case symbol_kind::S_RBRACKET: // RBRACKET
+      case symbol_kind::S_MINUS: // MINUS
         value.template destroy< DTL::Token * > ();
         break;
 
@@ -1451,6 +1456,21 @@ switch (yykind)
         return symbol_type (token::RBRACKET, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MINUS (DTL::Token * v)
+      {
+        return symbol_type (token::MINUS, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_MINUS (const DTL::Token *& v)
+      {
+        return symbol_type (token::MINUS, v);
+      }
+#endif
 
 
     class context
@@ -1779,7 +1799,7 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 78,     ///< Last index in yytable_.
+      yylast_ = 84,     ///< Last index in yytable_.
       yynnts_ = 16,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
@@ -1794,7 +1814,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 1798 "frontend.hh"
+#line 1818 "frontend.hh"
 
 
 

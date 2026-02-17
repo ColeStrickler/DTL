@@ -115,6 +115,18 @@ void DTL::PlusNode::resourceAnalysis(ResourceAnalysis* ra, int layer)
 }
 
 
+void DTL::MinusNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+	ra->UseNewSubUnitLayer(layer);
+
+
+
+
+    myExp1->resourceAnalysis(ra, layer+1);
+    myExp2->resourceAnalysis(ra, layer+1);
+}
+
+
 
 void DTL::TimesNode::resourceAnalysis(ResourceAnalysis* ra, int layer)
 {

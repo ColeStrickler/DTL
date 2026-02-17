@@ -164,6 +164,19 @@ void DTL::PlusNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 
 }
 
+
+void DTL::MinusNode::resourceAllocation(ResourceAllocation *ralloc, int depth) 
+{
+    auto outstmt = ralloc->GetCurrentOutStatement();
+    assert(outstmt != nullptr);
+
+    myExp1->resourceAllocation(ralloc, depth+1);
+    myExp2->resourceAllocation(ralloc, depth+1);
+    ralloc->SubUnit(depth, this, myExp1, myExp2);
+
+}
+
+
 void DTL::TimesNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 {
     auto outstmt = ralloc->GetCurrentOutStatement();
@@ -197,6 +210,12 @@ int DTL::ForStmtNode::Collapse(ResourceAllocation* ralloc)
 
     RegMaxValue = m;
     RegInitValue = init;
+    return 0;
+}
+
+int DTL::MinusNode::Collapse(ResourceAllocation *ralloc)
+{
+    assert(false);
     return 0;
 }
 
@@ -411,6 +430,19 @@ std::string DTL::AddUnit::toString(int layer)
     return label + "\n" + inA + "\n" + inB + "\n";
 }
 
+
+std::string DTL::SubUnit::toString(int layer) {
+    std::string node_name = "\"" + std::to_string(layer) + "_" + std::to_string(RegAssignment) + "\"";
+    std::string label = node_name  + "[label=\"Sub" +  std::to_string(layer) + "_" + std::to_string(RegAssignment)+ "\"];";
+
+
+    std::string inA = "\"" + std::to_string(layer-1) + "_" + std::to_string(InputA) + "\"" + " -> " + node_name + ";";
+    std::string inB = "\"" + std::to_string(layer-1) + "_" + std::to_string(InputB) + "\"" + " -> " + node_name + ";";
+
+    return label + "\n" + inA + "\n" + inB + "\n";
+}
+
+
 void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, uint64_t baseaddr)
 {
         std::ofstream outfile(file, std::ios::app);  // open for writing
@@ -548,7 +580,7 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   addr = to_hex(addr_);
   write_value = to_hex(static_cast<uint64_t>(reg.increment_condition));
   ret += "\nWRITE_UINT32(" + addr + "," + write_value + ");\n";
-
+    printf("LoopRegsOffset 0x%x\n", GetLoopRegsOffset());
   /*
       We now can write the magic values
       These are implemented backwards in the hardware to facilitate the unroll
@@ -574,3 +606,5 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   ret += "\nWRITE_UINT8(" + addr + "," + write_value + ");\n";
   return ret;
 }
+
+

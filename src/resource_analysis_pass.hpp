@@ -14,6 +14,7 @@ class AGUHardwareStat;
 
 struct DTLUnitAllocation
 {
+	int nSubUnits;
 	int nMultUnits;
 	int nAddUnits;
 	int nPassThrough;
@@ -33,6 +34,22 @@ struct DTLResources
 		GetPassThroughNeeded();
 		GetLayersNeeded();
 		GetMultUnitsNeeded();
+	}
+
+	int GetSubUnitsNeeded()
+	{
+		int sub_needed = 0;
+		for (auto& e: LayerFuncUnitAllocations)
+		{
+			for (auto& l : e.second)
+			{
+				const DTLUnitAllocation& alloc_layer = l.second;
+				int sub = alloc_layer.nSubUnits;
+				sub_needed = std::max(sub_needed, sub);
+			}
+		}
+		nSubNeeded = sub_needed;
+		return nSubNeeded;
 	}
 
 	int GetPassThroughNeeded()
@@ -120,10 +137,13 @@ struct DTLResources
 				int mult = alloc_layer.nMultUnits;
 				int add = alloc_layer.nAddUnits;
 				int pass = alloc_layer.nPassThrough;
+				int sub = alloc_layer.nSubUnits;
 				auto mult_units = std::to_string(mult);
 				auto add_units = std::to_string(add);
 				auto pass_thru = std::to_string(pass);
-				ret += "Layer " + std::to_string(l.first) + ", OutStatement" + std::to_string(e.first) + ": MultUnits(" + mult_units + ") AddUnits(" + add_units + ")" + " PassThrough(" + pass_thru + ")\n";
+				auto sub_units = std::to_string(sub);
+				ret += "Layer " + std::to_string(l.first) + ", OutStatement" + std::to_string(e.first) + ": MultUnits(" + mult_units +\
+				 ") AddUnits(" + add_units + ")" + " PassThrough(" + pass_thru + ")" + " SubUnits(" + sub_units + ")\n";
 
 			}
 		}
@@ -138,6 +158,7 @@ struct DTLResources
 	int nConstsNeeded;
 	int nOutStatements;
 	int nLayersNeeded;
+	int nSubNeeded;
 	int nMultNeeded;
 	int nAddNeeded;
 	int nPassThrough;
@@ -235,6 +256,10 @@ public:
 	}
 	void UseNewMultUnitLayer(int layer) {
 		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nMultUnits++;
+	}
+
+	void UseNewSubUnitLayer(int layer) {
+		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nSubUnits++;
 	}
 	
 	void UseNewPassThroughLayer(int layer) {

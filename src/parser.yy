@@ -75,10 +75,13 @@
 %token  <DTL::Token *>       COMMA
 %token  <DTL::Token *>       LBRACKET
 %token  <DTL::Token *>       RBRACKET
+%token  <DTL::Token *>       MINUS
 
 %left LESS
 %left CROSS
-%left STAR 
+%left MINUS
+%left STAR
+
 
 %type <DTL::ProgramNode*> program
 %type <DTL::ExpNode*> factor
@@ -200,6 +203,11 @@ expr: expr CROSS expr
     {
         const Position * p = new Position($1->pos(), $3->pos());
         $$ = new TimesNode(p, $1, $3);
+    }
+    | expr MINUS expr
+    {
+        const Position * p = new Position($1->pos(), $3->pos());
+        $$ = new MinusNode(p, $1, $3);
     }
     | term
     {

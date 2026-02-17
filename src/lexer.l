@@ -56,6 +56,7 @@ int 	    { return makeBareToken(TokenKind::INT); }
 ","		{ return makeBareToken(TokenKind::COMMA); }
 "["		{ return makeBareToken(TokenKind::LBRACKET); }
 "]"		{ return makeBareToken(TokenKind::RBRACKET); }
+"-"		{ return makeBareToken(TokenKind::MINUS); }
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)* { 
 			  Position * pos = new Position(lineNum, colNum,

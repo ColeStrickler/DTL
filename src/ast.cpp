@@ -145,6 +145,19 @@ std::string DTL::PlusNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
+std::string DTL::MinusNode::PrintAST(int &node_num, std::ofstream &outfile) {
+	node_num++;
+	std::string name = "Minus" + std::to_string(node_num);
+	auto exp1NodeString = myExp1->PrintAST(node_num, outfile);
+	auto exp2NodeString = myExp2->PrintAST(node_num, outfile);
+	outfile << name << " -> " << exp1NodeString << ";\n";
+	outfile << name << " -> " << exp2NodeString << ";\n";
+	
+	return name;
+}
+
+
+
 std::string DTL::LessEqNode::PrintAST(int &node_num, std::ofstream &outfile)
 {
 	node_num++;

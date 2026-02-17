@@ -46,6 +46,13 @@ int DTL::PostIncStmtNode::GetMaxDepth()
 }
 
 
+int DTL::MinusNode::GetMaxDepth()
+{
+    return 1 + std::max(myExp1->GetMaxDepth(), myExp2->GetMaxDepth());
+}
+
+
+
 int DTL::PlusNode::GetMaxDepth()
 {
     return 1 + std::max(myExp1->GetMaxDepth(), myExp2->GetMaxDepth());
@@ -286,6 +293,39 @@ ASTNode *DTL::PlusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t 
         myExp2 = static_cast<ExpNode*>(myExp2->TransformPass(currDepth+1, RequiredDepth, opt_flags));
     return this;
 }
+
+ASTNode *DTL::MinusNode::TransformPass(uint8_t opt_flags) 
+{
+    return this;
+}
+
+ASTNode *DTL::MinusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) {
+    bool bDepth = currDepth + 1 < RequiredDepth;
+    bool n1 = myExp1->getTag() == NODETAG::INTLITNODE || myExp1->getTag() == NODETAG::IDNODE;
+    bool n2 = myExp2->getTag() == NODETAG::INTLITNODE || myExp2->getTag() == NODETAG::IDNODE;
+    bool greedy_times = (opt_flags & DTL_OPT_MULTGREEDY != 0);
+
+    // no need to push too many pass throughs too base level --> possibly do this optimization with times as well
+    // this effectively schedules as many ready operations as possible
+    if(n1 && n2 && bDepth && greedy_times)
+    {
+        auto ilnode = new IntLitNode(pos(), 0);
+        auto dummyPlus = new PlusNode(pos(), (ExpNode*)this->TransformPass(currDepth+1, RequiredDepth, opt_flags), ilnode);
+        dummyPlus->setPassThrough();
+        //printf("times dummy 0x%x\n", ilnode);
+        //myExp1 = nullptr;
+        //myExp2 = nullptr;
+        ;
+        return dummyPlus;
+    }
+
+
+
+    myExp1 = static_cast<ExpNode*>(myExp1->TransformPass(currDepth+1, RequiredDepth, opt_flags));
+    myExp2 = static_cast<ExpNode*>(myExp2->TransformPass(currDepth+1, RequiredDepth, opt_flags));
+    return this;
+}
+
 
 ASTNode *DTL::TimesNode::TransformPass(uint8_t opt_flags)
 {
