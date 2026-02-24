@@ -23,7 +23,7 @@ struct DTLUnitAllocation
 
 struct DTLResources
 {
-	DTLResources() : ForLoopsNeeded(0), nConstsNeeded(0), nOutStatements(0), nPassThrough(0), nConstArrayNeeded(0), nConstArraySizeNeeded(0)
+	DTLResources() : ForLoopsNeeded(0), nConstsNeeded(0), nOutStatements(0), nPassThrough(0), nConstArrayNeeded(0), nConstArraySizeNeeded(0), nSubNeeded(0)
 	{
 
 	}
@@ -34,6 +34,7 @@ struct DTLResources
 		GetPassThroughNeeded();
 		GetLayersNeeded();
 		GetMultUnitsNeeded();
+		GetSubUnitsNeeded();
 	}
 
 	int GetSubUnitsNeeded()

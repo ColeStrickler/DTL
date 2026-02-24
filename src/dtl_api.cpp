@@ -215,8 +215,10 @@ void DTL::API::ResetConfig(int config)
 {
     uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(config) + AGU_CONFIG_RST;
     WRITE_BOOL(config_n_rst, true);
-    while(READ_BOOL(config_n_rst) != true){};
-    WRITE_BOOL(config_n_rst, false);
+    while(READ_BOOL(config_n_rst) != true){
+        
+    };
+   // WRITE_BOOL(config_n_rst, false);
 }
 
 void DTL::API::DebugPrintAllocator() 
@@ -294,6 +296,10 @@ int DTL::API::AllocateConfig() {
             m_ConfigBitmap |= (1ULL << i);
             printf("Allocating config %d\n", i);
             assert(i < hwStat->nMaxConfigs);
+
+            uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(i) + AGU_CONFIG_RST;
+            WRITE_BOOL(config_n_rst, false);
+
             return i;
         }
     }
@@ -588,8 +594,6 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
     /*
         Will want to make this per config ?
-
-
 
         We need the DTU not the AGU config, because the DTU config is where the address indirection comes from
     */
