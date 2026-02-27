@@ -13,7 +13,7 @@ for (int n = 0; n < 100; n++)
         {
             for (int h = 0; h < 400; h++)
             {
-                out = n*stride_n  + c + (H-1-h)*stride_h + (W-1-w)*stride_w;
+                out = n*stride_n + c + h*stride_h + (W-1-w)*stride_w;
             }
         }
     }
