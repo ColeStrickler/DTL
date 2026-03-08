@@ -89,7 +89,7 @@ int main()
 {
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 9, 1, 2);
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 8, 1, 2);
-	auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 8, 1, 2);
+	auto hwStat = new DTL::AGUHardwareStat(3, 4, 5, 6, 5, 4, 1, 1, 2);
 	hwStat->bytesCell = 2; // maxVarOutputs = 2
 
     std::istringstream input(FileToString("./test.dtl"));

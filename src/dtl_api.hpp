@@ -19,7 +19,7 @@
 
 namespace DTL
 {
-
+    
 
 
 #define DEVICE_FILE "/dev/DTU-RUNTIME-DRIVER"

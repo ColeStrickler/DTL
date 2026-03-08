@@ -1,20 +1,12 @@
+int rowsize = 16;
+int cols = {16, 32, 48};
 
-int H = 400;
-int W = 400;
-int stride_n = 100;
-int stride_h = 106;
-int stride_w = 105;
 
-for (int n = 0; n < 100; n++)
+
+for (int i = 0; i < 43690; i++)
 {
-    for (int c = 0; c < 3; c++)
+    for (int j = 0; j < 3; j++)
     {
-        for (int w = 0; w < 400; w++)
-        {
-            for (int h = 0; h < 400; h++)
-            {
-                out = n*stride_n + c + h*stride_h + (W-1-w)*stride_w;
-            }
-        }
+        out = i*rowsize + cols[j];
     }
 }

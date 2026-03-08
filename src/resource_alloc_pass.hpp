@@ -67,6 +67,16 @@ struct ConstArray
 };
 
 
+struct LayerConfig
+{
+    int nAdd;
+    int nMult;
+    int nPassThru;
+    int Sub;
+};
+
+
+
 // probably want to make a parameters struct to pass in
 class AGUHardwareStat
 {
@@ -74,7 +84,7 @@ public:
     AGUHardwareStat(int nAdd, int nMult, int nLayers, int nConst, int nForLoop, int nPassThrough, int nOutStatements, int nConstArray, int bytes_cell = 2) :\
         nLayerAddUnits(nAdd), nLayerMultUnits(nMult), nConstRegisters(nConst), nForLoopRegisters(nForLoop),\
         nLayers(nLayers), nLayerPassThrough(nPassThrough), nOutStatements(nOutStatements), nConstArray(nConstArray),\
-        nConstArraySize(32), nMaxConfigs(1), nLayerSubUnits(4)
+        nConstArraySize(32), nMaxConfigs(1), nLayerSubUnits(2)
     {
         
         /*
@@ -295,9 +305,8 @@ public:
         uint64_t offset = layerByteOffset + cellByteOffset + outStatementOffset + cell_index;
         std::string addr = to_hex(baseAddress + offset);
         VarOutMap[hash_str]++;
-        
+
         int routingIdx = IdxOutMap[idx_str];
-        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
         IdxOutMap[idx_str]++;
         assert(VarOutMap[hash_str] <= bytesCell); // this maps to maxVarOut
         assert(IdxOutMap[idx_str] <= bytesCell); 
@@ -305,7 +314,6 @@ public:
 
         unsigned char write_val = static_cast<unsigned char>(outRegNumber);
         write_val |= (routingIdx << idxBit);
-        printf("write_val %d\n", write_val);
 
         //printf("0x%x, 0x%x, 0x%x, 0x%x\n", layerByteOffset, cellByteOffset, outStatementOffset, cell_index);
         //printf("0x%x nOut %d, layer %d, inReg %d, outReg %d 0x%x\n", baseAddress, numOutStatement, layer, inRegNumber, outRegNumber, offset);
