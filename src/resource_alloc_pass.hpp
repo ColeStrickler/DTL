@@ -72,7 +72,7 @@ struct LayerConfig
     int nAdd;
     int nMult;
     int nPassThru;
-    int Sub;
+    int nSub;
 };
 
 
@@ -81,12 +81,12 @@ struct LayerConfig
 class AGUHardwareStat
 {
 public:
-    AGUHardwareStat(int nAdd, int nMult, int nLayers, int nConst, int nForLoop, int nPassThrough, int nOutStatements, int nConstArray, int bytes_cell = 2) :\
-        nLayerAddUnits(nAdd), nLayerMultUnits(nMult), nConstRegisters(nConst), nForLoopRegisters(nForLoop),\
-        nLayers(nLayers), nLayerPassThrough(nPassThrough), nOutStatements(nOutStatements), nConstArray(nConstArray),\
-        nConstArraySize(32), nMaxConfigs(1), nLayerSubUnits(2)
+    AGUHardwareStat(const std::vector<LayerConfig>& layerCfg, int nLayers, int nConst, int nForLoop, int nOutStatements, int nConstArray, int bytes_cell = 2) :\
+       nConstRegisters(nConst), nForLoopRegisters(nForLoop),\
+        nLayers(nLayers), nOutStatements(nOutStatements), nConstArray(nConstArray),\
+        nConstArraySize(32), nMaxConfigs(1), layerCfgs(layerCfg)
     {
-        
+                assert(layerCfg.size() == nLayers+1);
         /*
             1 config per out statement,
             1 routing config per layer,
@@ -97,9 +97,10 @@ public:
         */
         bytesMagic = 16;
         bytesCell = bytes_cell;
-        bytesLayer = bytesCell * (nAdd + nMult + nPassThrough + nLayerSubUnits);
+        bytesLayer = bytesCell * (GetMaxFuncUnits());
+
         
-        idxBit = log2ceil(nAdd+nMult+nPassThrough+nLayerSubUnits+1); // We do not need +1, because we are zero indexed
+        idxBit = log2ceil(GetMaxFuncUnits()+1); // We do not need +1, because we are zero indexed
 
 
         bytesOutStatement = (nLayers+1) * bytesLayer; // layer at beginning at at the end
@@ -134,7 +135,7 @@ public:
 
     inline uint64_t GetLoopRegsOffset() const
     {
-        return static_cast<uint64_t>(nOutStatements*(nLayers+1)*(nLayerPassThrough+nLayerMultUnits+nLayerAddUnits+nLayerSubUnits)*bytesCell);
+        return static_cast<uint64_t>(nOutStatements*(nLayers+1)*(GetMaxFuncUnits())*bytesCell);
     }
 
     inline uint64_t GetLoopIncRegsOffset(uint32_t byteWidth) const
@@ -182,6 +183,7 @@ public:
 
     std::string PrintConstRegWrite(uint64_t baseAddress, int constRegNum, int constRegvalue, uint32_t byte_width)
     {
+         printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
         uint64_t addr_ = baseAddress + GetConstantRegsOffset(byte_width) +constRegNum*byte_width;
         std::string addr = to_hex(addr_);
 
@@ -198,7 +200,7 @@ public:
 
     std::string PrintConstArrayWrite(uint64_t baseAddress, ConstArray& constArray, uint32_t byte_width)
     {
-        //printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
+        printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
         uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width);// + constArray.reg_num*(nConstArraySize*byte_width + 8);
 
         std::string ret;
@@ -318,7 +320,7 @@ public:
         //printf("0x%x, 0x%x, 0x%x, 0x%x\n", layerByteOffset, cellByteOffset, outStatementOffset, cell_index);
         //printf("0x%x nOut %d, layer %d, inReg %d, outReg %d 0x%x\n", baseAddress, numOutStatement, layer, inRegNumber, outRegNumber, offset);
         std::string write_value = std::to_string(static_cast<unsigned char>(write_val));
-
+        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
         return "WRITE_UINT8(" + addr + ", " + write_value + ");\n";  
     }
 
@@ -329,70 +331,123 @@ public:
 
     bool CheckMeetHardwareConstaints(DTLResources* rsrc) const
     {
-        bool ret = (rsrc->nAddNeeded <= nLayerAddUnits);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nAddNeeded, nLayerAddUnits);
-            std::cerr << "(rsrc->nAddNeeded <= nLayerAddUnits)\n"; goto end;
-        }
-        ret = (rsrc->nMultNeeded <= nLayerMultUnits);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nMultNeeded, nLayerMultUnits);
-            std::cerr << "(rsrc->nMultNeeded <= nLayerMultUnits)\n"; goto end;
-        }
+        bool ret = true;
+        for (int i  =  0; i <= nLayers; i++)
+        {
+            ret = (rsrc->AddUnitsNeededLayer(i) <= GetLayerAddUnits(i));
+            if (!ret) {
+                printf("(Layer %d) %d <= %d\n", i, rsrc->AddUnitsNeededLayer(i), GetLayerAddUnits(i));
+                std::cerr << "(rsrc->nAddNeeded <= nLayerAddUnits)\n"; goto end;
+            }
+            ret = (rsrc->MultUnitsNeededLayer(i) <= GetLayerMultUnits(i));
+            if (!ret) {
+                printf("(Layer %d) %d <= %d\n", i, rsrc->MultUnitsNeededLayer(i), GetLayerMultUnits(i));
+                std::cerr << "(rsrc->nMultNeeded <= nLayerMultUnits)\n"; goto end;
+            }
 
-        ret = (rsrc->nSubNeeded <= nLayerSubUnits);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nSubNeeded, nLayerSubUnits);
-            std::cerr << "(rsrc->nSubNeeded <= nLayerSubUnits)\n"; goto end;
-        }
+            ret = (rsrc->SubUnitsNeededLayer(i) <= GetLayerSubUnits(i));
+            if (!ret) {
+                printf("(Layer %d) %d <= %d\n", i, rsrc->SubUnitsNeededLayer(i), GetLayerSubUnits(i));
+                std::cerr << "(rsrc->nSubNeeded <= nLayerSubUnits)\n"; goto end;
+            }
 
-        ret = (rsrc->ForLoopsNeeded <= nForLoopRegisters);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->ForLoopsNeeded, nForLoopRegisters);
-            std::cerr << "(rsrc->ForLoopsNeeded <= nForLoopRegisters)\n"; goto end;
-        }
-        ret = (rsrc->nConstsNeeded <= nConstRegisters);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nConstsNeeded, nConstRegisters);
-            std::cerr << "(rsrc->nConstsNeeded <= nConstRegisters)\n"; goto end;
-        }
+            ret = (rsrc->ForLoopsNeeded <= nForLoopRegisters);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->ForLoopsNeeded, nForLoopRegisters);
+                std::cerr << "(rsrc->ForLoopsNeeded <= nForLoopRegisters)\n"; goto end;
+            }
+            ret = (rsrc->nConstsNeeded <= nConstRegisters);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->nConstsNeeded, nConstRegisters);
+                std::cerr << "(rsrc->nConstsNeeded <= nConstRegisters)\n"; goto end;
+            }
 
-        /*
-            Our current convention is to use the last layer to route PassThru0 to the output,
-            so we need an extra layer to do this successfully. We can probably do this in a better way
-            later on
-        */
-        ret = (rsrc->nLayersNeeded + 1 <= nLayers);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nLayersNeeded+1, nLayers);
-            std::cerr << "(rsrc->nLayersNeeded <= nLayers)\n"; goto end;
-        }
-        ret = (rsrc->nPassThrough <= nLayerPassThrough); 
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nPassThrough, nLayerPassThrough);
-            std::cerr << "(rsrc->nPassThrough <= nLayerPassThrough)\n"; goto end;
-        }
-        ret = (rsrc->nOutStatements <= nOutStatements);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nOutStatements, nOutStatements);
-            std::cerr << "(rsrc->nOutStatements <= nOutStatements)\n"; goto end;
+            /*
+                Our current convention is to use the last layer to route PassThru0 to the output,
+                so we need an extra layer to do this successfully. We can probably do this in a better way
+                later on
+            */
+            ret = (rsrc->nLayersNeeded + 1 <= nLayers);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->nLayersNeeded+1, nLayers);
+                std::cerr << "(rsrc->nLayersNeeded <= nLayers)\n"; goto end;
+            }
+            ret = (rsrc->PassThruUnitsNeededLayer(i) <= GetLayerPassThruUnits(i)); 
+            if (!ret) {
+                printf("(Layer %d) %d <= %d\n", i, rsrc->PassThruUnitsNeededLayer(i), GetLayerPassThruUnits(i));
+                std::cerr << "(rsrc->nPassThrough <= nLayerPassThrough)\n"; goto end;
+            }
+            ret = (rsrc->nOutStatements <= nOutStatements);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->nOutStatements, nOutStatements);
+                std::cerr << "(rsrc->nOutStatements <= nOutStatements)\n"; goto end;
+            }
+            
+            ret = (rsrc->nConstArrayNeeded <= nConstArray);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->nConstArrayNeeded, nConstArray);
+                std::cerr << "(rsrc->nConstArrayNeeded <= nConstArrays)\n"; goto end;
+            }
+
+            ret = (rsrc->nConstArraySizeNeeded <= nConstArraySize);
+            if (!ret) {
+                printf("%d <= %d\n", rsrc->nConstArraySizeNeeded , nConstArraySize);
+                std::cerr << "(rsrc->nConstArraySizeNeeded  <= nConstArraySize)\n"; goto end;
+            }
         }
         
-        ret = (rsrc->nConstArrayNeeded <= nConstArray);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nConstArrayNeeded, nConstArray);
-            std::cerr << "(rsrc->nConstArrayNeeded <= nConstArrays)\n"; goto end;
-        }
-
-        ret = (rsrc->nConstArraySizeNeeded <= nConstArraySize);
-        if (!ret) {
-            printf("%d <= %d\n", rsrc->nConstArraySizeNeeded , nConstArraySize);
-            std::cerr << "(rsrc->nConstArraySizeNeeded  <= nConstArraySize)\n"; goto end;
-        }
 
     end:
         return ret;
     }
+
+
+    int GetTotalFuncUnits(LayerConfig cfg) const
+    {
+        return cfg.nAdd + cfg.nMult + cfg.nPassThru + cfg.nSub;
+    }
+
+    int GetTotalFuncUnitsLayer(int layer) const
+    {
+        assert(layer >= 0 && layer < layerCfgs.size());
+        return GetTotalFuncUnits(layerCfgs[layer]);
+    }
+
+    int GetLayerAddUnits(int layer) const
+    {
+        assert(layer >= 0 && layer < layerCfgs.size());
+        return layerCfgs[layer].nAdd;
+    }
+
+    int GetLayerMultUnits(int layer) const
+    {
+        assert(layer >= 0 && layer < layerCfgs.size());
+        return layerCfgs[layer].nMult;
+    }
+
+    int GetLayerPassThruUnits(int layer) const
+    {
+        assert(layer >= 0 && layer < layerCfgs.size());
+        return layerCfgs[layer].nPassThru;
+    }
+
+    int GetLayerSubUnits(int layer) const
+    {
+        assert(layer >= 0 && layer < layerCfgs.size());
+        return layerCfgs[layer].nSub;
+    }
+
+    int GetMaxFuncUnits() const 
+    {
+        int ret = nForLoopRegisters + nConstRegisters + nConstArray;
+        for (auto& layer: layerCfgs)
+        {
+            ret = std::max(ret, GetTotalFuncUnits(layer));
+        }
+        return ret;
+    }
+
+
 
     int idxBit; // routing idx
     int bytesMagic;
@@ -402,15 +457,12 @@ public:
     int totalConfigRegionBits;
     int bits_outStatement;
 
-    int nLayerSubUnits;
-    int nLayerAddUnits;
-    int nLayerMultUnits;
+    std::vector<LayerConfig> layerCfgs;
     int nLayers;
     int nConstRegisters;
     int nConstArray;
     int nConstArraySize;
     int nForLoopRegisters;
-    int nLayerPassThrough;
     int nOutStatements;
     int nMaxConfigs;
 
@@ -633,9 +685,7 @@ private:
 class OutStmtRouting
 {
 public:
-    OutStmtRouting(int layerAddUnits, int layerMultUnits, int nPassThru, int nSubUnit, int nLayers, AGUHardwareStat* hwStat) : \
-        LayerAddUnitCount(layerAddUnits), LayerMultUnitCount(layerMultUnits), LayerPassThruCount(nPassThru), \
-        LayerSubUnitCount(nSubUnit), LayerCount(nLayers), hwStat(hwStat)
+    OutStmtRouting(int nLayers, AGUHardwareStat* hwStat, int usedLayers) : LayerCount(nLayers), hwStat(hwStat), UsedLayers(usedLayers)
     {
         
     }
@@ -654,7 +704,15 @@ public:
     {
         auto it = LayerRouting.find(layer);
         if (it == LayerRouting.end())
+        {
+            int LayerAddUnitCount       = hwStat->GetLayerAddUnits(UsedLayers-1-layer);
+            int LayerMultUnitCount      = hwStat->GetLayerMultUnits(UsedLayers-1-layer);
+            int LayerPassThruCount      = hwStat->GetLayerPassThruUnits(UsedLayers-1-layer);
+            int LayerSubUnitCount       = hwStat->GetLayerSubUnits(UsedLayers-1-layer);
+            printf("%d Layer %d,%d,%d,%d\n", layer, LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
             LayerRouting.insert(std::make_pair(layer, new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount)));
+        }
+
     }
 
 
@@ -737,8 +795,15 @@ public:
         LayerRouting = newLayerRouting;
         while(m < LayerCount+1)
         {
+            int LayerAddUnitCount       = hwStat->GetLayerAddUnits(m);
+            int LayerMultUnitCount      = hwStat->GetLayerMultUnits(m);
+            int LayerPassThruCount      = hwStat->GetLayerPassThruUnits(m);
+            int LayerSubUnitCount       = hwStat->GetLayerSubUnits(m);
+
             LayerRouting[m] = new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
+            int input = unit;
             unit = RequestPassThrough(m, unit);
+            printf("layer %d, passthru %d--->%d\n", m, input, unit);
             m++;
         }
         
@@ -761,11 +826,8 @@ private:
     // layer# -> AGULayer*
     std::map<int, AGULayer*> LayerRouting;
     //std::vector<AGULayer*> LayerRouting;
-    int LayerAddUnitCount;
-    int LayerMultUnitCount;
-    int LayerPassThruCount;
-    int LayerSubUnitCount;
     int LayerCount;
+    int UsedLayers;
 };
 
 
@@ -899,10 +961,11 @@ public:
         return OutStatementRouting[OutStatementRouting.size()-1];
     }
 
-    void NewOutStatement()
+    void NewOutStatement(int depth)
     {
+        int layers =  depth;
         assert(OutStatementRouting.size() <= hwStat->nOutStatements);
-        OutStatementRouting.push_back(new OutStmtRouting(hwStat->nLayerAddUnits, hwStat->nLayerMultUnits, hwStat->nLayerPassThrough, hwStat->nLayerSubUnits, hwStat->nLayers, hwStat));
+        OutStatementRouting.push_back(new OutStmtRouting(hwStat->nLayers, hwStat, layers));
     }
 
     

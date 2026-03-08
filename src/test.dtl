@@ -1,5 +1,5 @@
 int rowsize = 16;
-int cols = {16, 32, 48};
+int cols = {4, 8, 12};
 
 
 

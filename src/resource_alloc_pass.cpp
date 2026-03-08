@@ -86,7 +86,8 @@ void DTL::ForStmtNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 
 void DTL::OutStmtNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 {
-    ralloc->NewOutStatement();
+    int usedLayers = myExp->GetMaxDepth();
+    ralloc->NewOutStatement(usedLayers);
     myExp->resourceAllocation(ralloc, 0);
     ralloc->SetAnswer(myExp);
 }

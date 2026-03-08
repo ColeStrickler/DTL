@@ -37,6 +37,50 @@ struct DTLResources
 		GetSubUnitsNeeded();
 	}
 
+
+	int AddUnitsNeededLayer(int layer)
+	{
+		int needed = 0;
+		for (auto& e: LayerFuncUnitAllocations) // iterate over outstmts
+		{
+			needed = std::max(needed, e.second[layer].nAddUnits);
+		}
+		return needed;
+	}
+
+
+	int MultUnitsNeededLayer(int layer)
+	{
+		int needed = 0;
+		for (auto& e: LayerFuncUnitAllocations) // iterate over outstmts
+		{
+			needed = std::max(needed, e.second[layer].nMultUnits);
+		}
+		return needed;
+	}
+
+	int PassThruUnitsNeededLayer(int layer)
+	{
+		int needed = 0;
+		for (auto& e: LayerFuncUnitAllocations) // iterate over outstmts
+		{
+			needed = std::max(needed, e.second[layer].nPassThrough);
+		}
+		return needed;
+	}
+
+	int SubUnitsNeededLayer(int layer)
+	{
+		int needed = 0;
+		for (auto& e: LayerFuncUnitAllocations) // iterate over outstmts
+		{
+			needed = std::max(needed, e.second[layer].nSubUnits);
+		}
+		return needed;
+	}
+
+
+
 	int GetSubUnitsNeeded()
 	{
 		int sub_needed = 0;
