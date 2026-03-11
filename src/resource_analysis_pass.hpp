@@ -297,18 +297,18 @@ public:
 	void UseNewConst() 			{ResourcesNeeded->nConstsNeeded++;}
 	void UseNewOutStatement()	{ResourcesNeeded->nOutStatements++;}
 	void UseNewAddUnitLayer(int layer) {
-		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nAddUnits++;
+		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][currOutStmtDepth-1-layer].nAddUnits++;
 	}
 	void UseNewMultUnitLayer(int layer) {
-		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nMultUnits++;
+		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][currOutStmtDepth-1-layer].nMultUnits++;
 	}
 
 	void UseNewSubUnitLayer(int layer) {
-		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nSubUnits++;
+		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][currOutStmtDepth-1-layer].nSubUnits++;
 	}
 	
 	void UseNewPassThroughLayer(int layer) {
-		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nPassThrough++;
+		ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][currOutStmtDepth-1-layer].nPassThrough++;
 		//printf("layer %d, npassthrough %d\n", layer, ResourcesNeeded->LayerFuncUnitAllocations[ResourcesNeeded->CurrentOutStatement()][layer].nPassThrough);
 	}
 
@@ -319,9 +319,11 @@ public:
 	}
 
 	DTLResources* GetResources() const {return ResourcesNeeded;}
+	int currOutStmtDepth;
 private:
 	DTLResources* ResourcesNeeded;
 	AGUHardwareStat* hwStat;
+	
 
 
 	ResourceAnalysis() : ResourcesNeeded(new DTLResources())

@@ -1,12 +1,22 @@
-int rowsize = 16;
-int cols = {4, 8, 12};
+int stride_d1 = 1001;
+int stride_w1 = 1002;
+int stride_h1 = 1003;
+int stride_c1 = 1004;
+int stride_d2 = 1005;
+int stride_n1 = 1006;
+int stride_d3 = 1007;
 
 
-
-for (int i = 0; i < 43690; i++)
+for (int i = 0; i < 1000; i++)
 {
-    for (int j = 0; j < 3; j++)
+    for (int j = 0; j < 9999; j++)
     {
-        out = i*rowsize + cols[j];
+        for (int k = 0; k < 222; k++)
+        {
+            for (int l = 0; l < 3; l++)
+            {
+                out = (l*(stride_c1) + j*(stride_d1*stride_w1)) + (k*(stride_h1*stride_d2) + i*(stride_n1*stride_d3));
+            }
+        }
     }
 }

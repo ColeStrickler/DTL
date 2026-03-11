@@ -75,6 +75,8 @@ void DTL::ForStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 
 void DTL::OutStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 {
+    int depth = myExp->GetMaxDepth();
+    ra->currOutStmtDepth = depth;
     myExp->resourceAnalysis(ra, layer);
     ra->UseNewOutStatement(); // alloc outstatement at the end so we can zero index the resources
 }

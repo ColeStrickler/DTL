@@ -91,13 +91,14 @@ int main()
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 8, 1, 2);
 	//auto hwStat = new DTL::AGUHardwareStat(3, 4, 5, 6, 5, 4, 1, 1, 2);
 	auto hwStat = new DTL::AGUHardwareStat({ // (nAdd, nMult, nPassThru, nSUb) 
-		{4,2,1,3},
+		{2,4,2,4},
 		{2,2,1,4},
+		{2,2,1,2},
 		{1,1,1,2},
-		{1,1,1,2},
-		{1,1,1,2},
+		{1,1,1,1},
 		{0,0,1,0},
 	}, 5, 6, 5, 1, 1, 2);
+	 hwStat->nMaxConfigs = 8;
 	//hwStat->bytesCell = 2; // maxVarOutputs = 2
 
     std::istringstream input(FileToString("./test.dtl"));

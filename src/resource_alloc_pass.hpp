@@ -71,8 +71,8 @@ struct LayerConfig
 {
     int nAdd;
     int nMult;
-    int nPassThru;
     int nSub;
+    int nPassThru;
 };
 
 
