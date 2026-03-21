@@ -9,9 +9,20 @@
 
 namespace DTL {
 
+class IDNode;
 class ASTNode;
 class ProgramNode;
 class NameAnalysis;
+
+
+struct ConditionalInfo
+{
+	bool useCond;
+	bool useIfCond;
+	int outStatementsPerCond;
+	IDNode* condIdx;
+};
+
 
 // An instance of this class will be passed over the entire
 // AST. Rather than attaching types to each node, the
@@ -26,6 +37,10 @@ private:
 	// can only be created via the static build function
 	TypeAnalysis(){
 		hasError = false;
+		useCond = false;
+		useIfCond = false;
+		outStatementsPerCond = 0;
+		condIdx = nullptr;
 	}
 
 public:
@@ -208,12 +223,37 @@ public:
 		Report::fatal(pos,
 			"Non-lval assignment");
 	}
+
+
+	void errUnbalancedCond(const Position * pos){
+		hasError = true;
+		Report::fatal(pos,
+			"Unbalanced conditional statement.");
+	}
 private:
 	std::unordered_map<const ASTNode *, const DataType *> nodeToType;
 	//const FnType * currentFnType;
 	bool hasError;
 public:
 	ProgramNode * ast;
+
+	void SetConditionalInfo(bool use_cond, bool use_ifCond, int outPerCond, IDNode* condIndex)
+	{
+		useCond = use_cond;
+		useIfCond = use_ifCond;
+		outPerCond = outStatementsPerCond;
+		condIdx = condIndex;
+	}
+
+
+	ConditionalInfo GetConditionalInfo() const {
+		return {useCond, useIfCond, outStatementsPerCond, condIdx};
+	}
+	bool useCond;
+	bool useIfCond;
+	int outStatementsPerCond;
+	IDNode* condIdx;
+
 };
 
 }

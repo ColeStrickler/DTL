@@ -166,6 +166,31 @@ ASTNode *DTL::ForStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pas
     return this;
 }
 
+ASTNode *DTL::IfStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass) {
+    assert(myTrueCases.size() == myFalseCases.size());
+    for (int i = 0; i < myTrueCases.size(); i++)
+    {
+        myTrueCases[i] = (StmtNode*)myTrueCases[i]->ConstCoalesce(coalesce_pass, pass);
+        myFalseCases[i] = (StmtNode*)myFalseCases[i]->ConstCoalesce(coalesce_pass, pass);
+    }
+    return this;
+}
+
+ASTNode * DTL::SwitchStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass)
+{
+    
+    int caseSize = myCases[0].size();
+
+    for (auto& c: myCases)
+    {
+        for (int i = 0; i < c.size(); i++)
+        {
+            c[i] = (StmtNode*)c[i]->ConstCoalesce(coalesce_pass, pass);
+        }
+    }
+
+    return this;
+}
 
 ASTNode *DTL::OutStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass) {
     auto exp = myExp->ConstCoalesce(coalesce_pass, pass);

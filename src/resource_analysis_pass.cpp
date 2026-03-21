@@ -82,6 +82,18 @@ void DTL::OutStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 }
 
 
+void DTL::IfStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer) 
+{
+    assert(false); // should already be collapsed in transform pass
+}
+
+void DTL::SwitchStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+    assert(false); // should already be collapsed in transform pass
+}
+
+
+
 /*
     This should work because we will only enter this when evaluating the OutStmtNode
 */

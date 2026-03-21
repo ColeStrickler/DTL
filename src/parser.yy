@@ -40,6 +40,7 @@
    #include <iostream>
    #include <cstdlib>
    #include <fstream>
+   #include <algorithm>
 
    // Our code for interoperation between scanner/parser
    #include "scanner.hpp"
@@ -76,6 +77,12 @@
 %token  <DTL::Token *>       LBRACKET
 %token  <DTL::Token *>       RBRACKET
 %token  <DTL::Token *>       MINUS
+%token  <DTL::Token *>       COLON
+%token  <DTL::Token *>       CASE
+%token  <DTL::Token *>       SWITCH
+%token  <DTL::Token *>       IF
+%token  <DTL::Token *>       ELSE
+%token  <DTL::Token *>       ISEVEN
 
 %left LESS
 %left CROSS
@@ -93,7 +100,12 @@
 %type <DTL::ForStmtNode*> forstatement
 %type <std::vector<DTL::StmtNode*>> constdecls
 %type <std::vector<DTL::StmtNode*>> outstatements
+%type <std::vector<DTL::StmtNode*>> innernest
 %type <DTL::StmtNode*> outstatement
+%type <DTL::StmtNode*> ifstatement
+%type <DTL::StmtNode*> switchstatement
+%type <std::vector<std::vector<DTL::StmtNode*>>> casestatements
+%type <std::vector<DTL::StmtNode*>> casestatement
 %type <DTL::LocNode*> loc
 %type <DTL::TypeNode*> type
 %type <DTL::IntLitNode*> intlit
@@ -163,7 +175,7 @@ forstatement: FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY forstate
             $$ = new ForStmtNode(p, $3, $4, $6, stmt_vec);
 
         }
-        | FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY outstatements RCURLY
+        | FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY innernest RCURLY
         {
             const Position * p = new Position($1->pos(), $10->pos());
             $$ = new ForStmtNode(p, $3, $4, $6, $9);
@@ -179,6 +191,52 @@ outstatements : outstatements outstatement
             stmt_vec.push_back($1);
             $$ = stmt_vec;
         }
+
+
+innernest: outstatements
+    {
+        $$ = $1;
+    }
+    | ifstatement
+    {
+        $$ = {$1};
+    }
+    | switchstatement
+    {
+        $$ = {$1};
+    }
+
+ifstatement : IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $4, $7, $11);
+        }
+
+
+
+switchstatement : SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
+        {
+            std::reverse($6.begin(), $6.end());
+            $$ = new SwitchStmtNode($1->pos(), $3, $6);
+        }
+
+
+casestatements : casestatement casestatements
+    {    
+        $2.push_back($1);
+        $$ = $2;
+    }
+    | casestatement
+    {
+        $$ = {$1};
+    }
+
+casestatement : CASE COLON outstatements
+    {
+        $$ = $3;
+    }
+
+
+
 outstatement : OUT ASSIGN expr SEMICOL
             {
                 const Position * p = new Position($1->pos(), $4->pos());

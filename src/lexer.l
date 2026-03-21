@@ -57,6 +57,13 @@ int 	    { return makeBareToken(TokenKind::INT); }
 "["		{ return makeBareToken(TokenKind::LBRACKET); }
 "]"		{ return makeBareToken(TokenKind::RBRACKET); }
 "-"		{ return makeBareToken(TokenKind::MINUS); }
+":"		{ return makeBareToken(TokenKind::COLON); }
+"if"	{ return makeBareToken(TokenKind::IF); }
+"isEven?"	{ return makeBareToken(TokenKind::ISEVEN); }
+"switch"	{ return makeBareToken(TokenKind::SWITCH); }
+"case"	{ return makeBareToken(TokenKind::CASE); }
+"else"	{ return makeBareToken(TokenKind::ELSE); }
+
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)* { 
 			  Position * pos = new Position(lineNum, colNum,

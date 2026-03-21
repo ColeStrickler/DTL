@@ -152,6 +152,58 @@ void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
 	return;	
 }
 
+void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta ) 
+{
+	myID->typeAnalysis(ta);
+	auto type = ta->nodeType(myID);
+	if (!type->isInt())
+	{
+		ta->errAssignOpr(this->pos());
+		ta->nodeType(this, ErrorType::produce());
+		return;
+	}
+
+	if (myTrueCases.size() != myFalseCases.size())
+	{
+		ta->errUnbalancedCond(this->pos());
+		ta->nodeType(this, ErrorType::produce());
+		return;
+	}
+
+	ta->SetConditionalInfo(true, true, myTrueCases.size(), myID);
+	ta->nodeType(this, BasicType::VOID());
+}
+
+
+
+void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta) 
+{
+	myID->typeAnalysis(ta);
+	auto type = ta->nodeType(myID);
+	if (!type->isInt())
+	{
+		ta->errAssignOpr(this->pos());
+		ta->nodeType(this, ErrorType::produce());
+		return;
+	}
+	int outPerCond = myCases[0].size();
+
+	for (auto& c: myCases)
+	{
+		if (c.size() != outPerCond) // we need this so hardware can use it properly. particularly L^(-1)
+		{
+			ta->errUnbalancedCond(this->pos());
+			ta->nodeType(this, ErrorType::produce());
+			return;
+		}
+	}
+
+	ta->SetConditionalInfo(true, false, outPerCond, myID);
+	ta->nodeType(this, BasicType::VOID());
+}
+
+
+
 void DTL::OutStmtNode::typeAnalysis(TypeAnalysis *ta)
 {
 	myExp->typeAnalysis(ta);

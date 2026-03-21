@@ -169,6 +169,8 @@ bool DTL::API::Compile(const std::string &dtlProgram)
         ERR("Failed Type Analysis");
         return false;
     }
+    auto condInfo = ta->GetConditionalInfo();
+
     root = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(root, DTL::DTL_OPTLEVEL::OPTMAX));
     root = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(root, DTL_OPT_MAX));
     if (root == nullptr)
@@ -185,7 +187,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     }
     ra->GetResources()->GetNeededResourceStats();
 
-    ralloc = DTL::ResourceAllocation::build(ra, hwStat);
+    ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
     if (ralloc == nullptr)
     {
         ERR("ResourceAllocation failed\n");

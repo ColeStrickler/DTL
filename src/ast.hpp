@@ -60,7 +60,9 @@ namespace DTL
 		CONSTARRAYDECLNODE,
 		ARRAYINDEXNODE,
 		UNARYEXPNODE,
-		MINUSNODE
+		MINUSNODE,
+		IFSTMTNODE,
+		SWITCHSTMTNODE
 	};
 
 	class ASTNode
@@ -365,6 +367,74 @@ namespace DTL
 	private:
 		ExpNode *myExp;
 	};
+
+
+
+	/*
+		Currently this is only an IsEven? conditional
+	*/
+	class IfStmtNode : public StmtNode
+	{
+	public:
+		IfStmtNode(const Position *p, IDNode* id, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases)
+			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myID(id) { myTag = NODETAG::IFSTMTNODE; }
+		// void unparse(std::ostream& out, int indent) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void typeAnalysis(TypeAnalysis *ta ) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int GetMaxDepth();
+
+		int maxDepth; // calling GetMaxDepth() will also set this value
+		std::vector<DTL::StmtNode*> CollapseStatements();
+		// virtual void to3AC(Procedure * prog) override;
+	private:
+		IDNode* myID;
+		std::vector<DTL::StmtNode*> myTrueCases;
+		std::vector<DTL::StmtNode*> myFalseCases;
+	};
+
+
+	class SwitchStmtNode : public StmtNode
+	{
+	public:
+		SwitchStmtNode(const Position *p, IDNode* id, std::vector<std::vector<DTL::StmtNode*>> cases)
+			: StmtNode(p), myCases(cases), myID(id) { myTag = NODETAG::SWITCHSTMTNODE; }
+		// void unparse(std::ostream& out, int indent) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int GetMaxDepth();
+		std::vector<DTL::StmtNode*> CollapseStatements();
+		int maxDepth; // calling GetMaxDepth() will also set this value
+
+		// virtual void to3AC(Procedure * prog) override;
+	private:
+		IDNode* myID;
+		std::vector<std::vector<DTL::StmtNode*>> myCases;
+	};
+
+
+
+
+
 
 	class TypeNode : public ASTNode
 	{

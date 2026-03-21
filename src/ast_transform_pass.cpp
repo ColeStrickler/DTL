@@ -23,6 +23,12 @@ int DTL::OutStmtNode::GetMaxDepth()
 }
 
 
+
+int DTL::SwitchStmtNode::GetMaxDepth() { assert(false); return 0; }// should already be transformed away
+
+int DTL::IfStmtNode::GetMaxDepth() { assert(false); return 0; } // should already be transformed away
+
+
 int DTL::IDNode::GetMaxDepth()
 {
     return 0;
@@ -137,16 +143,41 @@ ASTNode *DTL::PostIncStmtNode::TransformPass(int currDepth, int RequiredDepth, u
 
 ASTNode *DTL::ForStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags)
 {
-   int req_depth = 0;
+    int req_depth = 0;
     for (auto& stmt: myStatements)
         req_depth = std::max(req_depth, stmt->GetMaxDepth());
 
 
-
+restart:
     for (int i = 0; i < myStatements.size(); i++)
     {
-        auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
-        myStatements[i] = static_cast<StmtNode*>(stmt);
+        switch (myStatements[i]->getTag())
+        {
+            case NODETAG::IFSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 if statement
+                auto stmtvec = static_cast<DTL::IfStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            case NODETAG::SWITCHSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 switch statement
+                auto stmtvec = static_cast<DTL::SwitchStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            default:
+            {
+                auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
+                myStatements[i] = static_cast<StmtNode*>(stmt);
+            }
+        }
+
     }
 
     return this;
@@ -160,11 +191,36 @@ ASTNode *DTL::ForStmtNode::TransformPass(uint8_t opt_flags)
         req_depth = std::max(req_depth, stmt->GetMaxDepth());
 
 
-
+restart:
     for (int i = 0; i < myStatements.size(); i++)
     {
-        auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
-        myStatements[i] = static_cast<StmtNode*>(stmt);
+        switch (myStatements[i]->getTag())
+        {
+            case NODETAG::IFSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 if statement
+                auto stmtvec = static_cast<DTL::IfStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            case NODETAG::SWITCHSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 switch statement
+                auto stmtvec = static_cast<DTL::SwitchStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            default:
+            {
+                auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
+                myStatements[i] = static_cast<StmtNode*>(stmt);
+            }
+        }
+
     }
 
     return this;
@@ -389,3 +445,26 @@ ASTNode *DTL::LessEqNode::TransformPass(int currDepth, int RequiredDepth, uint8_
 
 
 ASTNode *DTL::TypeNode::TransformPass(uint8_t opt_flags) { return this; }
+
+
+
+ASTNode *DTL::IfStmtNode::TransformPass(uint8_t opt_flags) { assert(false); return nullptr; }
+
+
+ASTNode *DTL::IfStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) 
+{
+    assert(false); return nullptr;
+}
+
+
+
+ASTNode *DTL::SwitchStmtNode::TransformPass(uint8_t opt_flags) {
+    assert(false); return nullptr;
+}
+
+
+
+ASTNode *DTL::SwitchStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) {
+    assert(false); return nullptr;
+}
+

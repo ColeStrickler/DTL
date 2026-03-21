@@ -27,6 +27,10 @@ namespace DTL
 
 #define USED_OUTSTMT_REG 0xf01
 #define USED_FORLOOP_REG 0xf02
+#define USED_OUT_PERCOND_REG 0xf03
+#define USE_CONDITIONAL_REG 0xf04
+#define USE_CONDITIONAL_IDX_REG 0xf05
+#define USE_CONDITIONAL_ISEVEN_REG 0xf06
 
 
 inline int log2ceil(int n) {
@@ -597,6 +601,7 @@ public:
     {
         int mapping = usedPassThrough;
         usedPassThrough++;
+        printf("maxPassThrough %d, usedPassThrough %d\n", maxPassThrough, usedPassThrough);
         assert(usedPassThrough <= maxPassThrough);
         MapFuncUnit(unit);
         return maxAddUnit + maxMultUnit + mapping;
@@ -834,11 +839,12 @@ private:
 
 class ResourceAllocation{
 public:
-	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat)
+	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat, ConditionalInfo condInfo)
     {
 		ResourceAllocation * resourceAlloc = new ResourceAllocation;
 		if (!resourceAlloc) return nullptr;
         resourceAlloc->hwStat = hwStat;
+        resourceAlloc->CondInfo = condInfo;
 
         if (!hwStat->CheckMeetHardwareConstaints(ra->GetResources()))
         {
@@ -1081,6 +1087,7 @@ public:
 
 
     AGUHardwareStat* hwStat;
+    ConditionalInfo CondInfo;
     ResourceAnalysis* rsrcAnalysis;
 
 private:

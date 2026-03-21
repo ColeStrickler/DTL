@@ -46,6 +46,36 @@ ASTNode *DTL::ForStmtNode::ConstFold(ConstantFoldPass* foldpass)
     return this;
 }
 
+
+ASTNode *DTL::IfStmtNode::ConstFold(DTL::ConstantFoldPass *foldpass) 
+{
+    assert(myTrueCases.size() == myFalseCases.size());
+    for (int i = 0; i < myTrueCases.size(); i++)
+    {
+        myTrueCases[i] = (StmtNode*)myTrueCases[i]->ConstFold(foldpass);
+        myFalseCases[i] = (StmtNode*)myFalseCases[i]->ConstFold(foldpass);
+    }
+    return this;
+}
+
+ASTNode *DTL::SwitchStmtNode::ConstFold(DTL::ConstantFoldPass *foldpass) 
+{
+    
+    int caseSize = myCases[0].size();
+
+
+    for (auto& c: myCases)
+    {
+        for (int i = 0; i < c.size(); i++)
+        {
+            c[i] = (StmtNode*)c[i]->ConstFold(foldpass);
+        }
+    }
+
+    return this;
+}
+
+
 ASTNode *DTL::OutStmtNode::ConstFold(ConstantFoldPass* foldpass) 
 {
     auto exp = myExp->ConstFold(foldpass);

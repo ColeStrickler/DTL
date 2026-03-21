@@ -15,7 +15,15 @@ for (int i = 0; i < 1000; i++)
         {
             for (int l = 0; l < 3; l++)
             {
-                out = (l*(stride_c1) + j*(stride_d1*stride_w1)) + (k*(stride_h1*stride_d2) + i*(stride_n1*stride_d3));
+                if (isEven? l)
+                {
+                    out = (l*(stride_c1) + j*(stride_d1*stride_w1)) + (k*(stride_h1*stride_d2) + i*(stride_n1*stride_d3));
+                }
+                else
+                {
+                    out = 1 + l;
+                }
+                
             }
         }
     }
