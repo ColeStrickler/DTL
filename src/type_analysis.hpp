@@ -241,7 +241,7 @@ public:
 	{
 		useCond = use_cond;
 		useIfCond = use_ifCond;
-		outPerCond = outStatementsPerCond;
+		outStatementsPerCond = outPerCond; 
 		condIdx = condIndex;
 	}
 

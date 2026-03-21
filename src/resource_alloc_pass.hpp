@@ -884,7 +884,7 @@ public:
             We traverse backwards, as the inner loops are placed at the end of this
         */
 
-        uint32_t d = rsrcAnalysis->GetResources()->nOutStatements; // the first divisor is # of outstatements
+        uint32_t d = CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements; // the first divisor is # of outstatements
         for (int i = loopRegisters.size()-1; i >= 0; i--)
         {
             auto& loopReg = loopRegisters[i];

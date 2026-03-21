@@ -495,17 +495,9 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUTSTMT_REG) + "," + to_hex(static_cast<uint8_t>(OutStatementRouting.size())) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_FORLOOP_REG) + "," + to_hex(static_cast<uint8_t>(loopRegisters.size())) +   ");\n";
                 
-        
 
 
-        #define USED_OUT_PERCOND_REG 0xf03
-#define USE_CONDITIONAL_REG 0xf04
-#define USE_CONDITIONAL_IDX_REG 0xf05
-#define USE_CONDITIONAL_ISEVEN_REG 0xf06
-        
-
-
-        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUT_PERCOND_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.outStatementsPerCond)) +   ");\n";
+        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUT_PERCOND_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements)) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useCond)) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG) + "," + to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_ISEVEN_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useIfCond)) +   ");\n";
@@ -537,7 +529,7 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
 
 
 
-    WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.outStatementsPerCond));
+    WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements));
     WRITE_UINT8(baseAddr+USE_CONDITIONAL_REG, static_cast<uint8_t>(CondInfo.useCond));
     WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX_REG, static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
     WRITE_UINT8(baseAddr+USE_CONDITIONAL_ISEVEN_REG, static_cast<uint8_t>(CondInfo.useIfCond));

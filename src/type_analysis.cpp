@@ -169,7 +169,7 @@ void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta )
 		ta->nodeType(this, ErrorType::produce());
 		return;
 	}
-
+		printf("oUTpERcOND %d\n", myTrueCases.size());
 	ta->SetConditionalInfo(true, true, myTrueCases.size(), myID);
 	ta->nodeType(this, BasicType::VOID());
 }
@@ -187,6 +187,7 @@ void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta)
 		return;
 	}
 	int outPerCond = myCases[0].size();
+
 
 	for (auto& c: myCases)
 	{
