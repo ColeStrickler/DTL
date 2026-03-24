@@ -15,12 +15,25 @@ class ProgramNode;
 class NameAnalysis;
 
 
+
+enum CondCode : unsigned char
+{
+	DISABLE,
+	ISEVEN,
+	SWITCH,
+	LT,
+	GT,
+	LTE,
+	GTE
+};
+
+
 struct ConditionalInfo
 {
-	bool useCond;
-	bool useIfCond;
+	CondCode conditionalCode;
 	int outStatementsPerCond;
 	IDNode* condIdx;
+	IDNode* condIdx2;
 };
 
 
@@ -237,22 +250,24 @@ private:
 public:
 	ProgramNode * ast;
 
-	void SetConditionalInfo(bool use_cond, bool use_ifCond, int outPerCond, IDNode* condIndex)
+	void SetConditionalInfo(CondCode code, int outPerCond, IDNode* condIndex, IDNode* condIndex2)
 	{
-		useCond = use_cond;
-		useIfCond = use_ifCond;
+		conditionalCode = code;
 		outStatementsPerCond = outPerCond; 
 		condIdx = condIndex;
+		condIdx2 = condIndex2;
 	}
 
 
 	ConditionalInfo GetConditionalInfo() const {
-		return {useCond, useIfCond, outStatementsPerCond, condIdx};
+		return {conditionalCode, outStatementsPerCond, condIdx, condIdx2};
 	}
 	bool useCond;
 	bool useIfCond;
 	int outStatementsPerCond;
+	CondCode conditionalCode;
 	IDNode* condIdx;
+	IDNode* condIdx2;
 
 };
 

@@ -121,6 +121,7 @@ ASTNode *DTL::ForStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *eli
 
 ASTNode * DTL::IfStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {
     assert(pass == 0); // pass 1 shouldn't reach here
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
     assert(myTrueCases.size() == myFalseCases.size());
     for (int i = 0; i < myTrueCases.size(); i++)
     {

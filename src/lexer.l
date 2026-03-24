@@ -47,6 +47,9 @@ int 	    { return makeBareToken(TokenKind::INT); }
 "+"         { return makeBareToken(TokenKind::CROSS); }
 "{"	    { return makeBareToken(TokenKind::LCURLY); }
 "<"	    { return makeBareToken(TokenKind::LESS); }
+"<="	    { return makeBareToken(TokenKind::LESSEQUAL); }
+">"	    { return makeBareToken(TokenKind::GREATER); }
+">="	    { return makeBareToken(TokenKind::GREATEREQUAL); }
 "("	    { return makeBareToken(TokenKind::LPAREN); }
 "++"	    { return makeBareToken(TokenKind::POSTINC); }
 "}"	    { return makeBareToken(TokenKind::RCURLY); }

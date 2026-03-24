@@ -167,6 +167,7 @@ ASTNode *DTL::ForStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pas
 }
 
 ASTNode *DTL::IfStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass) {
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
     assert(myTrueCases.size() == myFalseCases.size());
     for (int i = 0; i < myTrueCases.size(); i++)
     {

@@ -49,6 +49,7 @@ ASTNode *DTL::ForStmtNode::ConstFold(ConstantFoldPass* foldpass)
 
 ASTNode *DTL::IfStmtNode::ConstFold(DTL::ConstantFoldPass *foldpass) 
 {
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
     assert(myTrueCases.size() == myFalseCases.size());
     for (int i = 0; i < myTrueCases.size(); i++)
     {

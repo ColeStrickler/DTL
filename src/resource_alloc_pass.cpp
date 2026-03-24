@@ -495,14 +495,17 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUTSTMT_REG) + "," + to_hex(static_cast<uint8_t>(OutStatementRouting.size())) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_FORLOOP_REG) + "," + to_hex(static_cast<uint8_t>(loopRegisters.size())) +   ");\n";
                 
+        write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUT_PERCOND_REG) + ","  +         \
+            to_hex(static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements))+");\n";;
+        write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDCODE_REG) + "," +               \
+            to_hex(static_cast<uint8_t>(CondInfo.conditionalCode)) + ");\n";
+        write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG) + "," +        \
+            to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
 
+        if (CondInfo.condIdx2 != nullptr)
+            write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX2_REG) + "," +       \
+                to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx2->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
 
-        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUT_PERCOND_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements)) +   ");\n";
-        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useCond)) +   ");\n";
-        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG) + "," + to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) +   ");\n";
-        write += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_ISEVEN_REG) + "," + to_hex(static_cast<uint8_t>(CondInfo.useIfCond)) +   ");\n";
-
-        
         outfile << write;
         outfile.close();
 }
@@ -529,10 +532,11 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
 
 
 
-    WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements));
-    WRITE_UINT8(baseAddr+USE_CONDITIONAL_REG, static_cast<uint8_t>(CondInfo.useCond));
+    WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements));
+    WRITE_UINT8(baseAddr+USE_CONDCODE_REG, static_cast<uint8_t>(CondInfo.conditionalCode));
     WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX_REG, static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
-    WRITE_UINT8(baseAddr+USE_CONDITIONAL_ISEVEN_REG, static_cast<uint8_t>(CondInfo.useIfCond));
+    if (CondInfo.condIdx2 != nullptr)
+        WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX2_REG, static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx2->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
 
         
 }

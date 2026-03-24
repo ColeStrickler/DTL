@@ -373,11 +373,19 @@ namespace DTL
 	/*
 		Currently this is only an IsEven? conditional
 	*/
+
+	enum class IFSTMTTYPE{
+		IS_EVEN,
+		LT,
+		LTE,
+		GT,
+		GTE
+	};
 	class IfStmtNode : public StmtNode
 	{
 	public:
-		IfStmtNode(const Position *p, IDNode* id, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases)
-			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myID(id) { myTag = NODETAG::IFSTMTNODE; }
+		IfStmtNode(const Position *p, IDNode* id, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases, IFSTMTTYPE type, IDNode* id2 = nullptr)
+			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myID(id), myID2(id2), myType(type) { myTag = NODETAG::IFSTMTNODE; }
 		// void unparse(std::ostream& out, int indent) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
 		virtual void typeAnalysis(TypeAnalysis *ta ) override;
@@ -397,10 +405,13 @@ namespace DTL
 		std::vector<DTL::StmtNode*> CollapseStatements();
 		// virtual void to3AC(Procedure * prog) override;
 	private:
+		IFSTMTTYPE myType;
 		IDNode* myID;
+		IDNode* myID2;
 		std::vector<DTL::StmtNode*> myTrueCases;
 		std::vector<DTL::StmtNode*> myFalseCases;
 	};
+
 
 
 	class SwitchStmtNode : public StmtNode

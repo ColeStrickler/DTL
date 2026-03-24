@@ -64,6 +64,9 @@
 %token	<DTL::IntLitToken *> INTLITERAL
 %token	<DTL::Token *>       LCURLY
 %token	<DTL::Token *>       LESS
+%token	<DTL::Token *>       LESSEQUAL
+%token	<DTL::Token *>       GREATER
+%token	<DTL::Token *>       GREATEREQUAL
 %token	<DTL::Token *>       LPAREN
 %token	<DTL::Token *>       CROSS
 %token	<DTL::Token *>       POSTINC
@@ -208,8 +211,30 @@ innernest: outstatements
 
 ifstatement : IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $4, $7, $11);
+            $$ = new IfStmtNode($1->pos(), $4, $7, $11, IFSTMTTYPE::IS_EVEN);
         }
+        | IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::LT, $5);
+        }
+        | IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::LTE, $5);
+        }
+        | IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::GT, $5);
+        }
+        | IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::GTE, $5);
+        }
+
+
+
+
+
+
 
 
 

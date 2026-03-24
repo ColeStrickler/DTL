@@ -28,9 +28,9 @@ namespace DTL
 #define USED_OUTSTMT_REG 0xf01
 #define USED_FORLOOP_REG 0xf02
 #define USED_OUT_PERCOND_REG 0xf03
-#define USE_CONDITIONAL_REG 0xf04
+#define USE_CONDCODE_REG 0xf04
 #define USE_CONDITIONAL_IDX_REG 0xf05
-#define USE_CONDITIONAL_ISEVEN_REG 0xf06
+#define USE_CONDITIONAL_IDX2_REG 0xf06
 
 
 inline int log2ceil(int n) {
@@ -884,7 +884,7 @@ public:
             We traverse backwards, as the inner loops are placed at the end of this
         */
 
-        uint32_t d = CondInfo.useCond ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements; // the first divisor is # of outstatements
+        uint32_t d = CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements; // the first divisor is # of outstatements
         for (int i = loopRegisters.size()-1; i >= 0; i--)
         {
             auto& loopReg = loopRegisters[i];

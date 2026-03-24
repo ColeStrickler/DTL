@@ -437,6 +437,9 @@ namespace DTL {
       // INT
       // LCURLY
       // LESS
+      // LESSEQUAL
+      // GREATER
+      // GREATEREQUAL
       // LPAREN
       // CROSS
       // POSTINC
@@ -522,25 +525,28 @@ namespace DTL {
     INTLITERAL = 262,              // INTLITERAL
     LCURLY = 263,                  // LCURLY
     LESS = 264,                    // LESS
-    LPAREN = 265,                  // LPAREN
-    CROSS = 266,                   // CROSS
-    POSTINC = 267,                 // POSTINC
-    RCURLY = 268,                  // RCURLY
-    RPAREN = 269,                  // RPAREN
-    SEMICOL = 270,                 // SEMICOL
-    STAR = 271,                    // STAR
-    FOR = 272,                     // FOR
-    OUT = 273,                     // OUT
-    COMMA = 274,                   // COMMA
-    LBRACKET = 275,                // LBRACKET
-    RBRACKET = 276,                // RBRACKET
-    MINUS = 277,                   // MINUS
-    COLON = 278,                   // COLON
-    CASE = 279,                    // CASE
-    SWITCH = 280,                  // SWITCH
-    IF = 281,                      // IF
-    ELSE = 282,                    // ELSE
-    ISEVEN = 283                   // ISEVEN
+    LESSEQUAL = 265,               // LESSEQUAL
+    GREATER = 266,                 // GREATER
+    GREATEREQUAL = 267,            // GREATEREQUAL
+    LPAREN = 268,                  // LPAREN
+    CROSS = 269,                   // CROSS
+    POSTINC = 270,                 // POSTINC
+    RCURLY = 271,                  // RCURLY
+    RPAREN = 272,                  // RPAREN
+    SEMICOL = 273,                 // SEMICOL
+    STAR = 274,                    // STAR
+    FOR = 275,                     // FOR
+    OUT = 276,                     // OUT
+    COMMA = 277,                   // COMMA
+    LBRACKET = 278,                // LBRACKET
+    RBRACKET = 279,                // RBRACKET
+    MINUS = 280,                   // MINUS
+    COLON = 281,                   // COLON
+    CASE = 282,                    // CASE
+    SWITCH = 283,                  // SWITCH
+    IF = 284,                      // IF
+    ELSE = 285,                    // ELSE
+    ISEVEN = 286                   // ISEVEN
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -557,7 +563,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 29, ///< Number of tokens.
+        YYNTOKENS = 32, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -569,46 +575,49 @@ namespace DTL {
         S_INTLITERAL = 7,                        // INTLITERAL
         S_LCURLY = 8,                            // LCURLY
         S_LESS = 9,                              // LESS
-        S_LPAREN = 10,                           // LPAREN
-        S_CROSS = 11,                            // CROSS
-        S_POSTINC = 12,                          // POSTINC
-        S_RCURLY = 13,                           // RCURLY
-        S_RPAREN = 14,                           // RPAREN
-        S_SEMICOL = 15,                          // SEMICOL
-        S_STAR = 16,                             // STAR
-        S_FOR = 17,                              // FOR
-        S_OUT = 18,                              // OUT
-        S_COMMA = 19,                            // COMMA
-        S_LBRACKET = 20,                         // LBRACKET
-        S_RBRACKET = 21,                         // RBRACKET
-        S_MINUS = 22,                            // MINUS
-        S_COLON = 23,                            // COLON
-        S_CASE = 24,                             // CASE
-        S_SWITCH = 25,                           // SWITCH
-        S_IF = 26,                               // IF
-        S_ELSE = 27,                             // ELSE
-        S_ISEVEN = 28,                           // ISEVEN
-        S_YYACCEPT = 29,                         // $accept
-        S_program = 30,                          // program
-        S_constdecls = 31,                       // constdecls
-        S_constdecl = 32,                        // constdecl
-        S_intlist = 33,                          // intlist
-        S_forstatement = 34,                     // forstatement
-        S_outstatements = 35,                    // outstatements
-        S_innernest = 36,                        // innernest
-        S_ifstatement = 37,                      // ifstatement
-        S_switchstatement = 38,                  // switchstatement
-        S_casestatements = 39,                   // casestatements
-        S_casestatement = 40,                    // casestatement
-        S_outstatement = 41,                     // outstatement
-        S_type = 42,                             // type
-        S_expr = 43,                             // expr
-        S_unarystmt = 44,                        // unarystmt
-        S_term = 45,                             // term
-        S_factor = 46,                           // factor
-        S_intlit = 47,                           // intlit
-        S_loc = 48,                              // loc
-        S_id = 49                                // id
+        S_LESSEQUAL = 10,                        // LESSEQUAL
+        S_GREATER = 11,                          // GREATER
+        S_GREATEREQUAL = 12,                     // GREATEREQUAL
+        S_LPAREN = 13,                           // LPAREN
+        S_CROSS = 14,                            // CROSS
+        S_POSTINC = 15,                          // POSTINC
+        S_RCURLY = 16,                           // RCURLY
+        S_RPAREN = 17,                           // RPAREN
+        S_SEMICOL = 18,                          // SEMICOL
+        S_STAR = 19,                             // STAR
+        S_FOR = 20,                              // FOR
+        S_OUT = 21,                              // OUT
+        S_COMMA = 22,                            // COMMA
+        S_LBRACKET = 23,                         // LBRACKET
+        S_RBRACKET = 24,                         // RBRACKET
+        S_MINUS = 25,                            // MINUS
+        S_COLON = 26,                            // COLON
+        S_CASE = 27,                             // CASE
+        S_SWITCH = 28,                           // SWITCH
+        S_IF = 29,                               // IF
+        S_ELSE = 30,                             // ELSE
+        S_ISEVEN = 31,                           // ISEVEN
+        S_YYACCEPT = 32,                         // $accept
+        S_program = 33,                          // program
+        S_constdecls = 34,                       // constdecls
+        S_constdecl = 35,                        // constdecl
+        S_intlist = 36,                          // intlist
+        S_forstatement = 37,                     // forstatement
+        S_outstatements = 38,                    // outstatements
+        S_innernest = 39,                        // innernest
+        S_ifstatement = 40,                      // ifstatement
+        S_switchstatement = 41,                  // switchstatement
+        S_casestatements = 42,                   // casestatements
+        S_casestatement = 43,                    // casestatement
+        S_outstatement = 44,                     // outstatement
+        S_type = 45,                             // type
+        S_expr = 46,                             // expr
+        S_unarystmt = 47,                        // unarystmt
+        S_term = 48,                             // term
+        S_factor = 49,                           // factor
+        S_intlit = 50,                           // intlit
+        S_loc = 51,                              // loc
+        S_id = 52                                // id
       };
     };
 
@@ -690,6 +699,9 @@ namespace DTL {
       case symbol_kind::S_INT: // INT
       case symbol_kind::S_LCURLY: // LCURLY
       case symbol_kind::S_LESS: // LESS
+      case symbol_kind::S_LESSEQUAL: // LESSEQUAL
+      case symbol_kind::S_GREATER: // GREATER
+      case symbol_kind::S_GREATEREQUAL: // GREATEREQUAL
       case symbol_kind::S_LPAREN: // LPAREN
       case symbol_kind::S_CROSS: // CROSS
       case symbol_kind::S_POSTINC: // POSTINC
@@ -991,6 +1003,9 @@ switch (yykind)
       case symbol_kind::S_INT: // INT
       case symbol_kind::S_LCURLY: // LCURLY
       case symbol_kind::S_LESS: // LESS
+      case symbol_kind::S_LESSEQUAL: // LESSEQUAL
+      case symbol_kind::S_GREATER: // GREATER
+      case symbol_kind::S_GREATEREQUAL: // GREATEREQUAL
       case symbol_kind::S_LPAREN: // LPAREN
       case symbol_kind::S_CROSS: // CROSS
       case symbol_kind::S_POSTINC: // POSTINC
@@ -1349,6 +1364,51 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
+      make_LESSEQUAL (DTL::Token * v)
+      {
+        return symbol_type (token::LESSEQUAL, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_LESSEQUAL (const DTL::Token *& v)
+      {
+        return symbol_type (token::LESSEQUAL, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GREATER (DTL::Token * v)
+      {
+        return symbol_type (token::GREATER, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_GREATER (const DTL::Token *& v)
+      {
+        return symbol_type (token::GREATER, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GREATEREQUAL (DTL::Token * v)
+      {
+        return symbol_type (token::GREATEREQUAL, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_GREATEREQUAL (const DTL::Token *& v)
+      {
+        return symbol_type (token::GREATEREQUAL, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
       make_LPAREN (DTL::Token * v)
       {
         return symbol_type (token::LPAREN, std::move (v));
@@ -1659,7 +1719,7 @@ switch (yykind)
 
 
     /// Stored state numbers (used for stacks).
-    typedef signed char state_type;
+    typedef unsigned char state_type;
 
     /// The arguments of the error message.
     int yy_syntax_error_arguments_ (const context& yyctx,
@@ -1699,7 +1759,7 @@ switch (yykind)
     // Tables.
     // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
     // STATE-NUM.
-    static const signed char yypact_[];
+    static const short yypact_[];
 
     // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
     // Performed when YYTABLE does not specify something else to do.  Zero
@@ -1707,7 +1767,7 @@ switch (yykind)
     static const signed char yydefact_[];
 
     // YYPGOTO[NTERM-NUM].
-    static const signed char yypgoto_[];
+    static const short yypgoto_[];
 
     // YYDEFGOTO[NTERM-NUM].
     static const signed char yydefgoto_[];
@@ -1715,9 +1775,9 @@ switch (yykind)
     // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
     // positive, shift that token.  If negative, reduce the rule whose
     // number is the opposite.  If YYTABLE_NINF, syntax error.
-    static const signed char yytable_[];
+    static const unsigned char yytable_[];
 
-    static const signed char yycheck_[];
+    static const short yycheck_[];
 
     // YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
     // state STATE-NUM.
@@ -1959,7 +2019,7 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 108,     ///< Last index in yytable_.
+      yylast_ = 163,     ///< Last index in yytable_.
       yynnts_ = 21,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
@@ -1974,7 +2034,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 1978 "frontend.hh"
+#line 2038 "frontend.hh"
 
 
 

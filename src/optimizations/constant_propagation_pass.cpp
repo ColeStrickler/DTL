@@ -69,6 +69,7 @@ ASTNode *DTL::ForStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_p
 }
 
 ASTNode * DTL::IfStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass) {
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
     assert(myTrueCases.size() == myFalseCases.size());
     for (int i = 0; i < myTrueCases.size(); i++)
     {

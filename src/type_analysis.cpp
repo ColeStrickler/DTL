@@ -169,8 +169,21 @@ void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta )
 		ta->nodeType(this, ErrorType::produce());
 		return;
 	}
-		printf("oUTpERcOND %d\n", myTrueCases.size());
-	ta->SetConditionalInfo(true, true, myTrueCases.size(), myID);
+	printf("oUTpERcOND %d\n", myTrueCases.size());
+
+
+
+	switch (myType)
+	{
+		case IFSTMTTYPE::IS_EVEN: {ta->SetConditionalInfo(CondCode::ISEVEN, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::LT: 	{ta->SetConditionalInfo(CondCode::LT, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::LTE: 	{ta->SetConditionalInfo(CondCode::LTE, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::GT: 	{ta->SetConditionalInfo(CondCode::GT, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::GTE: 	{ta->SetConditionalInfo(CondCode::GTE, myTrueCases.size(), myID, myID2); break;}
+		default:
+			assert(false);
+	}
+	
 	ta->nodeType(this, BasicType::VOID());
 }
 
@@ -199,7 +212,7 @@ void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta)
 		}
 	}
 
-	ta->SetConditionalInfo(true, false, outPerCond, myID);
+	ta->SetConditionalInfo(CondCode::SWITCH, outPerCond, myID, nullptr);
 	ta->nodeType(this, BasicType::VOID());
 }
 
