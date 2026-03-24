@@ -50,8 +50,7 @@ private:
 	// can only be created via the static build function
 	TypeAnalysis(){
 		hasError = false;
-		useCond = false;
-		useIfCond = false;
+		conditionalCode = CondCode::DISABLE;
 		outStatementsPerCond = 0;
 		condIdx = nullptr;
 	}
@@ -262,8 +261,6 @@ public:
 	ConditionalInfo GetConditionalInfo() const {
 		return {conditionalCode, outStatementsPerCond, condIdx, condIdx2};
 	}
-	bool useCond;
-	bool useIfCond;
 	int outStatementsPerCond;
 	CondCode conditionalCode;
 	IDNode* condIdx;
