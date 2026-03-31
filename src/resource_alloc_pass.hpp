@@ -1065,7 +1065,7 @@ public:
     bool BindArrayIndex(int arrayReg, int ForLoopReg)
     {
         auto it = ArrayIndexBinding.find(arrayReg);
-        if (it != ArrayIndexBinding.end())
+        if (it != ArrayIndexBinding.end() && it->second != ForLoopReg)
         {
             printf("Error. Array is already bound to index.\n");
             return false;

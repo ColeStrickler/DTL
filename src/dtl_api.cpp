@@ -281,6 +281,7 @@ DTL::AGUHardwareStat *DTL::API::GetHWStat() { return hwStat; }
 
 uint64_t DTL::API::AllocateRegion(uint64_t size) 
 {
+    printf("size 0x%llx vs realBackingSize 0x%llx\n", size, m_RealBackingSize);
   assert(size <= m_RealBackingSize);
   uint64_t received_size = next_power_of_two(size);
   printf("AllocRegion() receivedSize %lld\n", received_size);

@@ -1,30 +1,35 @@
-int stride_d1 = 1001;
-int stride_w1 = 1002;
-int stride_h1 = 1003;
-int stride_c1 = 1004;
-int stride_d2 = 1005;
-int stride_n1 = 1006;
-int stride_d3 = 1007;
+
+int table1_base = 0;
+int table2_base = 400;
 
 
-for (int i = 0; i < 1000; i++)
+int t1_c1 = 1;
+int t2_c1 = 1;
+int t1_c2 = 5;
+int t2_c2 = 6;
+int t1_c3 = 8;
+int t2_c3 = 8;
+
+int t2_arr = {1,6,8};
+int t2row_size = 128;
+int t1row_size = 64;
+
+
+for (int x = 0; x < 3; x++)
 {
-    for (int j = 0; j < 9999; j++)
+    for (int i = 0; i < 50000; i++)
     {
-        for (int k = 0; k < 222; k++)
+        switch(x)
         {
-            for (int l = 0; l < 3; l++)
-            {  
-                if (k < l)
-                {
-                    out = l*k+4;
-                }
-                else
-                {
-                    out = 69*k+l;
-                }
-                
-            }
+            case:
+                out = table1_base + t1_c1 + i*t1row_size;
+                out = table2_base + t2_arr[x] + i*t2row_size;
+            case:
+                out = table1_base + t1_c2 + i*t2row_size;
+                out = table2_base + t2_arr[x] + i*t2row_size;
+            case:
+                out = table1_base + t1_c3 + i*t2row_size;
+                out = table2_base + t2_arr[x] + i*t2row_size;
         }
     }
 }

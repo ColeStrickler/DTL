@@ -53,6 +53,7 @@ private:
 		conditionalCode = CondCode::DISABLE;
 		outStatementsPerCond = 0;
 		condIdx = nullptr;
+		condIdx2 = nullptr;
 	}
 
 public:
