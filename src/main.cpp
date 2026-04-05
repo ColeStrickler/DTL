@@ -97,7 +97,7 @@ int main()
 		{1,1,1,2},
 		{1,1,1,1},
 		{0,0,0,1},
-	}, 5, 6, 5, 8, 1, 2);
+	}, 5, 6, 7, 2, 1, 2);
   hwStat->nMaxConfigs = 1;
   
 	//hwStat->bytesCell = 2; // maxVarOutputs = 2
