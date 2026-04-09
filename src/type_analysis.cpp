@@ -180,6 +180,9 @@ void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta )
 		case IFSTMTTYPE::LTE: 	{ta->SetConditionalInfo(CondCode::LTE, myTrueCases.size(), myID, myID2); break;}
 		case IFSTMTTYPE::GT: 	{ta->SetConditionalInfo(CondCode::GT, myTrueCases.size(), myID, myID2); break;}
 		case IFSTMTTYPE::GTE: 	{ta->SetConditionalInfo(CondCode::GTE, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::EDGE:	{ta->SetConditionalInfo(CondCode::EDGE, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::EDGE2OR: {ta->SetConditionalInfo(CondCode::EDGE2OR, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::EDGE2AND: {ta->SetConditionalInfo(CondCode::EDGE2AND, myTrueCases.size(), myID, myID2); break;}
 		default:
 			assert(false);
 	}

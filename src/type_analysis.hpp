@@ -24,7 +24,10 @@ enum CondCode : unsigned char
 	LT,
 	GT,
 	LTE,
-	GTE
+	GTE,
+	EDGE,
+	EDGE2OR,
+	EDGE2AND
 };
 
 

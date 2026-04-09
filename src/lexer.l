@@ -61,8 +61,11 @@ int 	    { return makeBareToken(TokenKind::INT); }
 "]"		{ return makeBareToken(TokenKind::RBRACKET); }
 "-"		{ return makeBareToken(TokenKind::MINUS); }
 ":"		{ return makeBareToken(TokenKind::COLON); }
+"||"		{ return makeBareToken(TokenKind::OR); }
+"&&"		{ return makeBareToken(TokenKind::AND); }
 "if"	{ return makeBareToken(TokenKind::IF); }
 "isEven?"	{ return makeBareToken(TokenKind::ISEVEN); }
+"isEdge?"	{ return makeBareToken(TokenKind::ISEDGE); }
 "switch"	{ return makeBareToken(TokenKind::SWITCH); }
 "case"	{ return makeBareToken(TokenKind::CASE); }
 "else"	{ return makeBareToken(TokenKind::ELSE); }

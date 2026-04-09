@@ -2,20 +2,14 @@ int depth = 16;
 int height = 128;
 int width = 128;
 
-for (int c = 0; c < 3; c++) {
-    for (int kt = 0; kt < 3; kt++) {
-        for (int kh = 0; kh < 3; kh++) {
-            for (int kw = 0; kw < 3; kw++) {
-                for (int t = 0; t < 126; t++) {
-                    for (int h = 0; h < 126; h++) {
-                        for (int w = 0; w < 126; w++) {
-                            out = (c*(depth*height*width) + w + kw)
-                                    + ((t + kt)*(height*width)
-                                    + (h + kh)*width);
-                        }
-                    }
-                }
-            }
-        }
+for (int i = 0; i < 100; i++)
+{
+    if (isEdge? i)
+    {
+        out = i;
+    }
+    else
+    {
+        out = 4;
     }
 }

@@ -86,6 +86,9 @@
 %token  <DTL::Token *>       IF
 %token  <DTL::Token *>       ELSE
 %token  <DTL::Token *>       ISEVEN
+%token  <DTL::Token *>       ISEDGE
+%token  <DTL::Token *>       OR
+%token  <DTL::Token *>       AND
 
 %left LESS
 %left CROSS
@@ -229,7 +232,18 @@ ifstatement : IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY
         {
             $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::GTE, $5);
         }
-
+        | IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $4, $7,  $11, IFSTMTTYPE::EDGE);
+        }
+        | IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $4, $10, $14, IFSTMTTYPE::EDGE2OR, $7);
+        }
+        | IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), $4, $10, $14, IFSTMTTYPE::EDGE2AND, $7);
+        }
 
 
 

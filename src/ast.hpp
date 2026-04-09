@@ -379,7 +379,10 @@ namespace DTL
 		LT,
 		LTE,
 		GT,
-		GTE
+		GTE,
+		EDGE,
+		EDGE2OR,
+		EDGE2AND
 	};
 	class IfStmtNode : public StmtNode
 	{

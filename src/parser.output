@@ -30,139 +30,145 @@ Grammar
    19            | IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    20            | IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    21            | IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   22            | IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23            | IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   24            | IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-   22 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
+   25 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
 
-   23 casestatements: casestatement casestatements
-   24               | casestatement
+   26 casestatements: casestatement casestatements
+   27               | casestatement
 
-   25 casestatement: CASE COLON outstatements
+   28 casestatement: CASE COLON outstatements
 
-   26 outstatement: OUT ASSIGN expr SEMICOL
+   29 outstatement: OUT ASSIGN expr SEMICOL
 
-   27 type: INT
+   30 type: INT
 
-   28 expr: expr CROSS expr
-   29     | expr LESS expr
-   30     | expr STAR expr
-   31     | expr MINUS expr
-   32     | term
+   31 expr: expr CROSS expr
+   32     | expr LESS expr
+   33     | expr STAR expr
+   34     | expr MINUS expr
+   35     | term
 
-   33 unarystmt: loc POSTINC
+   36 unarystmt: loc POSTINC
 
-   34 term: factor
-   35     | LPAREN expr RPAREN
+   37 term: factor
+   38     | LPAREN expr RPAREN
 
-   36 factor: intlit
-   37       | loc
+   39 factor: intlit
+   40       | loc
 
-   38 intlit: INTLITERAL
+   41 intlit: INTLITERAL
 
-   39 loc: id
-   40    | id LBRACKET id RBRACKET
+   42 loc: id
+   43    | id LBRACKET id RBRACKET
 
-   41 id: ID
+   44 id: ID
 
 
 Terminals, with rules where they appear
 
     "end file" (0) 0
     error (256)
-    ASSIGN <DTL::Token *> (258) 4 5 6 26
+    ASSIGN <DTL::Token *> (258) 4 5 6 29
     NOPT <DTL::Token *> (259) 5
-    ID <DTL::IDToken *> (260) 41
-    INT <DTL::Token *> (261) 27
-    INTLITERAL <DTL::IntLitToken *> (262) 38
-    LCURLY <DTL::Token *> (263) 6 10 11 17 18 19 20 21 22
-    LESS <DTL::Token *> (264) 18 29
+    ID <DTL::IDToken *> (260) 44
+    INT <DTL::Token *> (261) 30
+    INTLITERAL <DTL::IntLitToken *> (262) 41
+    LCURLY <DTL::Token *> (263) 6 10 11 17 18 19 20 21 22 23 24 25
+    LESS <DTL::Token *> (264) 18 32
     LESSEQUAL <DTL::Token *> (265) 19
     GREATER <DTL::Token *> (266) 20
     GREATEREQUAL <DTL::Token *> (267) 21
-    LPAREN <DTL::Token *> (268) 10 11 17 18 19 20 21 22 35
-    CROSS <DTL::Token *> (269) 28
-    POSTINC <DTL::Token *> (270) 33
-    RCURLY <DTL::Token *> (271) 6 10 11 17 18 19 20 21 22
-    RPAREN <DTL::Token *> (272) 10 11 17 18 19 20 21 22 35
-    SEMICOL <DTL::Token *> (273) 4 5 6 10 11 26
-    STAR <DTL::Token *> (274) 30
+    LPAREN <DTL::Token *> (268) 10 11 17 18 19 20 21 22 23 24 25 38
+    CROSS <DTL::Token *> (269) 31
+    POSTINC <DTL::Token *> (270) 36
+    RCURLY <DTL::Token *> (271) 6 10 11 17 18 19 20 21 22 23 24 25
+    RPAREN <DTL::Token *> (272) 10 11 17 18 19 20 21 22 23 24 25 38
+    SEMICOL <DTL::Token *> (273) 4 5 6 10 11 29
+    STAR <DTL::Token *> (274) 33
     FOR <DTL::Token *> (275) 10 11
-    OUT <DTL::Token *> (276) 26
+    OUT <DTL::Token *> (276) 29
     COMMA <DTL::Token *> (277) 7
-    LBRACKET <DTL::Token *> (278) 40
-    RBRACKET <DTL::Token *> (279) 40
-    MINUS <DTL::Token *> (280) 31
-    COLON <DTL::Token *> (281) 25
-    CASE <DTL::Token *> (282) 25
-    SWITCH <DTL::Token *> (283) 22
-    IF <DTL::Token *> (284) 17 18 19 20 21
-    ELSE <DTL::Token *> (285) 17 18 19 20 21
+    LBRACKET <DTL::Token *> (278) 43
+    RBRACKET <DTL::Token *> (279) 43
+    MINUS <DTL::Token *> (280) 34
+    COLON <DTL::Token *> (281) 28
+    CASE <DTL::Token *> (282) 28
+    SWITCH <DTL::Token *> (283) 25
+    IF <DTL::Token *> (284) 17 18 19 20 21 22 23 24
+    ELSE <DTL::Token *> (285) 17 18 19 20 21 22 23 24
     ISEVEN <DTL::Token *> (286) 17
+    ISEDGE <DTL::Token *> (287) 22 23 24
+    OR <DTL::Token *> (288) 23
+    AND <DTL::Token *> (289) 24
 
 
 Nonterminals, with rules where they appear
 
-    $accept (32)
+    $accept (35)
         on left: 0
-    program <DTL::ProgramNode*> (33)
+    program <DTL::ProgramNode*> (36)
         on left: 1
         on right: 0
-    constdecls <std::vector<DTL::StmtNode*>> (34)
+    constdecls <std::vector<DTL::StmtNode*>> (37)
         on left: 2 3
         on right: 1 2
-    constdecl <DTL::StmtNode*> (35)
+    constdecl <DTL::StmtNode*> (38)
         on left: 4 5 6
         on right: 2 10 11
-    intlist <std::vector<IntLitNode*>> (36)
+    intlist <std::vector<IntLitNode*>> (39)
         on left: 7 8 9
         on right: 6 7
-    forstatement <DTL::ForStmtNode*> (37)
+    forstatement <DTL::ForStmtNode*> (40)
         on left: 10 11
         on right: 1 10
-    outstatements <std::vector<DTL::StmtNode*>> (38)
+    outstatements <std::vector<DTL::StmtNode*>> (41)
         on left: 12 13
-        on right: 12 14 17 18 19 20 21 25
-    innernest <std::vector<DTL::StmtNode*>> (39)
+        on right: 12 14 17 18 19 20 21 22 23 24 28
+    innernest <std::vector<DTL::StmtNode*>> (42)
         on left: 14 15 16
         on right: 11
-    ifstatement <DTL::StmtNode*> (40)
-        on left: 17 18 19 20 21
+    ifstatement <DTL::StmtNode*> (43)
+        on left: 17 18 19 20 21 22 23 24
         on right: 15
-    switchstatement <DTL::StmtNode*> (41)
-        on left: 22
-        on right: 16
-    casestatements <std::vector<std::vector<DTL::StmtNode*>>> (42)
-        on left: 23 24
-        on right: 22 23
-    casestatement <std::vector<DTL::StmtNode*>> (43)
+    switchstatement <DTL::StmtNode*> (44)
         on left: 25
-        on right: 23 24
-    outstatement <DTL::StmtNode*> (44)
-        on left: 26
+        on right: 16
+    casestatements <std::vector<std::vector<DTL::StmtNode*>>> (45)
+        on left: 26 27
+        on right: 25 26
+    casestatement <std::vector<DTL::StmtNode*>> (46)
+        on left: 28
+        on right: 26 27
+    outstatement <DTL::StmtNode*> (47)
+        on left: 29
         on right: 12 13
-    type <DTL::TypeNode*> (45)
-        on left: 27
+    type <DTL::TypeNode*> (48)
+        on left: 30
         on right: 4 5 6
-    expr <DTL::ExpNode*> (46)
-        on left: 28 29 30 31 32
-        on right: 10 11 26 28 29 30 31 35
-    unarystmt <DTL::StmtNode*> (47)
-        on left: 33
+    expr <DTL::ExpNode*> (49)
+        on left: 31 32 33 34 35
+        on right: 10 11 29 31 32 33 34 38
+    unarystmt <DTL::StmtNode*> (50)
+        on left: 36
         on right: 10 11
-    term <DTL::ExpNode*> (48)
-        on left: 34 35
-        on right: 32
-    factor <DTL::ExpNode*> (49)
-        on left: 36 37
-        on right: 34
-    intlit <DTL::IntLitNode*> (50)
-        on left: 38
-        on right: 4 5 7 8 36
-    loc <DTL::LocNode*> (51)
+    term <DTL::ExpNode*> (51)
+        on left: 37 38
+        on right: 35
+    factor <DTL::ExpNode*> (52)
         on left: 39 40
-        on right: 33 37
-    id <DTL::IDNode*> (52)
+        on right: 37
+    intlit <DTL::IntLitNode*> (53)
         on left: 41
-        on right: 4 5 6 17 18 19 20 21 22 39 40
+        on right: 4 5 7 8 39
+    loc <DTL::LocNode*> (54)
+        on left: 42 43
+        on right: 36 40
+    id <DTL::IDNode*> (55)
+        on left: 44
+        on right: 4 5 6 17 18 19 20 21 22 23 24 25 42 43
 
 
 State 0
@@ -214,9 +220,9 @@ State 4
 
 State 5
 
-   27 type: INT •
+   30 type: INT •
 
-    $default  reduce using rule 27 (type)
+    $default  reduce using rule 30 (type)
 
 
 State 6
@@ -274,9 +280,9 @@ State 11
 
 State 12
 
-   41 id: ID •
+   44 id: ID •
 
-    $default  reduce using rule 41 (id)
+    $default  reduce using rule 44 (id)
 
 
 State 13
@@ -333,14 +339,14 @@ State 17
 
 State 18
 
-   38 intlit: INTLITERAL •
+   41 intlit: INTLITERAL •
 
-    $default  reduce using rule 38 (intlit)
+    $default  reduce using rule 41 (intlit)
 
 
 State 19
 
-   35 term: LPAREN • expr RPAREN
+   38 term: LPAREN • expr RPAREN
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -358,10 +364,10 @@ State 20
 
    10 forstatement: FOR LPAREN constdecl expr • SEMICOL unarystmt RPAREN LCURLY forstatement RCURLY
    11             | FOR LPAREN constdecl expr • SEMICOL unarystmt RPAREN LCURLY innernest RCURLY
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
 
     LESS     shift, and go to state 30
     CROSS    shift, and go to state 31
@@ -372,40 +378,40 @@ State 20
 
 State 21
 
-   32 expr: term •
+   35 expr: term •
 
-    $default  reduce using rule 32 (expr)
+    $default  reduce using rule 35 (expr)
 
 
 State 22
 
-   34 term: factor •
+   37 term: factor •
 
-    $default  reduce using rule 34 (term)
+    $default  reduce using rule 37 (term)
 
 
 State 23
 
-   36 factor: intlit •
+   39 factor: intlit •
 
-    $default  reduce using rule 36 (factor)
+    $default  reduce using rule 39 (factor)
 
 
 State 24
 
-   37 factor: loc •
+   40 factor: loc •
 
-    $default  reduce using rule 37 (factor)
+    $default  reduce using rule 40 (factor)
 
 
 State 25
 
-   39 loc: id •
-   40    | id • LBRACKET id RBRACKET
+   42 loc: id •
+   43    | id • LBRACKET id RBRACKET
 
     LBRACKET  shift, and go to state 35
 
-    $default  reduce using rule 39 (loc)
+    $default  reduce using rule 42 (loc)
 
 
 State 26
@@ -436,11 +442,11 @@ State 28
 
 State 29
 
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
-   35 term: LPAREN expr • RPAREN
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
+   38 term: LPAREN expr • RPAREN
 
     LESS    shift, and go to state 30
     CROSS   shift, and go to state 31
@@ -451,7 +457,7 @@ State 29
 
 State 30
 
-   29 expr: expr LESS • expr
+   32 expr: expr LESS • expr
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -467,7 +473,7 @@ State 30
 
 State 31
 
-   28 expr: expr CROSS • expr
+   31 expr: expr CROSS • expr
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -495,7 +501,7 @@ State 32
 
 State 33
 
-   30 expr: expr STAR • expr
+   33 expr: expr STAR • expr
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -511,7 +517,7 @@ State 33
 
 State 34
 
-   31 expr: expr MINUS • expr
+   34 expr: expr MINUS • expr
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -527,7 +533,7 @@ State 34
 
 State 35
 
-   40 loc: id LBRACKET • id RBRACKET
+   43 loc: id LBRACKET • id RBRACKET
 
     ID  shift, and go to state 12
 
@@ -567,38 +573,38 @@ State 39
 
 State 40
 
-   35 term: LPAREN expr RPAREN •
+   38 term: LPAREN expr RPAREN •
 
-    $default  reduce using rule 35 (term)
+    $default  reduce using rule 38 (term)
 
 
 State 41
 
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   29     | expr LESS expr •
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   32     | expr LESS expr •
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
 
     CROSS  shift, and go to state 31
     STAR   shift, and go to state 33
     MINUS  shift, and go to state 34
 
-    $default  reduce using rule 29 (expr)
+    $default  reduce using rule 32 (expr)
 
 
 State 42
 
-   28 expr: expr • CROSS expr
-   28     | expr CROSS expr •
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
+   31 expr: expr • CROSS expr
+   31     | expr CROSS expr •
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
 
     STAR   shift, and go to state 33
     MINUS  shift, and go to state 34
 
-    $default  reduce using rule 28 (expr)
+    $default  reduce using rule 31 (expr)
 
 
 State 43
@@ -611,38 +617,38 @@ State 43
 
 State 44
 
-   33 unarystmt: loc • POSTINC
+   36 unarystmt: loc • POSTINC
 
     POSTINC  shift, and go to state 51
 
 
 State 45
 
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   30     | expr STAR expr •
-   31     | expr • MINUS expr
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   33     | expr STAR expr •
+   34     | expr • MINUS expr
 
-    $default  reduce using rule 30 (expr)
+    $default  reduce using rule 33 (expr)
 
 
 State 46
 
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
-   31     | expr MINUS expr •
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
+   34     | expr MINUS expr •
 
     STAR  shift, and go to state 33
 
-    $default  reduce using rule 31 (expr)
+    $default  reduce using rule 34 (expr)
 
 
 State 47
 
-   40 loc: id LBRACKET id • RBRACKET
+   43 loc: id LBRACKET id • RBRACKET
 
     RBRACKET  shift, and go to state 52
 
@@ -676,16 +682,16 @@ State 50
 
 State 51
 
-   33 unarystmt: loc POSTINC •
+   36 unarystmt: loc POSTINC •
 
-    $default  reduce using rule 33 (unarystmt)
+    $default  reduce using rule 36 (unarystmt)
 
 
 State 52
 
-   40 loc: id LBRACKET id RBRACKET •
+   43 loc: id LBRACKET id RBRACKET •
 
-    $default  reduce using rule 40 (loc)
+    $default  reduce using rule 43 (loc)
 
 
 State 53
@@ -722,14 +728,14 @@ State 55
 
 State 56
 
-   26 outstatement: OUT • ASSIGN expr SEMICOL
+   29 outstatement: OUT • ASSIGN expr SEMICOL
 
     ASSIGN  shift, and go to state 65
 
 
 State 57
 
-   22 switchstatement: SWITCH • LPAREN id RPAREN LCURLY casestatements RCURLY
+   25 switchstatement: SWITCH • LPAREN id RPAREN LCURLY casestatements RCURLY
 
     LPAREN  shift, and go to state 66
 
@@ -741,6 +747,9 @@ State 58
    19            | IF • LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    20            | IF • LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    21            | IF • LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   22            | IF • LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23            | IF • LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   24            | IF • LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     LPAREN  shift, and go to state 67
 
@@ -794,7 +803,7 @@ State 64
 
 State 65
 
-   26 outstatement: OUT ASSIGN • expr SEMICOL
+   29 outstatement: OUT ASSIGN • expr SEMICOL
 
     ID          shift, and go to state 12
     INTLITERAL  shift, and go to state 18
@@ -810,7 +819,7 @@ State 65
 
 State 66
 
-   22 switchstatement: SWITCH LPAREN • id RPAREN LCURLY casestatements RCURLY
+   25 switchstatement: SWITCH LPAREN • id RPAREN LCURLY casestatements RCURLY
 
     ID  shift, and go to state 12
 
@@ -824,11 +833,15 @@ State 67
    19            | IF LPAREN • id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    20            | IF LPAREN • id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    21            | IF LPAREN • id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   22            | IF LPAREN • ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23            | IF LPAREN • ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   24            | IF LPAREN • ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     ID      shift, and go to state 12
     ISEVEN  shift, and go to state 73
+    ISEDGE  shift, and go to state 74
 
-    id  go to state 74
+    id  go to state 75
 
 
 State 68
@@ -854,24 +867,24 @@ State 70
 
 State 71
 
-   26 outstatement: OUT ASSIGN expr • SEMICOL
-   28 expr: expr • CROSS expr
-   29     | expr • LESS expr
-   30     | expr • STAR expr
-   31     | expr • MINUS expr
+   29 outstatement: OUT ASSIGN expr • SEMICOL
+   31 expr: expr • CROSS expr
+   32     | expr • LESS expr
+   33     | expr • STAR expr
+   34     | expr • MINUS expr
 
     LESS     shift, and go to state 30
     CROSS    shift, and go to state 31
-    SEMICOL  shift, and go to state 75
+    SEMICOL  shift, and go to state 76
     STAR     shift, and go to state 33
     MINUS    shift, and go to state 34
 
 
 State 72
 
-   22 switchstatement: SWITCH LPAREN id • RPAREN LCURLY casestatements RCURLY
+   25 switchstatement: SWITCH LPAREN id • RPAREN LCURLY casestatements RCURLY
 
-    RPAREN  shift, and go to state 76
+    RPAREN  shift, and go to state 77
 
 
 State 73
@@ -880,237 +893,197 @@ State 73
 
     ID  shift, and go to state 12
 
-    id  go to state 77
+    id  go to state 78
 
 
 State 74
+
+   22 ifstatement: IF LPAREN ISEDGE • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23            | IF LPAREN ISEDGE • id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   24            | IF LPAREN ISEDGE • id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    ID  shift, and go to state 12
+
+    id  go to state 79
+
+
+State 75
 
    18 ifstatement: IF LPAREN id • LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    19            | IF LPAREN id • LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    20            | IF LPAREN id • GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
    21            | IF LPAREN id • GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    LESS          shift, and go to state 78
-    LESSEQUAL     shift, and go to state 79
-    GREATER       shift, and go to state 80
-    GREATEREQUAL  shift, and go to state 81
-
-
-State 75
-
-   26 outstatement: OUT ASSIGN expr SEMICOL •
-
-    $default  reduce using rule 26 (outstatement)
+    LESS          shift, and go to state 80
+    LESSEQUAL     shift, and go to state 81
+    GREATER       shift, and go to state 82
+    GREATEREQUAL  shift, and go to state 83
 
 
 State 76
 
-   22 switchstatement: SWITCH LPAREN id RPAREN • LCURLY casestatements RCURLY
+   29 outstatement: OUT ASSIGN expr SEMICOL •
 
-    LCURLY  shift, and go to state 82
+    $default  reduce using rule 29 (outstatement)
 
 
 State 77
 
-   17 ifstatement: IF LPAREN ISEVEN id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   25 switchstatement: SWITCH LPAREN id RPAREN • LCURLY casestatements RCURLY
 
-    RPAREN  shift, and go to state 83
+    LCURLY  shift, and go to state 84
 
 
 State 78
+
+   17 ifstatement: IF LPAREN ISEVEN id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    RPAREN  shift, and go to state 85
+
+
+State 79
+
+   22 ifstatement: IF LPAREN ISEDGE id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23            | IF LPAREN ISEDGE id • OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   24            | IF LPAREN ISEDGE id • AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    RPAREN  shift, and go to state 86
+    OR      shift, and go to state 87
+    AND     shift, and go to state 88
+
+
+State 80
 
    18 ifstatement: IF LPAREN id LESS • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     ID  shift, and go to state 12
 
-    id  go to state 84
+    id  go to state 89
 
 
-State 79
+State 81
 
    19 ifstatement: IF LPAREN id LESSEQUAL • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     ID  shift, and go to state 12
 
-    id  go to state 85
+    id  go to state 90
 
 
-State 80
+State 82
 
    20 ifstatement: IF LPAREN id GREATER • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     ID  shift, and go to state 12
 
-    id  go to state 86
+    id  go to state 91
 
 
-State 81
+State 83
 
    21 ifstatement: IF LPAREN id GREATEREQUAL • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     ID  shift, and go to state 12
 
-    id  go to state 87
-
-
-State 82
-
-   22 switchstatement: SWITCH LPAREN id RPAREN LCURLY • casestatements RCURLY
-
-    CASE  shift, and go to state 88
-
-    casestatements  go to state 89
-    casestatement   go to state 90
-
-
-State 83
-
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-
-    LCURLY  shift, and go to state 91
+    id  go to state 92
 
 
 State 84
 
-   18 ifstatement: IF LPAREN id LESS id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   25 switchstatement: SWITCH LPAREN id RPAREN LCURLY • casestatements RCURLY
 
-    RPAREN  shift, and go to state 92
+    CASE  shift, and go to state 93
+
+    casestatements  go to state 94
+    casestatement   go to state 95
 
 
 State 85
 
-   19 ifstatement: IF LPAREN id LESSEQUAL id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    RPAREN  shift, and go to state 93
+    LCURLY  shift, and go to state 96
 
 
 State 86
 
-   20 ifstatement: IF LPAREN id GREATER id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    RPAREN  shift, and go to state 94
+    LCURLY  shift, and go to state 97
 
 
 State 87
 
-   21 ifstatement: IF LPAREN id GREATEREQUAL id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   23 ifstatement: IF LPAREN ISEDGE id OR • ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    RPAREN  shift, and go to state 95
+    ISEDGE  shift, and go to state 98
 
 
 State 88
 
-   25 casestatement: CASE • COLON outstatements
+   24 ifstatement: IF LPAREN ISEDGE id AND • ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    COLON  shift, and go to state 96
+    ISEDGE  shift, and go to state 99
 
 
 State 89
 
-   22 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements • RCURLY
+   18 ifstatement: IF LPAREN id LESS id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 97
+    RPAREN  shift, and go to state 100
 
 
 State 90
 
-   23 casestatements: casestatement • casestatements
-   24               | casestatement •
+   19 ifstatement: IF LPAREN id LESSEQUAL id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    CASE  shift, and go to state 88
-
-    $default  reduce using rule 24 (casestatements)
-
-    casestatements  go to state 98
-    casestatement   go to state 90
+    RPAREN  shift, and go to state 101
 
 
 State 91
 
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   20 ifstatement: IF LPAREN id GREATER id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 99
-    outstatement   go to state 64
+    RPAREN  shift, and go to state 102
 
 
 State 92
 
-   18 ifstatement: IF LPAREN id LESS id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   21 ifstatement: IF LPAREN id GREATEREQUAL id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 100
+    RPAREN  shift, and go to state 103
 
 
 State 93
 
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   28 casestatement: CASE • COLON outstatements
 
-    LCURLY  shift, and go to state 101
+    COLON  shift, and go to state 104
 
 
 State 94
 
-   20 ifstatement: IF LPAREN id GREATER id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   25 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements • RCURLY
 
-    LCURLY  shift, and go to state 102
+    RCURLY  shift, and go to state 105
 
 
 State 95
 
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   26 casestatements: casestatement • casestatements
+   27               | casestatement •
 
-    LCURLY  shift, and go to state 103
+    CASE  shift, and go to state 93
+
+    $default  reduce using rule 27 (casestatements)
+
+    casestatements  go to state 106
+    casestatement   go to state 95
 
 
 State 96
 
-   25 casestatement: CASE COLON • outstatements
-
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 104
-    outstatement   go to state 64
-
-
-State 97
-
-   22 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY •
-
-    $default  reduce using rule 22 (switchstatement)
-
-
-State 98
-
-   23 casestatements: casestatement casestatements •
-
-    $default  reduce using rule 23 (casestatements)
-
-
-State 99
-
-   12 outstatements: outstatements • outstatement
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
-
-    RCURLY  shift, and go to state 105
-    OUT     shift, and go to state 56
-
-    outstatement  go to state 69
-
-
-State 100
-
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
-
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 106
-    outstatement   go to state 64
-
-
-State 101
-
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     OUT  shift, and go to state 56
 
@@ -1118,9 +1091,9 @@ State 101
     outstatement   go to state 64
 
 
-State 102
+State 97
 
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     OUT  shift, and go to state 56
 
@@ -1128,52 +1101,82 @@ State 102
     outstatement   go to state 64
 
 
+State 98
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    ID  shift, and go to state 12
+
+    id  go to state 109
+
+
+State 99
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE • id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    ID  shift, and go to state 12
+
+    id  go to state 110
+
+
+State 100
+
+   18 ifstatement: IF LPAREN id LESS id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 111
+
+
+State 101
+
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 112
+
+
+State 102
+
+   20 ifstatement: IF LPAREN id GREATER id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 113
+
+
 State 103
 
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 109
-    outstatement   go to state 64
+    LCURLY  shift, and go to state 114
 
 
 State 104
 
-   12 outstatements: outstatements • outstatement
-   25 casestatement: CASE COLON outstatements •
+   28 casestatement: CASE COLON • outstatements
 
     OUT  shift, and go to state 56
 
-    $default  reduce using rule 25 (casestatement)
-
-    outstatement  go to state 69
+    outstatements  go to state 115
+    outstatement   go to state 64
 
 
 State 105
 
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
+   25 switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY •
 
-    ELSE  shift, and go to state 110
+    $default  reduce using rule 25 (switchstatement)
 
 
 State 106
 
-   12 outstatements: outstatements • outstatement
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+   26 casestatements: casestatement casestatements •
 
-    RCURLY  shift, and go to state 111
-    OUT     shift, and go to state 56
-
-    outstatement  go to state 69
+    $default  reduce using rule 26 (casestatements)
 
 
 State 107
 
    12 outstatements: outstatements • outstatement
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 112
+    RCURLY  shift, and go to state 116
     OUT     shift, and go to state 56
 
     outstatement  go to state 69
@@ -1182,9 +1185,9 @@ State 107
 State 108
 
    12 outstatements: outstatements • outstatement
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 113
+    RCURLY  shift, and go to state 117
     OUT     shift, and go to state 56
 
     outstatement  go to state 69
@@ -1192,53 +1195,21 @@ State 108
 
 State 109
 
-   12 outstatements: outstatements • outstatement
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 114
-    OUT     shift, and go to state 56
-
-    outstatement  go to state 69
+    RPAREN  shift, and go to state 118
 
 
 State 110
 
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id • RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 115
+    RPAREN  shift, and go to state 119
 
 
 State 111
 
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
-
-    ELSE  shift, and go to state 116
-
-
-State 112
-
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
-
-    ELSE  shift, and go to state 117
-
-
-State 113
-
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
-
-    ELSE  shift, and go to state 118
-
-
-State 114
-
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
-
-    ELSE  shift, and go to state 119
-
-
-State 115
-
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
     OUT  shift, and go to state 56
 
@@ -1246,40 +1217,82 @@ State 115
     outstatement   go to state 64
 
 
+State 112
+
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 121
+    outstatement   go to state 64
+
+
+State 113
+
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 122
+    outstatement   go to state 64
+
+
+State 114
+
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 123
+    outstatement   go to state 64
+
+
+State 115
+
+   12 outstatements: outstatements • outstatement
+   28 casestatement: CASE COLON outstatements •
+
+    OUT  shift, and go to state 56
+
+    $default  reduce using rule 28 (casestatement)
+
+    outstatement  go to state 69
+
+
 State 116
 
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 121
+    ELSE  shift, and go to state 124
 
 
 State 117
 
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 122
+    ELSE  shift, and go to state 125
 
 
 State 118
 
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 123
+    LCURLY  shift, and go to state 126
 
 
 State 119
 
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN • LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
 
-    LCURLY  shift, and go to state 124
+    LCURLY  shift, and go to state 127
 
 
 State 120
 
    12 outstatements: outstatements • outstatement
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 125
+    RCURLY  shift, and go to state 128
     OUT     shift, and go to state 56
 
     outstatement  go to state 69
@@ -1287,55 +1300,19 @@ State 120
 
 State 121
 
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+   12 outstatements: outstatements • outstatement
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
-    OUT  shift, and go to state 56
+    RCURLY  shift, and go to state 129
+    OUT     shift, and go to state 56
 
-    outstatements  go to state 126
-    outstatement   go to state 64
+    outstatement  go to state 69
 
 
 State 122
 
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
-
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 127
-    outstatement   go to state 64
-
-
-State 123
-
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
-
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 128
-    outstatement   go to state 64
-
-
-State 124
-
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
-
-    OUT  shift, and go to state 56
-
-    outstatements  go to state 129
-    outstatement   go to state 64
-
-
-State 125
-
-   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
-
-    $default  reduce using rule 17 (ifstatement)
-
-
-State 126
-
    12 outstatements: outstatements • outstatement
-   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
     RCURLY  shift, and go to state 130
     OUT     shift, and go to state 56
@@ -1343,10 +1320,10 @@ State 126
     outstatement  go to state 69
 
 
-State 127
+State 123
 
    12 outstatements: outstatements • outstatement
-   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
 
     RCURLY  shift, and go to state 131
     OUT     shift, and go to state 56
@@ -1354,51 +1331,365 @@ State 127
     outstatement  go to state 69
 
 
+State 124
+
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 132
+
+
+State 125
+
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 133
+
+
+State 126
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 134
+    outstatement   go to state 64
+
+
+State 127
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY • outstatements RCURLY ELSE LCURLY outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 135
+    outstatement   go to state 64
+
+
 State 128
 
-   12 outstatements: outstatements • outstatement
-   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 132
-    OUT     shift, and go to state 56
-
-    outstatement  go to state 69
+    ELSE  shift, and go to state 136
 
 
 State 129
 
-   12 outstatements: outstatements • outstatement
-   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
 
-    RCURLY  shift, and go to state 133
+    ELSE  shift, and go to state 137
+
+
+State 130
+
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
+
+    ELSE  shift, and go to state 138
+
+
+State 131
+
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
+
+    ELSE  shift, and go to state 139
+
+
+State 132
+
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 140
+    outstatement   go to state 64
+
+
+State 133
+
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 141
+    outstatement   go to state 64
+
+
+State 134
+
+   12 outstatements: outstatements • outstatement
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+
+    RCURLY  shift, and go to state 142
     OUT     shift, and go to state 56
 
     outstatement  go to state 69
 
 
-State 130
+State 135
+
+   12 outstatements: outstatements • outstatement
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements • RCURLY ELSE LCURLY outstatements RCURLY
+
+    RCURLY  shift, and go to state 143
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 136
+
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 144
+
+
+State 137
+
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 145
+
+
+State 138
+
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 146
+
+
+State 139
+
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 147
+
+
+State 140
+
+   12 outstatements: outstatements • outstatement
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 148
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 141
+
+   12 outstatements: outstatements • outstatement
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 149
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 142
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
+
+    ELSE  shift, and go to state 150
+
+
+State 143
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY • ELSE LCURLY outstatements RCURLY
+
+    ELSE  shift, and go to state 151
+
+
+State 144
+
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 152
+    outstatement   go to state 64
+
+
+State 145
+
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 153
+    outstatement   go to state 64
+
+
+State 146
+
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 154
+    outstatement   go to state 64
+
+
+State 147
+
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 155
+    outstatement   go to state 64
+
+
+State 148
+
+   17 ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
+
+    $default  reduce using rule 17 (ifstatement)
+
+
+State 149
+
+   22 ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
+
+    $default  reduce using rule 22 (ifstatement)
+
+
+State 150
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 156
+
+
+State 151
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE • LCURLY outstatements RCURLY
+
+    LCURLY  shift, and go to state 157
+
+
+State 152
+
+   12 outstatements: outstatements • outstatement
+   18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 158
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 153
+
+   12 outstatements: outstatements • outstatement
+   19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 159
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 154
+
+   12 outstatements: outstatements • outstatement
+   20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 160
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 155
+
+   12 outstatements: outstatements • outstatement
+   21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 161
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 156
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 162
+    outstatement   go to state 64
+
+
+State 157
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY • outstatements RCURLY
+
+    OUT  shift, and go to state 56
+
+    outstatements  go to state 163
+    outstatement   go to state 64
+
+
+State 158
 
    18 ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
 
     $default  reduce using rule 18 (ifstatement)
 
 
-State 131
+State 159
 
    19 ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
 
     $default  reduce using rule 19 (ifstatement)
 
 
-State 132
+State 160
 
    20 ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
 
     $default  reduce using rule 20 (ifstatement)
 
 
-State 133
+State 161
 
    21 ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
 
     $default  reduce using rule 21 (ifstatement)
+
+
+State 162
+
+   12 outstatements: outstatements • outstatement
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 164
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 163
+
+   12 outstatements: outstatements • outstatement
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements • RCURLY
+
+    RCURLY  shift, and go to state 165
+    OUT     shift, and go to state 56
+
+    outstatement  go to state 69
+
+
+State 164
+
+   23 ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
+
+    $default  reduce using rule 23 (ifstatement)
+
+
+State 165
+
+   24 ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY •
+
+    $default  reduce using rule 24 (ifstatement)

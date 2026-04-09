@@ -459,6 +459,9 @@ namespace DTL {
       // IF
       // ELSE
       // ISEVEN
+      // ISEDGE
+      // OR
+      // AND
       char dummy10[sizeof (DTL::Token *)];
 
       // type
@@ -546,7 +549,10 @@ namespace DTL {
     SWITCH = 283,                  // SWITCH
     IF = 284,                      // IF
     ELSE = 285,                    // ELSE
-    ISEVEN = 286                   // ISEVEN
+    ISEVEN = 286,                  // ISEVEN
+    ISEDGE = 287,                  // ISEDGE
+    OR = 288,                      // OR
+    AND = 289                      // AND
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -563,7 +569,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 32, ///< Number of tokens.
+        YYNTOKENS = 35, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -597,27 +603,30 @@ namespace DTL {
         S_IF = 29,                               // IF
         S_ELSE = 30,                             // ELSE
         S_ISEVEN = 31,                           // ISEVEN
-        S_YYACCEPT = 32,                         // $accept
-        S_program = 33,                          // program
-        S_constdecls = 34,                       // constdecls
-        S_constdecl = 35,                        // constdecl
-        S_intlist = 36,                          // intlist
-        S_forstatement = 37,                     // forstatement
-        S_outstatements = 38,                    // outstatements
-        S_innernest = 39,                        // innernest
-        S_ifstatement = 40,                      // ifstatement
-        S_switchstatement = 41,                  // switchstatement
-        S_casestatements = 42,                   // casestatements
-        S_casestatement = 43,                    // casestatement
-        S_outstatement = 44,                     // outstatement
-        S_type = 45,                             // type
-        S_expr = 46,                             // expr
-        S_unarystmt = 47,                        // unarystmt
-        S_term = 48,                             // term
-        S_factor = 49,                           // factor
-        S_intlit = 50,                           // intlit
-        S_loc = 51,                              // loc
-        S_id = 52                                // id
+        S_ISEDGE = 32,                           // ISEDGE
+        S_OR = 33,                               // OR
+        S_AND = 34,                              // AND
+        S_YYACCEPT = 35,                         // $accept
+        S_program = 36,                          // program
+        S_constdecls = 37,                       // constdecls
+        S_constdecl = 38,                        // constdecl
+        S_intlist = 39,                          // intlist
+        S_forstatement = 40,                     // forstatement
+        S_outstatements = 41,                    // outstatements
+        S_innernest = 42,                        // innernest
+        S_ifstatement = 43,                      // ifstatement
+        S_switchstatement = 44,                  // switchstatement
+        S_casestatements = 45,                   // casestatements
+        S_casestatement = 46,                    // casestatement
+        S_outstatement = 47,                     // outstatement
+        S_type = 48,                             // type
+        S_expr = 49,                             // expr
+        S_unarystmt = 50,                        // unarystmt
+        S_term = 51,                             // term
+        S_factor = 52,                           // factor
+        S_intlit = 53,                           // intlit
+        S_loc = 54,                              // loc
+        S_id = 55                                // id
       };
     };
 
@@ -721,6 +730,9 @@ namespace DTL {
       case symbol_kind::S_IF: // IF
       case symbol_kind::S_ELSE: // ELSE
       case symbol_kind::S_ISEVEN: // ISEVEN
+      case symbol_kind::S_ISEDGE: // ISEDGE
+      case symbol_kind::S_OR: // OR
+      case symbol_kind::S_AND: // AND
         value.move< DTL::Token * > (std::move (that.value));
         break;
 
@@ -1025,6 +1037,9 @@ switch (yykind)
       case symbol_kind::S_IF: // IF
       case symbol_kind::S_ELSE: // ELSE
       case symbol_kind::S_ISEVEN: // ISEVEN
+      case symbol_kind::S_ISEDGE: // ISEDGE
+      case symbol_kind::S_OR: // OR
+      case symbol_kind::S_AND: // AND
         value.template destroy< DTL::Token * > ();
         break;
 
@@ -1691,6 +1706,51 @@ switch (yykind)
         return symbol_type (token::ISEVEN, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ISEDGE (DTL::Token * v)
+      {
+        return symbol_type (token::ISEDGE, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_ISEDGE (const DTL::Token *& v)
+      {
+        return symbol_type (token::ISEDGE, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_OR (DTL::Token * v)
+      {
+        return symbol_type (token::OR, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_OR (const DTL::Token *& v)
+      {
+        return symbol_type (token::OR, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_AND (DTL::Token * v)
+      {
+        return symbol_type (token::AND, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_AND (const DTL::Token *& v)
+      {
+        return symbol_type (token::AND, v);
+      }
+#endif
 
 
     class context
@@ -2019,7 +2079,7 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 163,     ///< Last index in yytable_.
+      yylast_ = 234,     ///< Last index in yytable_.
       yynnts_ = 21,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
@@ -2034,7 +2094,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 2038 "frontend.hh"
+#line 2098 "frontend.hh"
 
 
 
