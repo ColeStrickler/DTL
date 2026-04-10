@@ -2,14 +2,17 @@ int depth = 16;
 int height = 128;
 int width = 128;
 
-for (int i = 0; i < 100; i++)
+for (int i = 0; i < 1400; i++)
 {
-    if (isEdge? i)
+    for (int j = 0; j < 32; j++)
     {
-        out = i;
-    }
-    else
-    {
-        out = 4;
+        if (isEdge? i || isEdge? j)
+        {
+            out = 4;
+        }
+        else
+        {
+            out = i;
+        }
     }
 }
