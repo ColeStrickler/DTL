@@ -89,6 +89,7 @@
 %token  <DTL::Token *>       ISEDGE
 %token  <DTL::Token *>       OR
 %token  <DTL::Token *>       AND
+%token  <DTL::Token *>       PAD
 
 %left LESS
 %left CROSS
@@ -214,37 +215,41 @@ innernest: outstatements
 
 ifstatement : IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $4, $7, $11, IFSTMTTYPE::IS_EVEN);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4}, $7, $11, IFSTMTTYPE::IS_EVEN);
         }
         | IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::LT, $5);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::LT);
         }
         | IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::LTE, $5);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::LTE);
         }
         | IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::GT, $5);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::GT);
         }
         | IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $3, $8, $12, IFSTMTTYPE::GTE, $5);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::GTE);
         }
         | IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $4, $7,  $11, IFSTMTTYPE::EDGE);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4}, $7,  $11, IFSTMTTYPE::EDGE);
         }
         | IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $4, $10, $14, IFSTMTTYPE::EDGE2OR, $7);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4,$7}, $10, $14, IFSTMTTYPE::EDGE2OR);
         }
         | IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
         {
-            $$ = new IfStmtNode($1->pos(), $4, $10, $14, IFSTMTTYPE::EDGE2AND, $7);
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4,$7}, $10, $14, IFSTMTTYPE::EDGE2AND);
         }
-
+        | IF LPAREN PAD id id id id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            std::vector<IDNode*> ids = {$4, $5, $6, $7};
+            $$ = new IfStmtNode($1->pos(), ids, $10, $14, IFSTMTTYPE::PAD);
+        }
 
 
 

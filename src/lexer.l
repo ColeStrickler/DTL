@@ -69,6 +69,7 @@ int 	    { return makeBareToken(TokenKind::INT); }
 "switch"	{ return makeBareToken(TokenKind::SWITCH); }
 "case"	{ return makeBareToken(TokenKind::CASE); }
 "else"	{ return makeBareToken(TokenKind::ELSE); }
+"pad?" { return makeBareToken(TokenKind::PAD); }
 
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)* { 

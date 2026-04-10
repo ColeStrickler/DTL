@@ -176,7 +176,7 @@ ASTNode *DTL::IfStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass
     }
     return this;
 }
-
+ 
 ASTNode * DTL::SwitchStmtNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass)
 {
     

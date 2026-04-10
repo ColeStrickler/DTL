@@ -27,7 +27,8 @@ enum CondCode : unsigned char
 	GTE,
 	EDGE,
 	EDGE2OR,
-	EDGE2AND
+	EDGE2AND,
+	PAD
 };
 
 
@@ -35,8 +36,7 @@ struct ConditionalInfo
 {
 	CondCode conditionalCode;
 	int outStatementsPerCond;
-	IDNode* condIdx;
-	IDNode* condIdx2;
+	std::vector<IDNode*> condIndices;
 };
 
 
@@ -55,8 +55,7 @@ private:
 		hasError = false;
 		conditionalCode = CondCode::DISABLE;
 		outStatementsPerCond = 0;
-		condIdx = nullptr;
-		condIdx2 = nullptr;
+		condIndices = {};
 	}
 
 public:
@@ -253,23 +252,20 @@ private:
 public:
 	ProgramNode * ast;
 
-	void SetConditionalInfo(CondCode code, int outPerCond, IDNode* condIndex, IDNode* condIndex2)
+	void SetConditionalInfo(CondCode code, int outPerCond, std::vector<IDNode*> cond_indices)
 	{
 		conditionalCode = code;
 		outStatementsPerCond = outPerCond; 
-		condIdx = condIndex;
-		condIdx2 = condIndex2;
+		condIndices = cond_indices;
 	}
 
 
 	ConditionalInfo GetConditionalInfo() const {
-		return {conditionalCode, outStatementsPerCond, condIdx, condIdx2};
+		return {conditionalCode, outStatementsPerCond, condIndices};
 	}
 	int outStatementsPerCond;
 	CondCode conditionalCode;
-	IDNode* condIdx;
-	IDNode* condIdx2;
-
+	std::vector<IDNode*> condIndices;
 };
 
 }

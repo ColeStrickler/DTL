@@ -241,6 +241,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.copy< DTL::Token * > (YY_MOVE (that.value));
         break;
 
@@ -366,6 +367,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.move< DTL::Token * > (YY_MOVE (s.value));
         break;
 
@@ -560,6 +562,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.YY_MOVE_OR_COPY< DTL::Token * > (YY_MOVE (that.value));
         break;
 
@@ -669,6 +672,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.move< DTL::Token * > (YY_MOVE (that.value));
         break;
 
@@ -778,6 +782,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.copy< DTL::Token * > (that.value);
         break;
 
@@ -885,6 +890,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.move< DTL::Token * > (that.value);
         break;
 
@@ -1232,6 +1238,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         yylhs.value.emplace< DTL::Token * > ();
         break;
 
@@ -1269,91 +1276,91 @@ namespace DTL {
           switch (yyn)
             {
   case 2: // program: constdecls forstatement
-#line 124 "parser.yy"
+#line 125 "parser.yy"
         {
             yystack_[1].value.as < std::vector<DTL::StmtNode*> > ().push_back(yystack_[0].value.as < DTL::ForStmtNode* > ());
             *root = new ProgramNode(yystack_[1].value.as < std::vector<DTL::StmtNode*> > ());
             yylhs.value.as < DTL::ProgramNode* > () = *root;
         }
-#line 1279 "parser.cc"
+#line 1286 "parser.cc"
     break;
 
   case 3: // constdecls: constdecls constdecl
-#line 130 "parser.yy"
+#line 131 "parser.yy"
         {
             yystack_[1].value.as < std::vector<DTL::StmtNode*> > ().push_back(yystack_[0].value.as < DTL::StmtNode* > ());
             yylhs.value.as < std::vector<DTL::StmtNode*> > () = yystack_[1].value.as < std::vector<DTL::StmtNode*> > ();
         }
-#line 1288 "parser.cc"
+#line 1295 "parser.cc"
     break;
 
   case 4: // constdecls: %empty
-#line 135 "parser.yy"
+#line 136 "parser.yy"
         {
             auto ret = std::vector<DTL::StmtNode*>();
             yylhs.value.as < std::vector<DTL::StmtNode*> > () = ret;
         }
-#line 1297 "parser.cc"
+#line 1304 "parser.cc"
     break;
 
   case 5: // constdecl: type id ASSIGN intlit SEMICOL
-#line 140 "parser.yy"
+#line 141 "parser.yy"
         {
             const Position * p = new Position(yystack_[4].value.as < DTL::TypeNode* > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
             yylhs.value.as < DTL::StmtNode* > () = new ConstDeclNode(p, yystack_[4].value.as < DTL::TypeNode* > (), yystack_[3].value.as < DTL::IDNode* > (), yystack_[1].value.as < DTL::IntLitNode* > ());
         }
-#line 1306 "parser.cc"
+#line 1313 "parser.cc"
     break;
 
   case 6: // constdecl: NOPT type id ASSIGN intlit SEMICOL
-#line 145 "parser.yy"
+#line 146 "parser.yy"
         {
             const Position * p = new Position(yystack_[4].value.as < DTL::TypeNode* > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
             auto decl = new ConstDeclNode(p, yystack_[4].value.as < DTL::TypeNode* > (), yystack_[3].value.as < DTL::IDNode* > (), yystack_[1].value.as < DTL::IntLitNode* > ());
             decl->SetOpt(false);
             yylhs.value.as < DTL::StmtNode* > () = decl;
         }
-#line 1317 "parser.cc"
+#line 1324 "parser.cc"
     break;
 
   case 7: // constdecl: type id ASSIGN LCURLY intlist RCURLY SEMICOL
-#line 152 "parser.yy"
+#line 153 "parser.yy"
         {
              const Position * p = new Position(yystack_[6].value.as < DTL::TypeNode* > ()->pos(), yystack_[1].value.as < DTL::Token * > ()->pos());
             yylhs.value.as < DTL::StmtNode* > () = new ConstArrayDeclNode(yystack_[6].value.as < DTL::TypeNode* > ()->pos(), yystack_[6].value.as < DTL::TypeNode* > (), yystack_[5].value.as < DTL::IDNode* > (), yystack_[2].value.as < std::vector<IntLitNode*> > ());
         }
-#line 1326 "parser.cc"
+#line 1333 "parser.cc"
     break;
 
   case 8: // intlist: intlit COMMA intlist
-#line 159 "parser.yy"
+#line 160 "parser.yy"
         {
             yylhs.value.as < std::vector<IntLitNode*> > () = std::vector<DTL::IntLitNode*>();
             yylhs.value.as < std::vector<IntLitNode*> > ().push_back(yystack_[2].value.as < DTL::IntLitNode* > ());
             yylhs.value.as < std::vector<IntLitNode*> > ().insert(yylhs.value.as < std::vector<IntLitNode*> > ().end(), yystack_[0].value.as < std::vector<IntLitNode*> > ().begin(), yystack_[0].value.as < std::vector<IntLitNode*> > ().end());
         }
-#line 1336 "parser.cc"
+#line 1343 "parser.cc"
     break;
 
   case 9: // intlist: intlit
-#line 165 "parser.yy"
+#line 166 "parser.yy"
         {
             yylhs.value.as < std::vector<IntLitNode*> > () = std::vector<DTL::IntLitNode*>();
             yylhs.value.as < std::vector<IntLitNode*> > ().push_back(yystack_[0].value.as < DTL::IntLitNode* > ());
         }
-#line 1345 "parser.cc"
+#line 1352 "parser.cc"
     break;
 
   case 10: // intlist: %empty
-#line 170 "parser.yy"
+#line 171 "parser.yy"
         {
             yylhs.value.as < std::vector<IntLitNode*> > () = std::vector<DTL::IntLitNode*>();
         }
-#line 1353 "parser.cc"
+#line 1360 "parser.cc"
     break;
 
   case 11: // forstatement: FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY forstatement RCURLY
-#line 177 "parser.yy"
+#line 178 "parser.yy"
         {
             const Position * p = new Position(yystack_[9].value.as < DTL::Token * > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
             std::vector<StmtNode*> stmt_vec;
@@ -1361,295 +1368,304 @@ namespace DTL {
             yylhs.value.as < DTL::ForStmtNode* > () = new ForStmtNode(p, yystack_[7].value.as < DTL::StmtNode* > (), yystack_[6].value.as < DTL::ExpNode* > (), yystack_[4].value.as < DTL::StmtNode* > (), stmt_vec);
 
         }
-#line 1365 "parser.cc"
+#line 1372 "parser.cc"
     break;
 
   case 12: // forstatement: FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY innernest RCURLY
-#line 185 "parser.yy"
+#line 186 "parser.yy"
         {
             const Position * p = new Position(yystack_[9].value.as < DTL::Token * > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
             yylhs.value.as < DTL::ForStmtNode* > () = new ForStmtNode(p, yystack_[7].value.as < DTL::StmtNode* > (), yystack_[6].value.as < DTL::ExpNode* > (), yystack_[4].value.as < DTL::StmtNode* > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > ());
         }
-#line 1374 "parser.cc"
+#line 1381 "parser.cc"
     break;
 
   case 13: // outstatements: outstatements outstatement
-#line 190 "parser.yy"
+#line 191 "parser.yy"
         {
             yystack_[1].value.as < std::vector<DTL::StmtNode*> > ().push_back(yystack_[0].value.as < DTL::StmtNode* > ());
             yylhs.value.as < std::vector<DTL::StmtNode*> > () = yystack_[1].value.as < std::vector<DTL::StmtNode*> > ();
         }
-#line 1383 "parser.cc"
+#line 1390 "parser.cc"
     break;
 
   case 14: // outstatements: outstatement
-#line 195 "parser.yy"
+#line 196 "parser.yy"
         {
             std::vector<StmtNode*> stmt_vec;
             stmt_vec.push_back(yystack_[0].value.as < DTL::StmtNode* > ());
             yylhs.value.as < std::vector<DTL::StmtNode*> > () = stmt_vec;
         }
-#line 1393 "parser.cc"
+#line 1400 "parser.cc"
     break;
 
   case 15: // innernest: outstatements
-#line 203 "parser.yy"
+#line 204 "parser.yy"
     {
         yylhs.value.as < std::vector<DTL::StmtNode*> > () = yystack_[0].value.as < std::vector<DTL::StmtNode*> > ();
     }
-#line 1401 "parser.cc"
+#line 1408 "parser.cc"
     break;
 
   case 16: // innernest: ifstatement
-#line 207 "parser.yy"
+#line 208 "parser.yy"
     {
         yylhs.value.as < std::vector<DTL::StmtNode*> > () = {yystack_[0].value.as < DTL::StmtNode* > ()};
     }
-#line 1409 "parser.cc"
+#line 1416 "parser.cc"
     break;
 
   case 17: // innernest: switchstatement
-#line 211 "parser.yy"
+#line 212 "parser.yy"
     {
         yylhs.value.as < std::vector<DTL::StmtNode*> > () = {yystack_[0].value.as < DTL::StmtNode* > ()};
     }
-#line 1417 "parser.cc"
+#line 1424 "parser.cc"
     break;
 
   case 18: // ifstatement: IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 216 "parser.yy"
+#line 217 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[11].value.as < DTL::Token * > ()->pos(), yystack_[8].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::IS_EVEN);
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[11].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::IS_EVEN);
         }
-#line 1425 "parser.cc"
+#line 1432 "parser.cc"
     break;
 
   case 19: // ifstatement: IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 220 "parser.yy"
+#line 221 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), yystack_[10].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::LT, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[10].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::LT);
         }
-#line 1433 "parser.cc"
+#line 1440 "parser.cc"
     break;
 
   case 20: // ifstatement: IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 224 "parser.yy"
+#line 225 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), yystack_[10].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::LTE, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[10].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::LTE);
         }
-#line 1441 "parser.cc"
+#line 1448 "parser.cc"
     break;
 
   case 21: // ifstatement: IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 228 "parser.yy"
+#line 229 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), yystack_[10].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::GT, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[10].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::GT);
         }
-#line 1449 "parser.cc"
+#line 1456 "parser.cc"
     break;
 
   case 22: // ifstatement: IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 232 "parser.yy"
+#line 233 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), yystack_[10].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::GTE, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[12].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[10].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::GTE);
         }
-#line 1457 "parser.cc"
+#line 1464 "parser.cc"
     break;
 
   case 23: // ifstatement: IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 236 "parser.yy"
+#line 237 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[11].value.as < DTL::Token * > ()->pos(), yystack_[8].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (),  yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE);
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[11].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (),  yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE);
         }
-#line 1465 "parser.cc"
+#line 1472 "parser.cc"
     break;
 
   case 24: // ifstatement: IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 240 "parser.yy"
+#line 241 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[14].value.as < DTL::Token * > ()->pos(), yystack_[11].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE2OR, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[14].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[11].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE2OR);
         }
-#line 1473 "parser.cc"
+#line 1480 "parser.cc"
     break;
 
   case 25: // ifstatement: IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
-#line 244 "parser.yy"
+#line 245 "parser.yy"
         {
-            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[14].value.as < DTL::Token * > ()->pos(), yystack_[11].value.as < DTL::IDNode* > (), yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE2AND, yystack_[8].value.as < DTL::IDNode* > ());
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[14].value.as < DTL::Token * > ()->pos(), std::vector<IDNode*>{yystack_[11].value.as < DTL::IDNode* > (),yystack_[8].value.as < DTL::IDNode* > ()}, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::EDGE2AND);
         }
-#line 1481 "parser.cc"
+#line 1488 "parser.cc"
     break;
 
-  case 26: // switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
-#line 256 "parser.yy"
+  case 26: // ifstatement: IF LPAREN PAD id id id id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+#line 249 "parser.yy"
+        {
+            std::vector<IDNode*> ids = {yystack_[11].value.as < DTL::IDNode* > (), yystack_[10].value.as < DTL::IDNode* > (), yystack_[9].value.as < DTL::IDNode* > (), yystack_[8].value.as < DTL::IDNode* > ()};
+            yylhs.value.as < DTL::StmtNode* > () = new IfStmtNode(yystack_[14].value.as < DTL::Token * > ()->pos(), ids, yystack_[5].value.as < std::vector<DTL::StmtNode*> > (), yystack_[1].value.as < std::vector<DTL::StmtNode*> > (), IFSTMTTYPE::PAD);
+        }
+#line 1497 "parser.cc"
+    break;
+
+  case 27: // switchstatement: SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
+#line 261 "parser.yy"
         {
             std::reverse(yystack_[1].value.as < std::vector<std::vector<DTL::StmtNode*>> > ().begin(), yystack_[1].value.as < std::vector<std::vector<DTL::StmtNode*>> > ().end());
             yylhs.value.as < DTL::StmtNode* > () = new SwitchStmtNode(yystack_[6].value.as < DTL::Token * > ()->pos(), yystack_[4].value.as < DTL::IDNode* > (), yystack_[1].value.as < std::vector<std::vector<DTL::StmtNode*>> > ());
         }
-#line 1490 "parser.cc"
+#line 1506 "parser.cc"
     break;
 
-  case 27: // casestatements: casestatement casestatements
-#line 263 "parser.yy"
+  case 28: // casestatements: casestatement casestatements
+#line 268 "parser.yy"
     {    
         yystack_[0].value.as < std::vector<std::vector<DTL::StmtNode*>> > ().push_back(yystack_[1].value.as < std::vector<DTL::StmtNode*> > ());
         yylhs.value.as < std::vector<std::vector<DTL::StmtNode*>> > () = yystack_[0].value.as < std::vector<std::vector<DTL::StmtNode*>> > ();
     }
-#line 1499 "parser.cc"
-    break;
-
-  case 28: // casestatements: casestatement
-#line 268 "parser.yy"
-    {
-        yylhs.value.as < std::vector<std::vector<DTL::StmtNode*>> > () = {yystack_[0].value.as < std::vector<DTL::StmtNode*> > ()};
-    }
-#line 1507 "parser.cc"
-    break;
-
-  case 29: // casestatement: CASE COLON outstatements
-#line 273 "parser.yy"
-    {
-        yylhs.value.as < std::vector<DTL::StmtNode*> > () = yystack_[0].value.as < std::vector<DTL::StmtNode*> > ();
-    }
 #line 1515 "parser.cc"
     break;
 
-  case 30: // outstatement: OUT ASSIGN expr SEMICOL
-#line 280 "parser.yy"
+  case 29: // casestatements: casestatement
+#line 273 "parser.yy"
+    {
+        yylhs.value.as < std::vector<std::vector<DTL::StmtNode*>> > () = {yystack_[0].value.as < std::vector<DTL::StmtNode*> > ()};
+    }
+#line 1523 "parser.cc"
+    break;
+
+  case 30: // casestatement: CASE COLON outstatements
+#line 278 "parser.yy"
+    {
+        yylhs.value.as < std::vector<DTL::StmtNode*> > () = yystack_[0].value.as < std::vector<DTL::StmtNode*> > ();
+    }
+#line 1531 "parser.cc"
+    break;
+
+  case 31: // outstatement: OUT ASSIGN expr SEMICOL
+#line 285 "parser.yy"
             {
                 const Position * p = new Position(yystack_[3].value.as < DTL::Token * > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
                 yylhs.value.as < DTL::StmtNode* > () = new OutStmtNode(p, yystack_[1].value.as < DTL::ExpNode* > ());
             }
-#line 1524 "parser.cc"
+#line 1540 "parser.cc"
     break;
 
-  case 31: // type: INT
-#line 286 "parser.yy"
+  case 32: // type: INT
+#line 291 "parser.yy"
     {
         yylhs.value.as < DTL::TypeNode* > () = new IntTypeNode(yystack_[0].value.as < DTL::Token * > ()->pos());
     }
-#line 1532 "parser.cc"
+#line 1548 "parser.cc"
     break;
 
-  case 32: // expr: expr CROSS expr
-#line 290 "parser.yy"
+  case 33: // expr: expr CROSS expr
+#line 295 "parser.yy"
     {
         const Position * p = new Position(yystack_[2].value.as < DTL::ExpNode* > ()->pos(), yystack_[0].value.as < DTL::ExpNode* > ()->pos());
         yylhs.value.as < DTL::ExpNode* > () = new PlusNode(p, yystack_[2].value.as < DTL::ExpNode* > (), yystack_[0].value.as < DTL::ExpNode* > ());
     }
-#line 1541 "parser.cc"
+#line 1557 "parser.cc"
     break;
 
-  case 33: // expr: expr LESS expr
-#line 295 "parser.yy"
+  case 34: // expr: expr LESS expr
+#line 300 "parser.yy"
     {
         const Position * p = new Position(yystack_[2].value.as < DTL::ExpNode* > ()->pos(), yystack_[0].value.as < DTL::ExpNode* > ()->pos());
         yylhs.value.as < DTL::ExpNode* > () = new LessNode(p, yystack_[2].value.as < DTL::ExpNode* > (), yystack_[0].value.as < DTL::ExpNode* > ());
     }
-#line 1550 "parser.cc"
+#line 1566 "parser.cc"
     break;
 
-  case 34: // expr: expr STAR expr
-#line 300 "parser.yy"
+  case 35: // expr: expr STAR expr
+#line 305 "parser.yy"
     {
         const Position * p = new Position(yystack_[2].value.as < DTL::ExpNode* > ()->pos(), yystack_[0].value.as < DTL::ExpNode* > ()->pos());
         yylhs.value.as < DTL::ExpNode* > () = new TimesNode(p, yystack_[2].value.as < DTL::ExpNode* > (), yystack_[0].value.as < DTL::ExpNode* > ());
     }
-#line 1559 "parser.cc"
+#line 1575 "parser.cc"
     break;
 
-  case 35: // expr: expr MINUS expr
-#line 305 "parser.yy"
+  case 36: // expr: expr MINUS expr
+#line 310 "parser.yy"
     {
         const Position * p = new Position(yystack_[2].value.as < DTL::ExpNode* > ()->pos(), yystack_[0].value.as < DTL::ExpNode* > ()->pos());
         yylhs.value.as < DTL::ExpNode* > () = new MinusNode(p, yystack_[2].value.as < DTL::ExpNode* > (), yystack_[0].value.as < DTL::ExpNode* > ());
     }
-#line 1568 "parser.cc"
+#line 1584 "parser.cc"
     break;
 
-  case 36: // expr: term
-#line 310 "parser.yy"
+  case 37: // expr: term
+#line 315 "parser.yy"
     {
         yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::ExpNode* > ();
     }
-#line 1576 "parser.cc"
+#line 1592 "parser.cc"
     break;
 
-  case 37: // unarystmt: loc POSTINC
-#line 315 "parser.yy"
+  case 38: // unarystmt: loc POSTINC
+#line 320 "parser.yy"
         {
             const Position* p = new Position(yystack_[1].value.as < DTL::LocNode* > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
             yylhs.value.as < DTL::StmtNode* > () = new PostIncStmtNode(p, yystack_[1].value.as < DTL::LocNode* > ());
         }
-#line 1585 "parser.cc"
-    break;
-
-  case 38: // term: factor
-#line 323 "parser.yy"
-    {
-        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::ExpNode* > ();
-    }
-#line 1593 "parser.cc"
-    break;
-
-  case 39: // term: LPAREN expr RPAREN
-#line 327 "parser.yy"
-    {
-        yylhs.value.as < DTL::ExpNode* > () = yystack_[1].value.as < DTL::ExpNode* > ();
-    }
 #line 1601 "parser.cc"
     break;
 
-  case 40: // factor: intlit
-#line 331 "parser.yy"
+  case 39: // term: factor
+#line 328 "parser.yy"
     {
-        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::IntLitNode* > ();
+        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::ExpNode* > ();
     }
 #line 1609 "parser.cc"
     break;
 
-  case 41: // factor: loc
-#line 335 "parser.yy"
+  case 40: // term: LPAREN expr RPAREN
+#line 332 "parser.yy"
     {
-        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::LocNode* > ();
+        yylhs.value.as < DTL::ExpNode* > () = yystack_[1].value.as < DTL::ExpNode* > ();
     }
 #line 1617 "parser.cc"
     break;
 
-  case 42: // intlit: INTLITERAL
-#line 339 "parser.yy"
+  case 41: // factor: intlit
+#line 336 "parser.yy"
     {
-        yylhs.value.as < DTL::IntLitNode* > () = new IntLitNode(yystack_[0].value.as < DTL::IntLitToken * > ()->pos(), yystack_[0].value.as < DTL::IntLitToken * > ()->num());
+        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::IntLitNode* > ();
     }
 #line 1625 "parser.cc"
     break;
 
-  case 43: // loc: id
-#line 344 "parser.yy"
+  case 42: // factor: loc
+#line 340 "parser.yy"
     {
-        yylhs.value.as < DTL::LocNode* > () = yystack_[0].value.as < DTL::IDNode* > ();
+        yylhs.value.as < DTL::ExpNode* > () = yystack_[0].value.as < DTL::LocNode* > ();
     }
 #line 1633 "parser.cc"
     break;
 
-  case 44: // loc: id LBRACKET id RBRACKET
-#line 348 "parser.yy"
+  case 43: // intlit: INTLITERAL
+#line 344 "parser.yy"
     {
-        yylhs.value.as < DTL::LocNode* > () = new ArrayIndexNode(yystack_[3].value.as < DTL::IDNode* > ()->pos(), yystack_[3].value.as < DTL::IDNode* > (), yystack_[1].value.as < DTL::IDNode* > ());
+        yylhs.value.as < DTL::IntLitNode* > () = new IntLitNode(yystack_[0].value.as < DTL::IntLitToken * > ()->pos(), yystack_[0].value.as < DTL::IntLitToken * > ()->num());
     }
 #line 1641 "parser.cc"
     break;
 
-  case 45: // id: ID
-#line 353 "parser.yy"
+  case 44: // loc: id
+#line 349 "parser.yy"
     {
-        yylhs.value.as < DTL::IDNode* > () = new IDNode(yystack_[0].value.as < DTL::IDToken * > ()->pos(), yystack_[0].value.as < DTL::IDToken * > ()->value());
+        yylhs.value.as < DTL::LocNode* > () = yystack_[0].value.as < DTL::IDNode* > ();
     }
 #line 1649 "parser.cc"
     break;
 
+  case 45: // loc: id LBRACKET id RBRACKET
+#line 353 "parser.yy"
+    {
+        yylhs.value.as < DTL::LocNode* > () = new ArrayIndexNode(yystack_[3].value.as < DTL::IDNode* > ()->pos(), yystack_[3].value.as < DTL::IDNode* > (), yystack_[1].value.as < DTL::IDNode* > ());
+    }
+#line 1657 "parser.cc"
+    break;
 
-#line 1653 "parser.cc"
+  case 46: // id: ID
+#line 358 "parser.yy"
+    {
+        yylhs.value.as < DTL::IDNode* > () = new IDNode(yystack_[0].value.as < DTL::IDToken * > ()->pos(), yystack_[0].value.as < DTL::IDToken * > ()->value());
+    }
+#line 1665 "parser.cc"
+    break;
+
+
+#line 1669 "parser.cc"
 
             default:
               break;
@@ -1997,158 +2013,163 @@ namespace DTL {
   }
 
 
-  const signed char Parser::yypact_ninf_ = -61;
+  const signed char Parser::yypact_ninf_ = -92;
 
   const signed char Parser::yytable_ninf_ = -1;
 
   const short
   Parser::yypact_[] =
   {
-     -61,    20,     3,   -61,     4,   -61,    53,   -61,   -61,    11,
-      11,   144,   -61,    30,    47,    32,    35,    33,   -61,    32,
-      10,   -61,   -61,   -61,   -61,    46,    33,    58,    59,    27,
-      32,    32,    11,    32,    32,    11,    75,    90,   -61,   -61,
-     -61,    13,   -13,   125,   109,   -61,   106,   115,   131,    33,
-     143,   -61,   -61,   -61,   -61,    36,   149,   140,   141,   139,
-     136,   142,   -61,   -61,   -61,    32,    11,    -1,   -61,   -61,
-     -61,   108,   145,    11,    11,   135,   -61,   148,   146,   -12,
-      11,    11,    11,    11,   132,   152,   153,   133,   134,   147,
-     150,   151,   154,   155,   156,   132,   136,   136,    11,    11,
-     161,   162,   165,   166,   136,   -61,   -61,    -8,    37,   158,
-     159,   136,   136,   136,   136,   136,   157,   160,   169,   170,
-      38,    51,    52,    63,   171,   172,   136,   136,   163,   164,
-     167,   168,   136,   136,    88,    89,   174,   175,   176,   177,
-      92,    95,   173,   178,   136,   136,   136,   136,   -61,   -61,
-     180,   181,   107,   113,   116,   119,   136,   136,   -61,   -61,
-     -61,   -61,   120,   122,   -61,   -61
+     -92,     7,    18,   -92,     4,   -92,    31,   -92,   -92,    15,
+      15,    17,   -92,    53,    54,    67,    24,    66,   -92,    67,
+     107,   -92,   -92,   -92,   -92,    61,    66,    80,    88,   121,
+      67,    67,    15,    67,    67,    15,    71,    90,   -92,   -92,
+     -92,    20,    21,   105,   118,   -92,   101,   113,   123,    66,
+     137,   -92,   -92,   -92,   -92,    50,   159,   152,   154,   153,
+     147,   155,   -92,   -92,   -92,    67,    15,    -2,   -92,   -92,
+     -92,   125,   156,    15,    15,    15,    85,   -92,   162,   157,
+     -15,    15,    15,    15,    15,    15,   148,   164,   168,   146,
+     149,    15,   160,   163,   165,   166,   158,   169,   148,   147,
+     147,    15,    15,    15,   171,   178,   179,   180,   147,   -92,
+     -92,   -10,    34,   172,   173,   174,   147,   147,   147,   147,
+     147,   167,   170,   184,   185,   186,    37,    38,    69,    70,
+     187,   188,   147,   147,   147,   175,   176,   177,   181,   147,
+     147,   102,   103,   115,   190,   191,   193,   194,   126,   132,
+     182,   183,   189,   147,   147,   147,   147,   -92,   -92,   195,
+     196,   200,   133,   135,   136,   139,   147,   147,   147,   -92,
+     -92,   -92,   -92,   142,   143,   145,   -92,   -92,   -92
   };
 
   const signed char
   Parser::yydefact_[] =
   {
-       4,     0,     0,     1,     0,    31,     0,     3,     2,     0,
-       0,     0,    45,     0,     0,     0,     0,     0,    42,     0,
-       0,    36,    38,    40,    41,    43,    10,     0,     0,     0,
+       4,     0,     0,     1,     0,    32,     0,     3,     2,     0,
+       0,     0,    46,     0,     0,     0,     0,     0,    43,     0,
+       0,    37,    39,    41,    42,    44,    10,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     9,     5,     6,
-      39,    33,    32,     0,     0,    34,    35,     0,     0,    10,
-       0,    37,    44,     7,     8,     0,     0,     0,     0,     0,
+      40,    34,    33,     0,     0,    35,    36,     0,     0,    10,
+       0,    38,    45,     7,     8,     0,     0,     0,     0,     0,
       15,     0,    16,    17,    14,     0,     0,     0,    11,    13,
-      12,     0,     0,     0,     0,     0,    30,     0,     0,     0,
+      12,     0,     0,     0,     0,     0,     0,    31,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    28,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    26,    27,     0,     0,     0,
-       0,     0,     0,     0,     0,    29,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,    29,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    27,
+      28,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+      30,     0,     0,     0,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    18,    23,
-       0,     0,     0,     0,     0,     0,     0,     0,    19,    20,
-      21,    22,     0,     0,    24,    25
+       0,     0,     0,     0,     0,     0,     0,    18,    23,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    19,
+      20,    21,    22,     0,     0,     0,    24,    25,    26
   };
 
   const short
   Parser::yypgoto_[] =
   {
-     -61,   -61,   -61,   184,   137,   179,   -26,   -61,   -61,   -61,
-      96,   -61,   -60,   188,   -16,   -61,   -61,   -61,   -15,   182,
-      16
+     -92,   -92,   -92,   198,   161,   192,   -91,   -92,   -92,   -92,
+     116,   -92,   -60,   211,   -18,   -92,   -92,   -92,   -12,   197,
+      26
   };
 
   const signed char
   Parser::yydefgoto_[] =
   {
        0,     1,     2,     7,    36,     8,    60,    61,    62,    63,
-      94,    95,    64,     9,    20,    43,    21,    22,    23,    24,
+      97,    98,    64,     9,    20,    43,    21,    22,    23,    24,
       25
   };
 
   const unsigned char
   Parser::yytable_[] =
   {
-      69,    27,    28,    29,    12,    86,    33,     4,   116,     5,
-       5,    37,    34,    56,    41,    42,    12,    45,    46,    30,
-       3,    87,    88,     6,    31,    13,    14,    31,    32,    33,
-      73,    74,    33,    16,    37,    34,    30,    12,    34,    18,
-      18,    31,    18,    26,    40,    19,    33,    69,    69,    71,
-      17,    47,    34,   117,   128,    69,     6,    56,    56,    56,
-      69,    69,    69,    69,    57,    58,    11,   129,   130,    35,
-     107,   108,    56,    56,    69,    69,    38,    39,   115,   131,
-      69,    69,    72,    75,    56,   120,   121,   122,   123,    78,
-      79,    48,    69,    69,    69,    69,    89,    90,    91,    92,
-     134,   135,    69,    69,   142,   143,   140,   141,   148,    56,
-      56,   149,    49,    56,   109,   110,    56,    30,   152,   153,
-     154,   155,    31,   158,    51,    33,    76,    33,    56,   159,
-     162,   163,   160,    34,    56,   161,   164,    56,   165,    52,
-      56,    56,    50,    56,    80,    81,    82,    83,     4,    53,
-       5,    55,    65,    66,    67,    68,    84,    56,    70,    93,
-      96,    97,    77,    85,   100,    98,    99,   101,   102,   111,
-     112,   103,   105,   113,   114,   118,   119,   126,   127,   132,
-     133,   104,   144,   145,   146,   147,    54,   124,   156,   157,
-     125,   106,    10,   136,   137,    15,     0,   138,   139,     0,
-       0,     0,     0,   150,     0,     0,     0,     0,   151,     0,
-       0,     0,     0,     0,    44,     0,     0,     0,     0,     0,
+      69,    29,    88,    12,    27,    28,   121,     3,   111,   112,
+       5,    56,    41,    42,    37,    45,    46,   120,    89,    90,
+      12,     4,     4,     5,     5,   126,   127,   128,   129,    73,
+      74,    18,    26,    75,    31,    13,    14,    37,     6,    33,
+      33,   141,   142,   143,    11,    34,    34,    71,   148,   149,
+     122,    69,    69,   135,   136,    56,    16,    17,    56,    56,
+      69,    47,   162,   163,   164,   165,    69,    69,    69,    69,
+       6,    56,    12,    18,    18,   173,   174,   175,    57,    58,
+      19,    69,    69,    69,    35,   137,   138,    48,    69,    69,
+      56,    56,    72,    76,    82,    83,    84,    85,    38,    79,
+      80,    81,    69,    69,    69,    69,    39,    91,    92,    93,
+      94,    95,    49,    69,    69,    69,    30,   103,   150,   151,
+      33,    31,    50,    56,    56,    32,    33,   113,   114,   115,
+      30,   152,    34,    51,    30,    31,    56,    52,    40,    31,
+      33,    53,   157,    77,    33,    55,    34,    56,   158,   169,
+      34,   170,   171,    56,    56,   172,    56,    56,   176,   177,
+      56,   178,    65,    56,    56,    66,    56,    67,    56,    68,
+      86,    70,    99,    78,    87,    96,   100,   104,   101,   116,
+     105,   102,   106,   107,   108,   109,   117,   118,   119,   123,
+     124,   125,   132,   133,   134,   139,   140,   130,   153,   154,
+     131,   155,   156,   166,   167,   144,   145,   146,   168,    15,
+      54,   147,   159,   160,   110,    10,     0,     0,     0,   161,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    44,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,    59
+       0,     0,     0,     0,     0,     0,     0,    59
   };
 
   const short
   Parser::yycheck_[] =
   {
-      60,    16,    17,    19,     5,    17,    19,     4,    16,     6,
-       6,    26,    25,    21,    30,    31,     5,    33,    34,     9,
-       0,    33,    34,    20,    14,     9,    10,    14,    18,    19,
-      31,    32,    19,     3,    49,    25,     9,     5,    25,     7,
-       7,    14,     7,     8,    17,    13,    19,   107,   108,    65,
-       3,    35,    25,    16,    16,   115,    20,    21,    21,    21,
-     120,   121,   122,   123,    28,    29,    13,    16,    16,    23,
-      96,    97,    21,    21,   134,   135,    18,    18,   104,    16,
-     140,   141,    66,    67,    21,   111,   112,   113,   114,    73,
-      74,    16,   152,   153,   154,   155,    80,    81,    82,    83,
-     126,   127,   162,   163,    16,    16,   132,   133,    16,    21,
-      21,    16,    22,    21,    98,    99,    21,     9,   144,   145,
-     146,   147,    14,    16,    15,    19,    18,    19,    21,    16,
-     156,   157,    16,    25,    21,    16,    16,    21,    16,    24,
-      21,    21,    17,    21,     9,    10,    11,    12,     4,    18,
-       6,     8,     3,    13,    13,    16,     8,    21,    16,    27,
-       8,     8,    17,    17,    17,    32,    32,    17,    17,     8,
-       8,    17,    16,     8,     8,    17,    17,     8,     8,     8,
-       8,    26,     8,     8,     8,     8,    49,    30,     8,     8,
-      30,    95,     4,    30,    30,    11,    -1,    30,    30,    -1,
-      -1,    -1,    -1,    30,    -1,    -1,    -1,    -1,    30,    -1,
-      -1,    -1,    -1,    -1,    32,    -1,    -1,    -1,    -1,    -1,
+      60,    19,    17,     5,    16,    17,    16,     0,    99,   100,
+       6,    21,    30,    31,    26,    33,    34,   108,    33,    34,
+       5,     4,     4,     6,     6,   116,   117,   118,   119,    31,
+      32,     7,     8,    35,    14,     9,    10,    49,    20,    19,
+      19,   132,   133,   134,    13,    25,    25,    65,   139,   140,
+      16,   111,   112,    16,    16,    21,     3,     3,    21,    21,
+     120,    35,   153,   154,   155,   156,   126,   127,   128,   129,
+      20,    21,     5,     7,     7,   166,   167,   168,    28,    29,
+      13,   141,   142,   143,    23,    16,    16,    16,   148,   149,
+      21,    21,    66,    67,     9,    10,    11,    12,    18,    73,
+      74,    75,   162,   163,   164,   165,    18,    81,    82,    83,
+      84,    85,    22,   173,   174,   175,     9,    91,    16,    16,
+      19,    14,    17,    21,    21,    18,    19,   101,   102,   103,
+       9,    16,    25,    15,     9,    14,    21,    24,    17,    14,
+      19,    18,    16,    18,    19,     8,    25,    21,    16,    16,
+      25,    16,    16,    21,    21,    16,    21,    21,    16,    16,
+      21,    16,     3,    21,    21,    13,    21,    13,    21,    16,
+       8,    16,     8,    17,    17,    27,     8,    17,    32,     8,
+      17,    32,    17,    17,    26,    16,     8,     8,     8,    17,
+      17,    17,     8,     8,     8,     8,     8,    30,     8,     8,
+      30,     8,     8,     8,     8,    30,    30,    30,     8,    11,
+      49,    30,    30,    30,    98,     4,    -1,    -1,    -1,    30,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    32,
       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    55
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    55
   };
 
   const signed char
   Parser::yystos_[] =
   {
-       0,    36,    37,     0,     4,     6,    20,    38,    40,    48,
-      48,    13,     5,    55,    55,    38,     3,     3,     7,    13,
-      49,    51,    52,    53,    54,    55,     8,    53,    53,    49,
-       9,    14,    18,    19,    25,    23,    39,    53,    18,    18,
-      17,    49,    49,    50,    54,    49,    49,    55,    16,    22,
-      17,    15,    24,    18,    39,     8,    21,    28,    29,    40,
-      41,    42,    43,    44,    47,     3,    13,    13,    16,    47,
-      16,    49,    55,    31,    32,    55,    18,    17,    55,    55,
-       9,    10,    11,    12,     8,    17,    17,    33,    34,    55,
-      55,    55,    55,    27,    45,    46,     8,     8,    32,    32,
-      17,    17,    17,    17,    26,    16,    45,    41,    41,    55,
-      55,     8,     8,     8,     8,    41,    16,    16,    17,    17,
-      41,    41,    41,    41,    30,    30,     8,     8,    16,    16,
-      16,    16,     8,     8,    41,    41,    30,    30,    30,    30,
-      41,    41,    16,    16,     8,     8,     8,     8,    16,    16,
-      30,    30,    41,    41,    41,    41,     8,     8,    16,    16,
-      16,    16,    41,    41,    16,    16
+       0,    37,    38,     0,     4,     6,    20,    39,    41,    49,
+      49,    13,     5,    56,    56,    39,     3,     3,     7,    13,
+      50,    52,    53,    54,    55,    56,     8,    54,    54,    50,
+       9,    14,    18,    19,    25,    23,    40,    54,    18,    18,
+      17,    50,    50,    51,    55,    50,    50,    56,    16,    22,
+      17,    15,    24,    18,    40,     8,    21,    28,    29,    41,
+      42,    43,    44,    45,    48,     3,    13,    13,    16,    48,
+      16,    50,    56,    31,    32,    35,    56,    18,    17,    56,
+      56,    56,     9,    10,    11,    12,     8,    17,    17,    33,
+      34,    56,    56,    56,    56,    56,    27,    46,    47,     8,
+       8,    32,    32,    56,    17,    17,    17,    17,    26,    16,
+      46,    42,    42,    56,    56,    56,     8,     8,     8,     8,
+      42,    16,    16,    17,    17,    17,    42,    42,    42,    42,
+      30,    30,     8,     8,     8,    16,    16,    16,    16,     8,
+       8,    42,    42,    42,    30,    30,    30,    30,    42,    42,
+      16,    16,    16,     8,     8,     8,     8,    16,    16,    30,
+      30,    30,    42,    42,    42,    42,     8,     8,     8,    16,
+      16,    16,    16,    42,    42,    42,    16,    16,    16
   };
 
   const signed char
   Parser::yyr1_[] =
   {
-       0,    35,    36,    37,    37,    38,    38,    38,    39,    39,
-      39,    40,    40,    41,    41,    42,    42,    42,    43,    43,
-      43,    43,    43,    43,    43,    43,    44,    45,    45,    46,
-      47,    48,    49,    49,    49,    49,    49,    50,    51,    51,
-      52,    52,    53,    54,    54,    55
+       0,    36,    37,    38,    38,    39,    39,    39,    40,    40,
+      40,    41,    41,    42,    42,    43,    43,    43,    44,    44,
+      44,    44,    44,    44,    44,    44,    44,    45,    46,    46,
+      47,    48,    49,    50,    50,    50,    50,    50,    51,    52,
+      52,    53,    53,    54,    55,    55,    56
   };
 
   const signed char
@@ -2156,9 +2177,9 @@ namespace DTL {
   {
        0,     2,     2,     2,     0,     5,     6,     7,     3,     1,
        0,    10,    10,     2,     1,     1,     1,     1,    12,    13,
-      13,    13,    13,    12,    15,    15,     7,     2,     1,     3,
-       4,     1,     3,     3,     3,     3,     1,     2,     1,     3,
-       1,     1,     1,     1,     4,     1
+      13,    13,    13,    12,    15,    15,    15,     7,     2,     1,
+       3,     4,     1,     3,     3,     3,     3,     1,     2,     1,
+       3,     1,     1,     1,     1,     4,     1
   };
 
 
@@ -2173,8 +2194,8 @@ namespace DTL {
   "GREATEREQUAL", "LPAREN", "CROSS", "POSTINC", "RCURLY", "RPAREN",
   "SEMICOL", "STAR", "FOR", "OUT", "COMMA", "LBRACKET", "RBRACKET",
   "MINUS", "COLON", "CASE", "SWITCH", "IF", "ELSE", "ISEVEN", "ISEDGE",
-  "OR", "AND", "$accept", "program", "constdecls", "constdecl", "intlist",
-  "forstatement", "outstatements", "innernest", "ifstatement",
+  "OR", "AND", "PAD", "$accept", "program", "constdecls", "constdecl",
+  "intlist", "forstatement", "outstatements", "innernest", "ifstatement",
   "switchstatement", "casestatements", "casestatement", "outstatement",
   "type", "expr", "unarystmt", "term", "factor", "intlit", "loc", "id", YY_NULLPTR
   };
@@ -2185,11 +2206,11 @@ namespace DTL {
   const short
   Parser::yyrline_[] =
   {
-       0,   123,   123,   129,   135,   139,   144,   151,   158,   164,
-     170,   176,   184,   189,   194,   202,   206,   210,   215,   219,
-     223,   227,   231,   235,   239,   243,   255,   262,   267,   272,
-     279,   285,   289,   294,   299,   304,   309,   314,   322,   326,
-     330,   334,   338,   343,   347,   352
+       0,   124,   124,   130,   136,   140,   145,   152,   159,   165,
+     171,   177,   185,   190,   195,   203,   207,   211,   216,   220,
+     224,   228,   232,   236,   240,   244,   248,   260,   267,   272,
+     277,   284,   290,   294,   299,   304,   309,   314,   319,   327,
+     331,   335,   339,   343,   348,   352,   357
   };
 
   void
@@ -2256,10 +2277,11 @@ namespace DTL {
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,    30,    31,    32,    33,    34
+      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
+      35
     };
     // Last valid token kind.
-    const int code_max = 289;
+    const int code_max = 290;
 
     if (t <= 0)
       return symbol_kind::S_YYEOF;
@@ -2271,9 +2293,9 @@ namespace DTL {
 
 #line 5 "parser.yy"
 } // DTL
-#line 2275 "parser.cc"
+#line 2297 "parser.cc"
 
-#line 360 "parser.yy"
+#line 365 "parser.yy"
 
 
 

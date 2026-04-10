@@ -1,18 +1,22 @@
-int depth = 16;
+
 int height = 128;
 int width = 128;
 
-for (int i = 0; i < 1400; i++)
-{
-    for (int j = 0; j < 32; j++)
-    {
-        if (isEdge? i || isEdge? j)
-        {
-            out = 4;
-        }
-        else
-        {
-            out = i;
+for (int c_im = 0; c_im < 3; c_im++) {
+    for (int kh = 0; kh < 3; kh++) {
+        for (int kw = 0; kw <3; kw++) {
+            for (int h = 0; h < 128; h++) {
+                for (int w = 0; w < 128; w++) {
+                    if (pad? h kh w kw)
+                    {
+                        out = 0;
+                    }
+                    else
+                    {
+                        out = c_im*(height*width) + (h + kh)*(width) + (w + kw);
+                    }
+                }
+            }
         }
     }
 }

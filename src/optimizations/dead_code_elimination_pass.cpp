@@ -130,7 +130,7 @@ ASTNode * DTL::IfStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *eli
     }
     return this;
 }
-
+ 
 
 ASTNode *DTL::SwitchStmtNode::DeadCodeElimination( DTL::DeadCodeEliminationPass *elim_pass, int pass) 
 {

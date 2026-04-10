@@ -77,7 +77,7 @@ ASTNode * DTL::IfStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_p
         myFalseCases[i] = (StmtNode*)myFalseCases[i]->ConstPropagation(prop_pass);
     }
     return this;
-}
+} 
 
 ASTNode *DTL::SwitchStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass)
 {

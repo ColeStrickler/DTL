@@ -197,7 +197,7 @@ ASTNode *DTL::MinusNode::ConstFold(DTL::ConstantFoldPass *foldpass) {
     auto left = myExp1->ConstFold(foldpass);
     auto right = myExp2->ConstFold(foldpass);
 
-
+  
     if (left->getTag() == DTL::NODETAG::INTLITNODE && right->getTag() == DTL::NODETAG::INTLITNODE)
     {
         foldpass->IncFoldCount();

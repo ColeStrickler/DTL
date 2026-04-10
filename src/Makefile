@@ -94,4 +94,5 @@ lexer.yy.cc: lexer.l
 # ============================================================
 clean:
 	rm -rf *.o *.x86.o *.d *.output *.cc *.hh parser.dot parser.png \
-	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh
+	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh 
+	

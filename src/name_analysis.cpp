@@ -113,8 +113,12 @@ bool OutStmtNode::nameAnalysis(SymbolTable* symTab)
 
 bool DTL::IfStmtNode::nameAnalysis(SymbolTable *symTab) 
 { 
-    if(!myID->nameAnalysis(symTab))
-        return false;
+    for (auto& myID: myIDs)
+    {
+        if(!myID->nameAnalysis(symTab))
+            return false;
+    }
+
 
     for (auto& s: myTrueCases)
     {

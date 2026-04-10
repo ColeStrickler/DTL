@@ -154,14 +154,19 @@ void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
 
 void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta ) 
 {
-	myID->typeAnalysis(ta);
-	auto type = ta->nodeType(myID);
-	if (!type->isInt())
+
+	for (auto& myID: myIDs)
 	{
-		ta->errAssignOpr(this->pos());
-		ta->nodeType(this, ErrorType::produce());
-		return;
+		myID->typeAnalysis(ta);
+		auto type = ta->nodeType(myID);
+		if (!type->isInt())
+		{
+			ta->errAssignOpr(this->pos());
+			ta->nodeType(this, ErrorType::produce());
+			return;
+		}
 	}
+
 
 	if (myTrueCases.size() != myFalseCases.size())
 	{
@@ -175,14 +180,15 @@ void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta )
 
 	switch (myType)
 	{
-		case IFSTMTTYPE::IS_EVEN: {ta->SetConditionalInfo(CondCode::ISEVEN, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::LT: 	{ta->SetConditionalInfo(CondCode::LT, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::LTE: 	{ta->SetConditionalInfo(CondCode::LTE, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::GT: 	{ta->SetConditionalInfo(CondCode::GT, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::GTE: 	{ta->SetConditionalInfo(CondCode::GTE, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::EDGE:	{ta->SetConditionalInfo(CondCode::EDGE, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::EDGE2OR: {ta->SetConditionalInfo(CondCode::EDGE2OR, myTrueCases.size(), myID, myID2); break;}
-		case IFSTMTTYPE::EDGE2AND: {ta->SetConditionalInfo(CondCode::EDGE2AND, myTrueCases.size(), myID, myID2); break;}
+		case IFSTMTTYPE::IS_EVEN: {ta->SetConditionalInfo(CondCode::ISEVEN, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::LT: 	{ta->SetConditionalInfo(CondCode::LT, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::LTE: 	{ta->SetConditionalInfo(CondCode::LTE, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::GT: 	{ta->SetConditionalInfo(CondCode::GT, myTrueCases.size(), myIDs);break;}
+		case IFSTMTTYPE::GTE: 	{ta->SetConditionalInfo(CondCode::GTE, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::EDGE:	{ta->SetConditionalInfo(CondCode::EDGE, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::EDGE2OR: {ta->SetConditionalInfo(CondCode::EDGE2OR, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::EDGE2AND: {ta->SetConditionalInfo(CondCode::EDGE2AND, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::PAD: {ta->SetConditionalInfo(CondCode::PAD, myTrueCases.size(),  myIDs); break;}
 		default:
 			assert(false);
 	}
@@ -215,7 +221,7 @@ void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta)
 		}
 	}
 
-	ta->SetConditionalInfo(CondCode::SWITCH, outPerCond, myID, nullptr);
+	ta->SetConditionalInfo(CondCode::SWITCH, outPerCond, {myID});
 	ta->nodeType(this, BasicType::VOID());
 }
 

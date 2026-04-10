@@ -97,13 +97,18 @@ std::string DTL::IfStmtNode::PrintAST(int &node_num, std::ofstream &outfile) {
 	std::string name = "IfStmtNode" + std::to_string(node_num);
 	std::string t = "IfStmtNode" + std::to_string(node_num) + "true";
 	std::string f = "IfStmtNode" + std::to_string(node_num) + "false";
-	auto idNodeString = myID->PrintAST(node_num, outfile);
+	std::string idNodeString = "";
+	for (auto& myID: myIDs)
+	{
+		idNodeString = myID->PrintAST(node_num, outfile);
 	
 
-	outfile << name << " -> " << t << ";\n";
-	outfile << name << " -> " << f << ";\n";
-	outfile << name << " -> " << idNodeString << ";\n";
+		outfile << name << " -> " << t << ";\n";
+		outfile << name << " -> " << f << ";\n";
+		outfile << name << " -> " << idNodeString << ";\n";
 
+	}
+		
 	for (auto& tc: myTrueCases)
 	{
 		auto trueNodeString = tc->PrintAST(node_num, outfile);

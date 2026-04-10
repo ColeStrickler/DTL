@@ -501,14 +501,14 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
             to_hex(static_cast<uint8_t>(CondInfo.conditionalCode)) + ");\n";
 
 
-        if (CondInfo.condIdx != nullptr)
-            write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG) + "," +        \
-                to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
 
-        if (CondInfo.condIdx2 != nullptr)
-            write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX2_REG) + "," +       \
-                to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx2->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
 
+        for (int i = 0; i < CondInfo.condIndices.size(); i++)
+        {
+            printf("cond %s --> %d\n", CondInfo.condIndices[i]->getName().c_str(), ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray);
+             write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG+i) + "," +        \
+                to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
+        }
         outfile << write;
         outfile.close();
 }
@@ -537,11 +537,11 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
 
     WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements));
     WRITE_UINT8(baseAddr+USE_CONDCODE_REG, static_cast<uint8_t>(CondInfo.conditionalCode));
-    if (CondInfo.condIdx != nullptr)
-        WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX_REG, static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
-    if (CondInfo.condIdx2 != nullptr)
-        WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX2_REG, static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIdx2->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
-
+        for (int i = 0; i < CondInfo.condIndices.size(); i++)
+        {
+            
+             WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX_REG+i, (ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
+        }
         
 }
 

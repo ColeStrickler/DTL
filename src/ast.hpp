@@ -382,13 +382,15 @@ namespace DTL
 		GTE,
 		EDGE,
 		EDGE2OR,
-		EDGE2AND
+		EDGE2AND,
+		PAD
 	};
 	class IfStmtNode : public StmtNode
 	{
 	public:
-		IfStmtNode(const Position *p, IDNode* id, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases, IFSTMTTYPE type, IDNode* id2 = nullptr)
-			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myID(id), myID2(id2), myType(type) { myTag = NODETAG::IFSTMTNODE; }
+
+		IfStmtNode(const Position *p,const std::vector<IDNode*>& ids, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases, IFSTMTTYPE type)
+			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myType(type), myIDs(ids) { myTag = NODETAG::IFSTMTNODE; }
 		// void unparse(std::ostream& out, int indent) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
 		virtual void typeAnalysis(TypeAnalysis *ta ) override;
@@ -409,8 +411,7 @@ namespace DTL
 		// virtual void to3AC(Procedure * prog) override;
 	private:
 		IFSTMTTYPE myType;
-		IDNode* myID;
-		IDNode* myID2;
+		std::vector<IDNode*> myIDs;
 		std::vector<DTL::StmtNode*> myTrueCases;
 		std::vector<DTL::StmtNode*> myFalseCases;
 	};

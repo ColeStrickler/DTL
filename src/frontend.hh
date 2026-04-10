@@ -462,6 +462,7 @@ namespace DTL {
       // ISEDGE
       // OR
       // AND
+      // PAD
       char dummy10[sizeof (DTL::Token *)];
 
       // type
@@ -552,7 +553,8 @@ namespace DTL {
     ISEVEN = 286,                  // ISEVEN
     ISEDGE = 287,                  // ISEDGE
     OR = 288,                      // OR
-    AND = 289                      // AND
+    AND = 289,                     // AND
+    PAD = 290                      // PAD
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -569,7 +571,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 35, ///< Number of tokens.
+        YYNTOKENS = 36, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -606,27 +608,28 @@ namespace DTL {
         S_ISEDGE = 32,                           // ISEDGE
         S_OR = 33,                               // OR
         S_AND = 34,                              // AND
-        S_YYACCEPT = 35,                         // $accept
-        S_program = 36,                          // program
-        S_constdecls = 37,                       // constdecls
-        S_constdecl = 38,                        // constdecl
-        S_intlist = 39,                          // intlist
-        S_forstatement = 40,                     // forstatement
-        S_outstatements = 41,                    // outstatements
-        S_innernest = 42,                        // innernest
-        S_ifstatement = 43,                      // ifstatement
-        S_switchstatement = 44,                  // switchstatement
-        S_casestatements = 45,                   // casestatements
-        S_casestatement = 46,                    // casestatement
-        S_outstatement = 47,                     // outstatement
-        S_type = 48,                             // type
-        S_expr = 49,                             // expr
-        S_unarystmt = 50,                        // unarystmt
-        S_term = 51,                             // term
-        S_factor = 52,                           // factor
-        S_intlit = 53,                           // intlit
-        S_loc = 54,                              // loc
-        S_id = 55                                // id
+        S_PAD = 35,                              // PAD
+        S_YYACCEPT = 36,                         // $accept
+        S_program = 37,                          // program
+        S_constdecls = 38,                       // constdecls
+        S_constdecl = 39,                        // constdecl
+        S_intlist = 40,                          // intlist
+        S_forstatement = 41,                     // forstatement
+        S_outstatements = 42,                    // outstatements
+        S_innernest = 43,                        // innernest
+        S_ifstatement = 44,                      // ifstatement
+        S_switchstatement = 45,                  // switchstatement
+        S_casestatements = 46,                   // casestatements
+        S_casestatement = 47,                    // casestatement
+        S_outstatement = 48,                     // outstatement
+        S_type = 49,                             // type
+        S_expr = 50,                             // expr
+        S_unarystmt = 51,                        // unarystmt
+        S_term = 52,                             // term
+        S_factor = 53,                           // factor
+        S_intlit = 54,                           // intlit
+        S_loc = 55,                              // loc
+        S_id = 56                                // id
       };
     };
 
@@ -733,6 +736,7 @@ namespace DTL {
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.move< DTL::Token * > (std::move (that.value));
         break;
 
@@ -1040,6 +1044,7 @@ switch (yykind)
       case symbol_kind::S_ISEDGE: // ISEDGE
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.template destroy< DTL::Token * > ();
         break;
 
@@ -1751,6 +1756,21 @@ switch (yykind)
         return symbol_type (token::AND, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_PAD (DTL::Token * v)
+      {
+        return symbol_type (token::PAD, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_PAD (const DTL::Token *& v)
+      {
+        return symbol_type (token::PAD, v);
+      }
+#endif
 
 
     class context
@@ -2079,7 +2099,7 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 234,     ///< Last index in yytable_.
+      yylast_ = 247,     ///< Last index in yytable_.
       yynnts_ = 21,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
@@ -2094,7 +2114,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 2098 "frontend.hh"
+#line 2118 "frontend.hh"
 
 
 
