@@ -25,23 +25,34 @@
 
 int lowering_main(DTL::ProgramNode* prog);
 
+
+const std::string SHADOW_ARRAY = "SHADOW_MEM_REGION";
+
+
 class ASTMLIRLowerer {
 public:
   ASTMLIRLowerer(mlir::MLIRContext &ctx, mlir::OpBuilder &b)
-      : context(ctx), builder(b) {}
+      : context(ctx), builder(b), m_TotalShadowRegionSize(1) {}
+
+
 
   void lowerDTLKernel(DTL::ProgramNode *block);
   void lowerConstDecl(DTL::DeclNode* decl_node);
   void lowerForLoop(DTL::ForStmtNode* for_stmt);
+
+
+  void allocMemRefArray();
+  int getMemRefArraySize(DTL::ForStmtNode* for_stmt);
+
   void lowerOutStatement(DTL::OutStmtNode* out_stmt);
-  void lowerExpr(DTL::ExpNode* exp);
+  mlir::Value lowerExpr(DTL::ExpNode* exp);
 
 
 
 
 
 private:
-
+  int m_TotalShadowRegionSize;
   mlir::MLIRContext &context;
   mlir::OpBuilder &builder;
   std::unordered_map<std::string, mlir::Value> symbolTable;

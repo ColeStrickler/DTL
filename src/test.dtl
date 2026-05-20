@@ -2,9 +2,17 @@
 
 for (int i = 0; i < 83690; i++)
 {
-    for (int j = 0; j < 1; j++)
+    for (int j = 0; j < 16; j++)
     {
-        out = i + j;
+        if (i >= j)
+        {
+            out = i + j;
+        }
+        else
+        {
+            out = i*j;
+        }
+        
     }
 }
                     

@@ -628,6 +628,8 @@ namespace DTL
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth() = 0;
 		// virtual Opd * flatten(Procedure * prog) override = 0;
+		ExpNode* GetLeftChild() const {return myExp1;}
+		ExpNode* GetRightChild() const {return myExp2;}
 	protected:
 		ExpNode *myExp1;
 		ExpNode *myExp2;

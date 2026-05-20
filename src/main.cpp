@@ -148,6 +148,7 @@ int main()
 
 
 	lowering_main(root);
+	return 0;
 
 
 

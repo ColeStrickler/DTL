@@ -67,9 +67,12 @@ int lowering_main(DTL::ProgramNode* prog)
 
     auto *entryBlock =
         function.addEntryBlock();
+        
 
     builder.setInsertionPointToStart(
         entryBlock);
+
+    auto oldIP = builder.saveInsertionPoint();
 
 
     //
@@ -80,6 +83,8 @@ int lowering_main(DTL::ProgramNode* prog)
         builder);
 
     lowerer.lowerDTLKernel(prog);
+    builder.restoreInsertionPoint(oldIP);
+
     //
     // 8. Finish function
     //
@@ -108,6 +113,8 @@ void ASTMLIRLowerer::lowerDTLKernel(DTL::ProgramNode *block)
             }
             case DTL::NODETAG::FORSTMTNODE:
             {
+                m_TotalShadowRegionSize = getMemRefArraySize(static_cast<DTL::ForStmtNode*>(stmt));
+                allocMemRefArray();
                 lowerForLoop(static_cast<DTL::ForStmtNode*>(stmt));
                 break;
             }
@@ -127,10 +134,10 @@ void ASTMLIRLowerer::lowerConstDecl(DTL::DeclNode *decl_node)
 
 void ASTMLIRLowerer::lowerForLoop(DTL::ForStmtNode *for_stmt)
 {
-    for_stmt->Collapse(nullptr); // ralloc* not actually used
 
     int initVal = for_stmt->GetRegInitValue();
     int maxVal = for_stmt->GetRegMaxValue();
+    m_TotalShadowRegionSize *= maxVal; // we just calculate this on the fly
 
     auto loc = builder.getUnknownLoc();
     auto init_op = builder.create<mlir::arith::ConstantIndexOp>(loc, initVal);
@@ -152,7 +159,7 @@ void ASTMLIRLowerer::lowerForLoop(DTL::ForStmtNode *for_stmt)
         {
             case DTL::NODETAG::OUTSTMTNODE: lowerOutStatement(static_cast<DTL::OutStmtNode*>(stmt)); break;
             case DTL::NODETAG::FORSTMTNODE: lowerForLoop(static_cast<DTL::ForStmtNode*>(stmt)); break;
-            case DTL::NODETAG::IFSTMTNODE:
+            case DTL::NODETAG::IFSTMTNODE:{printf("found ifstmt!\n");}
             case DTL::NODETAG::SWITCHSTMTNODE:
             {
                 printf("Conditionals to MLIR not yet implemented!\n");
@@ -170,12 +177,103 @@ void ASTMLIRLowerer::lowerForLoop(DTL::ForStmtNode *for_stmt)
 
 }
 
-void ASTMLIRLowerer::lowerOutStatement(DTL::OutStmtNode *out_stmt)
+void ASTMLIRLowerer::allocMemRefArray()
 {
-    lowerExpr(out_stmt->GetExp());
+    auto loc = builder.getUnknownLoc();
+    auto memrefType = mlir::MemRefType::get(
+        {m_TotalShadowRegionSize},             // shape (e.g. array size)
+        builder.getI32Type()                   // element type
+    );
+
+    auto alloc = builder.create<mlir::memref::AllocOp>(
+        loc,
+        memrefType
+    );
+
+    symbolTable[SHADOW_ARRAY] = alloc;
+    return;
 }
 
-void ASTMLIRLowerer::lowerExpr(DTL::ExpNode *exp)
+int ASTMLIRLowerer::getMemRefArraySize(DTL::ForStmtNode *for_stmt)
 {
-    printf("here\n");
+    for_stmt->Collapse(nullptr); // ralloc* not actually used
+    int ret = for_stmt->GetRegMaxValue();
+
+    auto children = for_stmt->GetStatements();
+    if (children.size() == 1 && children[0]->getTag() == DTL::NODETAG::FORSTMTNODE)
+        ret *= getMemRefArraySize(static_cast<DTL::ForStmtNode*>(children[0]));   
+
+    return ret;
+}
+
+void ASTMLIRLowerer::lowerOutStatement(DTL::OutStmtNode *out_stmt)
+{
+    auto loc = builder.getUnknownLoc();
+    mlir::Value exp_val = lowerExpr(out_stmt->GetExp());
+    mlir::Value arr = symbolTable[SHADOW_ARRAY];
+
+    auto load = builder.create<mlir::memref::LoadOp>(
+        loc,
+        arr,
+        exp_val
+    );
+    return;
+}
+
+mlir::Value ASTMLIRLowerer::lowerExpr(DTL::ExpNode *exp)
+{
+    auto loc = builder.getUnknownLoc();
+    switch(exp->getTag())
+    {
+        case DTL::NODETAG::ARRAYINDEXNODE:
+        {
+            printf("ASTMLIRLowerer::lowerExpr() ARRAYINDEXNODE not yet implemented.\n");
+            exit(-1);
+        }
+        case DTL::NODETAG::IDNODE:
+        {
+            auto idnode = static_cast<DTL::IDNode*>(exp);
+            auto it = symbolTable.find(idnode->getName());
+            assert(it != symbolTable.end());
+            mlir::Value id_val = it->second;
+            return id_val;
+        }
+        case DTL::NODETAG::INTLITNODE:
+        {
+            auto intnode = static_cast<DTL::IntLitNode*>(exp);
+            mlir::Value intVal = builder.create<mlir::arith::ConstantIndexOp>(loc, intnode->GetVal());
+            return intVal;
+        }
+        case DTL::NODETAG::MINUSNODE:
+        {
+            auto bnode = static_cast<DTL::BinaryExpNode*>(exp);
+            mlir::Value val1 = lowerExpr(bnode->GetLeftChild());
+            mlir::Value val2 = lowerExpr(bnode->GetRightChild());
+            mlir::Value yieldVal = builder.create<mlir::arith::SubIOp>(loc, val1, val2);
+            return yieldVal;
+            break;
+        }
+        case DTL::NODETAG::PLUSNODE:
+            {
+            auto bnode = static_cast<DTL::BinaryExpNode*>(exp);
+            mlir::Value val1 = lowerExpr(bnode->GetLeftChild());
+            mlir::Value val2 = lowerExpr(bnode->GetRightChild());
+            mlir::Value yieldVal = builder.create<mlir::arith::AddIOp>(loc, val1, val2);
+            return yieldVal;
+        }
+        case DTL::NODETAG::TIMESNODE:
+        {
+            auto bnode = static_cast<DTL::BinaryExpNode*>(exp);
+            mlir::Value val1 = lowerExpr(bnode->GetLeftChild());
+            mlir::Value val2 = lowerExpr(bnode->GetRightChild());
+            mlir::Value yieldVal = builder.create<mlir::arith::MulIOp>(loc, val1, val2);
+            return yieldVal;
+            break;
+        }
+        default:
+        {
+            printf("ASTMLIRLowerer::lowerExpr() encountered unexpected NODETAG %d.\n", exp->getTag());
+            exit(-1);
+        }
+    }
 }

@@ -12,7 +12,7 @@ ConstDeclNode12 -> IntTypeNode13;
 ConstDeclNode12 -> IDNode14_j;
 ConstDeclNode12 -> IntLitNode15_0;
 LessNode16 -> IDNode17_j;
-LessNode16 -> IntLitNode18_1;
+LessNode16 -> IntLitNode18_16;
 PostIncStmtNode19 -> IDNode20_j;
 ForStmtNode11 -> ConstDeclNode12;
 ForStmtNode11 -> LessNode16;
@@ -21,6 +21,8 @@ PlusNode22 -> IDNode23_i;
 PlusNode22 -> IDNode24_j;
 OutStmtNode21 -> PlusNode22;
 ForStmtNode11 -> OutStmtNode21;
+OutStmtNode25 -> IDNode26_i;
+ForStmtNode11 -> OutStmtNode25;
 ForStmtNode1 -> ForStmtNode11;
 ProgramNode -> ForStmtNode1;
 }
