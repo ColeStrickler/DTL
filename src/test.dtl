@@ -1,22 +1,13 @@
+int row_size = 128;
 
-int height = 128;
-int width = 128;
+int col_offsets = {0};
 
-for (int c_im = 0; c_im < 3; c_im++) {
-    for (int kh = 0; kh < 3; kh++) {
-        for (int kw = 0; kw <3; kw++) {
-            for (int h = 0; h < 128; h++) {
-                for (int w = 0; w < 128; w++) {
-                    if (pad? h kh w kw)
+
+                    for (int i = 0; i < 83690; i++)
                     {
-                        out = 0;
+                        for (int j = 0; j < 1; j++)
+                        {
+                            out = i*row_size + col_offsets[j];
+                        }
                     }
-                    else
-                    {
-                        out = c_im*(height*width) + (h + kh)*(width) + (w + kw);
-                    }
-                }
-            }
-        }
-    }
-}
+                    

@@ -90,7 +90,8 @@ int main()
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 9, 1, 2);
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 8, 1, 2);
 	//auto hwStat = new DTL::AGUHardwareStat(3, 4, 5, 6, 5, 4, 1, 1, 2);
-	auto hwStat = new DTL::AGUHardwareStat({ // (nAdd, nMult, nSUb, nPassThru) 
+
+  auto hwStat = new DTL::AGUHardwareStat({ // (nAdd, nMult, nSUb, nPassThru) 
 		{2,4,2,4},
 		{2,2,1,4},
 		{2,2,1,2},
@@ -98,7 +99,7 @@ int main()
 		{1,1,1,1},
 		{0,0,0,1},
 	}, 5, 6, 5, 2, 1, 2);
-  hwStat->nMaxConfigs = 1;
+  hwStat->nMaxConfigs = 8;
   
 	//hwStat->bytesCell = 2; // maxVarOutputs = 2
 
