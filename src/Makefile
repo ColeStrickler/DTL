@@ -15,9 +15,21 @@ YACC_H = frontend.hh
 CXX_RISCV = riscv64-unknown-linux-gnu-g++
 CXX_X86   = g++
 
+# LLVM INFRA --> Change this to your LLVM/MLIR install
+LLVM_DIR   := ~/Documents/llvm-project/llvm/include
+MLIR_DIR   := ~/Documents/llvm-project/mlir/include
+BUILD_DIR  := ~/Documents/llvm-project/build/include
+LLVM_LIB   := ~/Documents/llvm-project/build/lib
+
+
+
+
+
 CFLAGS_COMMON = -O2 -fno-math-errno -fstrict-aliasing -g -std=c++17 -I./
 CFLAGS_RISCV  = $(CFLAGS_COMMON)
 CFLAGS_X86    = $(CFLAGS_COMMON)
+CFLAGS_LLVM   = $(CFLAGS_COMMON) -I$(LLVM_DIR) -I$(MLIR_DIR) -I$(BUILD_DIR)
+
 
 # All C++ source files in current directory (excluding main.cpp)
 CPP_SRCS := $(filter-out main.cpp, $(wildcard *.cpp))

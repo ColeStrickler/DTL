@@ -119,6 +119,8 @@ namespace DTL
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
 
+		std::vector<StmtNode*>& GetStatements() {return myStatements;};
+
 	private:
 		std::vector<StmtNode *> myStatements;
 	};
@@ -331,6 +333,10 @@ namespace DTL
 		std::string GetInitVar() const {return static_cast<ConstDeclNode*>(myInit)->GetIDString();}
 		// virtual void to3AC(Procedure * prog) override;
 
+
+		int GetRegInitValue() const {return RegInitValue;}
+		int GetRegMaxValue() const {return RegMaxValue;}
+		std::vector<StmtNode*>& GetStatements() {return myStatements;}
 	private:
 		int RegInitValue;
 		int RegMaxValue;
@@ -363,6 +369,8 @@ namespace DTL
 
 		int maxDepth; // calling GetMaxDepth() will also set this value
 
+
+		ExpNode* GetExp() const {return myExp;}
 		// virtual void to3AC(Procedure * prog) override;
 	private:
 		ExpNode *myExp;
