@@ -16,25 +16,50 @@ CXX_RISCV = riscv64-unknown-linux-gnu-g++
 CXX_X86   = g++
 
 # LLVM INFRA --> Change this to your LLVM/MLIR install
-LLVM_DIR   := ~/Documents/llvm-project/llvm/include
-MLIR_DIR   := ~/Documents/llvm-project/mlir/include
-BUILD_DIR  := ~/Documents/llvm-project/build/include
-LLVM_LIB   := ~/Documents/llvm-project/build/lib
+LLVM_CONFIG   = llvm-config
+LLVM_CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags)
+LLVM_LDFLAGS  := $(shell $(LLVM_CONFIG) --ldflags)
+LLVM_SYSTEM   := $(shell $(LLVM_CONFIG) --system-libs)
+
+# Core LLVM libs
+LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs core support irreader)
+
+MLIR_LIB_DIR := /home/cole/Documents/llvm-project/build/lib
+
+MLIR_LIBS := -Wl,--start-group $(MLIR_LIB_DIR)/libMLIR*.a -Wl,--end-group
+# Final flags
+LLVM_INCLUDES := $(LLVM_CXXFLAGS)
+
+LLVM_LDFLAGS_FINAL := \
+    $(LLVM_LDFLAGS) \
+    -L/home/cole/Documents/llvm-project/build/lib
+
+LLVM_LIBS_FINAL := \
+    $(MLIR_LIBS) \
+    $(LLVM_LIBS) \
+    $(LLVM_SYSTEM)
 
 
+LLVM_DIR := /home/cole/Documents/llvm-project/llvm/include
+MLIR_DIR := /home/cole/Documents/llvm-project/mlir/include
+BUILD_DIR := /home/cole/Documents/llvm-project/build/include
+TOOLS_INC := /home/cole/Documents/llvm-project/build/tools/mlir/include
+LLVM_INCLUDES = -I$(LLVM_DIR) -I$(MLIR_DIR) -I$(BUILD_DIR) -I$(TOOLS_INC)
 
 
 
 CFLAGS_COMMON = -O2 -fno-math-errno -fstrict-aliasing -g -std=c++17 -I./
 CFLAGS_RISCV  = $(CFLAGS_COMMON)
-CFLAGS_X86    = $(CFLAGS_COMMON)
-CFLAGS_LLVM   = $(CFLAGS_COMMON) -I$(LLVM_DIR) -I$(MLIR_DIR) -I$(BUILD_DIR)
+CFLAGS_X86    = $(CFLAGS_COMMON) $(LLVM_INCLUDES)
+CFLAGS_LLVM   = $(CFLAGS_COMMON) 
 
 
 # All C++ source files in current directory (excluding main.cpp)
 CPP_SRCS := $(filter-out main.cpp, $(wildcard *.cpp))
 OPT_SRCS := $(wildcard optimizations/*.cpp)
+MLIR_SRCS := $(wildcard lowering/*.cpp)
 CPP_SRCS += $(OPT_SRCS)
+CPP_SRCS += $(MLIR_SRCS)
 
 # Object files for each build
 OBJ_RISCV = parser.o lexer.o $(CPP_SRCS:.cpp=.o)
@@ -75,7 +100,7 @@ lexer.o: lexer.yy.cc
 # === x86 dtlcompiler build (via "make dtlcompiler") =========
 # ============================================================
 dtlcompiler: $(OBJ_X86)
-	$(CXX_X86) $(CFLAGS_X86) -o $@ $(OBJ_X86)
+	$(CXX_X86) $(CFLAGS_X86) -o $@ $(OBJ_X86) $(LLVM_LDFLAGS_FINAL) $(LLVM_LIBS_FINAL)
 
 parser.x86.o: parser.cc frontend.hh
 	$(CXX_X86) $(CFLAGS_X86) -MMD -MP -c $< -o $@

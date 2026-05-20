@@ -9,7 +9,7 @@
 
 
 
-int lowering_main()
+int lowering_main(DTL::ProgramNode* prog)
 {
         //
     // 1. Register dialects
@@ -79,7 +79,7 @@ int lowering_main()
         context,
         builder);
 
-
+    lowerer.lowerDTLKernel(prog);
     //
     // 8. Finish function
     //
@@ -118,6 +118,11 @@ void ASTMLIRLowerer::lowerDTLKernel(DTL::ProgramNode *block)
             }
         }
     }
+}
+
+void ASTMLIRLowerer::lowerConstDecl(DTL::DeclNode *decl_node)
+{
+    printf("lowerConstDecl\n");
 }
 
 void ASTMLIRLowerer::lowerForLoop(DTL::ForStmtNode *for_stmt)

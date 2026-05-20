@@ -11,6 +11,7 @@
 #include "resource_alloc_pass.hpp"
 #include "dtl_api.hpp"
 #include "optimizations/optimization_passes.hpp"
+#include "lowering/lowering.hpp"
 
 
 static void writeTokenStream(const char * inPath, const char * outPath){
@@ -139,6 +140,19 @@ int main()
 
         return false;
     }
+
+
+
+
+
+
+
+	lowering_main(root);
+
+
+
+
+
 	root->PrintAST("out.ast");
 		
 	auto ra = DTL::ResourceAnalysis::build(root, hwStat);

@@ -17,9 +17,13 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/SmallVector.h"
 
+
+#include <unordered_map>
+
 // AST
 #include "ast.hpp"
 
+int lowering_main(DTL::ProgramNode* prog);
 
 class ASTMLIRLowerer {
 public:
@@ -40,7 +44,7 @@ private:
 
   mlir::MLIRContext &context;
   mlir::OpBuilder &builder;
-  llvm::DenseMap<std::string, mlir::Value> symbolTable;
+  std::unordered_map<std::string, mlir::Value> symbolTable;
 };
 
 
