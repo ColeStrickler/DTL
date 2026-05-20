@@ -23,6 +23,12 @@ int DTL::OutStmtNode::GetMaxDepth()
 }
 
 
+
+int DTL::SwitchStmtNode::GetMaxDepth() { assert(false); return 0; }// should already be transformed away
+
+int DTL::IfStmtNode::GetMaxDepth() { assert(false); return 0; } // should already be transformed away
+
+
 int DTL::IDNode::GetMaxDepth()
 {
     return 0;
@@ -44,6 +50,13 @@ int DTL::PostIncStmtNode::GetMaxDepth()
     assert(false); // should never hit since we only call beginning from OutStmtNode
     return 0;
 }
+
+
+int DTL::MinusNode::GetMaxDepth()
+{
+    return 1 + std::max(myExp1->GetMaxDepth(), myExp2->GetMaxDepth());
+}
+
 
 
 int DTL::PlusNode::GetMaxDepth()
@@ -130,16 +143,41 @@ ASTNode *DTL::PostIncStmtNode::TransformPass(int currDepth, int RequiredDepth, u
 
 ASTNode *DTL::ForStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags)
 {
-   int req_depth = 0;
+    int req_depth = 0;
     for (auto& stmt: myStatements)
         req_depth = std::max(req_depth, stmt->GetMaxDepth());
 
 
-
+restart:
     for (int i = 0; i < myStatements.size(); i++)
     {
-        auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
-        myStatements[i] = static_cast<StmtNode*>(stmt);
+        switch (myStatements[i]->getTag())
+        {
+            case NODETAG::IFSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 if statement
+                auto stmtvec = static_cast<DTL::IfStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            case NODETAG::SWITCHSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 switch statement
+                auto stmtvec = static_cast<DTL::SwitchStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            default:
+            {
+                auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
+                myStatements[i] = static_cast<StmtNode*>(stmt);
+            }
+        }
+
     }
 
     return this;
@@ -153,11 +191,36 @@ ASTNode *DTL::ForStmtNode::TransformPass(uint8_t opt_flags)
         req_depth = std::max(req_depth, stmt->GetMaxDepth());
 
 
-
+restart:
     for (int i = 0; i < myStatements.size(); i++)
     {
-        auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
-        myStatements[i] = static_cast<StmtNode*>(stmt);
+        switch (myStatements[i]->getTag())
+        {
+            case NODETAG::IFSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 if statement
+                auto stmtvec = static_cast<DTL::IfStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            case NODETAG::SWITCHSTMTNODE:
+            {
+                assert(myStatements.size() == 1); // for now only 1 switch statement
+                auto stmtvec = static_cast<DTL::SwitchStmtNode*>(myStatements[i])->CollapseStatements();
+                myStatements.clear();
+                myStatements.insert(myStatements.end(), stmtvec.begin(), stmtvec.end());
+                goto restart;
+                break;
+            }
+            default:
+            {
+                auto stmt = myStatements[i]->TransformPass(0, req_depth, opt_flags);
+                myStatements[i] = static_cast<StmtNode*>(stmt);
+            }
+        }
+
     }
 
     return this;
@@ -287,6 +350,39 @@ ASTNode *DTL::PlusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t 
     return this;
 }
 
+ASTNode *DTL::MinusNode::TransformPass(uint8_t opt_flags) 
+{
+    return this;
+}
+
+ASTNode *DTL::MinusNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) {
+    bool bDepth = currDepth + 1 < RequiredDepth;
+    bool n1 = myExp1->getTag() == NODETAG::INTLITNODE || myExp1->getTag() == NODETAG::IDNODE;
+    bool n2 = myExp2->getTag() == NODETAG::INTLITNODE || myExp2->getTag() == NODETAG::IDNODE;
+    bool greedy_times = (opt_flags & DTL_OPT_MULTGREEDY != 0);
+
+    // no need to push too many pass throughs too base level --> possibly do this optimization with times as well
+    // this effectively schedules as many ready operations as possible
+    if(n1 && n2 && bDepth && greedy_times)
+    {
+        auto ilnode = new IntLitNode(pos(), 0);
+        auto dummyPlus = new PlusNode(pos(), (ExpNode*)this->TransformPass(currDepth+1, RequiredDepth, opt_flags), ilnode);
+        dummyPlus->setPassThrough();
+        //printf("times dummy 0x%x\n", ilnode);
+        //myExp1 = nullptr;
+        //myExp2 = nullptr;
+        ;
+        return dummyPlus;
+    }
+
+
+
+    myExp1 = static_cast<ExpNode*>(myExp1->TransformPass(currDepth+1, RequiredDepth, opt_flags));
+    myExp2 = static_cast<ExpNode*>(myExp2->TransformPass(currDepth+1, RequiredDepth, opt_flags));
+    return this;
+}
+
+
 ASTNode *DTL::TimesNode::TransformPass(uint8_t opt_flags)
 {
     return this; // only worried about restructing branches from OutStmtNode
@@ -349,3 +445,26 @@ ASTNode *DTL::LessEqNode::TransformPass(int currDepth, int RequiredDepth, uint8_
 
 
 ASTNode *DTL::TypeNode::TransformPass(uint8_t opt_flags) { return this; }
+
+
+
+ASTNode *DTL::IfStmtNode::TransformPass(uint8_t opt_flags) { assert(false); return nullptr; }
+
+
+ASTNode *DTL::IfStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) 
+{
+    assert(false); return nullptr;
+}
+
+
+
+ASTNode *DTL::SwitchStmtNode::TransformPass(uint8_t opt_flags) {
+    assert(false); return nullptr;
+}
+
+
+
+ASTNode *DTL::SwitchStmtNode::TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) {
+    assert(false); return nullptr;
+}
+

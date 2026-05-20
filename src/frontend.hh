@@ -426,6 +426,8 @@ namespace DTL {
       char dummy8[sizeof (DTL::ProgramNode*)];
 
       // constdecl
+      // ifstatement
+      // switchstatement
       // outstatement
       // unarystmt
       char dummy9[sizeof (DTL::StmtNode*)];
@@ -435,6 +437,9 @@ namespace DTL {
       // INT
       // LCURLY
       // LESS
+      // LESSEQUAL
+      // GREATER
+      // GREATEREQUAL
       // LPAREN
       // CROSS
       // POSTINC
@@ -447,6 +452,17 @@ namespace DTL {
       // COMMA
       // LBRACKET
       // RBRACKET
+      // MINUS
+      // COLON
+      // CASE
+      // SWITCH
+      // IF
+      // ELSE
+      // ISEVEN
+      // ISEDGE
+      // OR
+      // AND
+      // PAD
       char dummy10[sizeof (DTL::Token *)];
 
       // type
@@ -454,10 +470,15 @@ namespace DTL {
 
       // constdecls
       // outstatements
+      // innernest
+      // casestatement
       char dummy12[sizeof (std::vector<DTL::StmtNode*>)];
 
       // intlist
       char dummy13[sizeof (std::vector<IntLitNode*>)];
+
+      // casestatements
+      char dummy14[sizeof (std::vector<std::vector<DTL::StmtNode*>>)];
     };
 
     /// The size of the largest semantic type.
@@ -508,18 +529,32 @@ namespace DTL {
     INTLITERAL = 262,              // INTLITERAL
     LCURLY = 263,                  // LCURLY
     LESS = 264,                    // LESS
-    LPAREN = 265,                  // LPAREN
-    CROSS = 266,                   // CROSS
-    POSTINC = 267,                 // POSTINC
-    RCURLY = 268,                  // RCURLY
-    RPAREN = 269,                  // RPAREN
-    SEMICOL = 270,                 // SEMICOL
-    STAR = 271,                    // STAR
-    FOR = 272,                     // FOR
-    OUT = 273,                     // OUT
-    COMMA = 274,                   // COMMA
-    LBRACKET = 275,                // LBRACKET
-    RBRACKET = 276                 // RBRACKET
+    LESSEQUAL = 265,               // LESSEQUAL
+    GREATER = 266,                 // GREATER
+    GREATEREQUAL = 267,            // GREATEREQUAL
+    LPAREN = 268,                  // LPAREN
+    CROSS = 269,                   // CROSS
+    POSTINC = 270,                 // POSTINC
+    RCURLY = 271,                  // RCURLY
+    RPAREN = 272,                  // RPAREN
+    SEMICOL = 273,                 // SEMICOL
+    STAR = 274,                    // STAR
+    FOR = 275,                     // FOR
+    OUT = 276,                     // OUT
+    COMMA = 277,                   // COMMA
+    LBRACKET = 278,                // LBRACKET
+    RBRACKET = 279,                // RBRACKET
+    MINUS = 280,                   // MINUS
+    COLON = 281,                   // COLON
+    CASE = 282,                    // CASE
+    SWITCH = 283,                  // SWITCH
+    IF = 284,                      // IF
+    ELSE = 285,                    // ELSE
+    ISEVEN = 286,                  // ISEVEN
+    ISEDGE = 287,                  // ISEDGE
+    OR = 288,                      // OR
+    AND = 289,                     // AND
+    PAD = 290                      // PAD
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -536,7 +571,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 22, ///< Number of tokens.
+        YYNTOKENS = 36, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -548,34 +583,53 @@ namespace DTL {
         S_INTLITERAL = 7,                        // INTLITERAL
         S_LCURLY = 8,                            // LCURLY
         S_LESS = 9,                              // LESS
-        S_LPAREN = 10,                           // LPAREN
-        S_CROSS = 11,                            // CROSS
-        S_POSTINC = 12,                          // POSTINC
-        S_RCURLY = 13,                           // RCURLY
-        S_RPAREN = 14,                           // RPAREN
-        S_SEMICOL = 15,                          // SEMICOL
-        S_STAR = 16,                             // STAR
-        S_FOR = 17,                              // FOR
-        S_OUT = 18,                              // OUT
-        S_COMMA = 19,                            // COMMA
-        S_LBRACKET = 20,                         // LBRACKET
-        S_RBRACKET = 21,                         // RBRACKET
-        S_YYACCEPT = 22,                         // $accept
-        S_program = 23,                          // program
-        S_constdecls = 24,                       // constdecls
-        S_constdecl = 25,                        // constdecl
-        S_intlist = 26,                          // intlist
-        S_forstatement = 27,                     // forstatement
-        S_outstatements = 28,                    // outstatements
-        S_outstatement = 29,                     // outstatement
-        S_type = 30,                             // type
-        S_expr = 31,                             // expr
-        S_unarystmt = 32,                        // unarystmt
-        S_term = 33,                             // term
-        S_factor = 34,                           // factor
-        S_intlit = 35,                           // intlit
-        S_loc = 36,                              // loc
-        S_id = 37                                // id
+        S_LESSEQUAL = 10,                        // LESSEQUAL
+        S_GREATER = 11,                          // GREATER
+        S_GREATEREQUAL = 12,                     // GREATEREQUAL
+        S_LPAREN = 13,                           // LPAREN
+        S_CROSS = 14,                            // CROSS
+        S_POSTINC = 15,                          // POSTINC
+        S_RCURLY = 16,                           // RCURLY
+        S_RPAREN = 17,                           // RPAREN
+        S_SEMICOL = 18,                          // SEMICOL
+        S_STAR = 19,                             // STAR
+        S_FOR = 20,                              // FOR
+        S_OUT = 21,                              // OUT
+        S_COMMA = 22,                            // COMMA
+        S_LBRACKET = 23,                         // LBRACKET
+        S_RBRACKET = 24,                         // RBRACKET
+        S_MINUS = 25,                            // MINUS
+        S_COLON = 26,                            // COLON
+        S_CASE = 27,                             // CASE
+        S_SWITCH = 28,                           // SWITCH
+        S_IF = 29,                               // IF
+        S_ELSE = 30,                             // ELSE
+        S_ISEVEN = 31,                           // ISEVEN
+        S_ISEDGE = 32,                           // ISEDGE
+        S_OR = 33,                               // OR
+        S_AND = 34,                              // AND
+        S_PAD = 35,                              // PAD
+        S_YYACCEPT = 36,                         // $accept
+        S_program = 37,                          // program
+        S_constdecls = 38,                       // constdecls
+        S_constdecl = 39,                        // constdecl
+        S_intlist = 40,                          // intlist
+        S_forstatement = 41,                     // forstatement
+        S_outstatements = 42,                    // outstatements
+        S_innernest = 43,                        // innernest
+        S_ifstatement = 44,                      // ifstatement
+        S_switchstatement = 45,                  // switchstatement
+        S_casestatements = 46,                   // casestatements
+        S_casestatement = 47,                    // casestatement
+        S_outstatement = 48,                     // outstatement
+        S_type = 49,                             // type
+        S_expr = 50,                             // expr
+        S_unarystmt = 51,                        // unarystmt
+        S_term = 52,                             // term
+        S_factor = 53,                           // factor
+        S_intlit = 54,                           // intlit
+        S_loc = 55,                              // loc
+        S_id = 56                                // id
       };
     };
 
@@ -645,6 +699,8 @@ namespace DTL {
         break;
 
       case symbol_kind::S_constdecl: // constdecl
+      case symbol_kind::S_ifstatement: // ifstatement
+      case symbol_kind::S_switchstatement: // switchstatement
       case symbol_kind::S_outstatement: // outstatement
       case symbol_kind::S_unarystmt: // unarystmt
         value.move< DTL::StmtNode* > (std::move (that.value));
@@ -655,6 +711,9 @@ namespace DTL {
       case symbol_kind::S_INT: // INT
       case symbol_kind::S_LCURLY: // LCURLY
       case symbol_kind::S_LESS: // LESS
+      case symbol_kind::S_LESSEQUAL: // LESSEQUAL
+      case symbol_kind::S_GREATER: // GREATER
+      case symbol_kind::S_GREATEREQUAL: // GREATEREQUAL
       case symbol_kind::S_LPAREN: // LPAREN
       case symbol_kind::S_CROSS: // CROSS
       case symbol_kind::S_POSTINC: // POSTINC
@@ -667,6 +726,17 @@ namespace DTL {
       case symbol_kind::S_COMMA: // COMMA
       case symbol_kind::S_LBRACKET: // LBRACKET
       case symbol_kind::S_RBRACKET: // RBRACKET
+      case symbol_kind::S_MINUS: // MINUS
+      case symbol_kind::S_COLON: // COLON
+      case symbol_kind::S_CASE: // CASE
+      case symbol_kind::S_SWITCH: // SWITCH
+      case symbol_kind::S_IF: // IF
+      case symbol_kind::S_ELSE: // ELSE
+      case symbol_kind::S_ISEVEN: // ISEVEN
+      case symbol_kind::S_ISEDGE: // ISEDGE
+      case symbol_kind::S_OR: // OR
+      case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.move< DTL::Token * > (std::move (that.value));
         break;
 
@@ -676,11 +746,17 @@ namespace DTL {
 
       case symbol_kind::S_constdecls: // constdecls
       case symbol_kind::S_outstatements: // outstatements
+      case symbol_kind::S_innernest: // innernest
+      case symbol_kind::S_casestatement: // casestatement
         value.move< std::vector<DTL::StmtNode*> > (std::move (that.value));
         break;
 
       case symbol_kind::S_intlist: // intlist
         value.move< std::vector<IntLitNode*> > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_casestatements: // casestatements
+        value.move< std::vector<std::vector<DTL::StmtNode*>> > (std::move (that.value));
         break;
 
       default:
@@ -860,6 +936,18 @@ namespace DTL {
       {}
 #endif
 
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::vector<std::vector<DTL::StmtNode*>>&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::vector<std::vector<DTL::StmtNode*>>& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
       /// Destroy the symbol.
       ~basic_symbol ()
       {
@@ -919,6 +1007,8 @@ switch (yykind)
         break;
 
       case symbol_kind::S_constdecl: // constdecl
+      case symbol_kind::S_ifstatement: // ifstatement
+      case symbol_kind::S_switchstatement: // switchstatement
       case symbol_kind::S_outstatement: // outstatement
       case symbol_kind::S_unarystmt: // unarystmt
         value.template destroy< DTL::StmtNode* > ();
@@ -929,6 +1019,9 @@ switch (yykind)
       case symbol_kind::S_INT: // INT
       case symbol_kind::S_LCURLY: // LCURLY
       case symbol_kind::S_LESS: // LESS
+      case symbol_kind::S_LESSEQUAL: // LESSEQUAL
+      case symbol_kind::S_GREATER: // GREATER
+      case symbol_kind::S_GREATEREQUAL: // GREATEREQUAL
       case symbol_kind::S_LPAREN: // LPAREN
       case symbol_kind::S_CROSS: // CROSS
       case symbol_kind::S_POSTINC: // POSTINC
@@ -941,6 +1034,17 @@ switch (yykind)
       case symbol_kind::S_COMMA: // COMMA
       case symbol_kind::S_LBRACKET: // LBRACKET
       case symbol_kind::S_RBRACKET: // RBRACKET
+      case symbol_kind::S_MINUS: // MINUS
+      case symbol_kind::S_COLON: // COLON
+      case symbol_kind::S_CASE: // CASE
+      case symbol_kind::S_SWITCH: // SWITCH
+      case symbol_kind::S_IF: // IF
+      case symbol_kind::S_ELSE: // ELSE
+      case symbol_kind::S_ISEVEN: // ISEVEN
+      case symbol_kind::S_ISEDGE: // ISEDGE
+      case symbol_kind::S_OR: // OR
+      case symbol_kind::S_AND: // AND
+      case symbol_kind::S_PAD: // PAD
         value.template destroy< DTL::Token * > ();
         break;
 
@@ -950,11 +1054,17 @@ switch (yykind)
 
       case symbol_kind::S_constdecls: // constdecls
       case symbol_kind::S_outstatements: // outstatements
+      case symbol_kind::S_innernest: // innernest
+      case symbol_kind::S_casestatement: // casestatement
         value.template destroy< std::vector<DTL::StmtNode*> > ();
         break;
 
       case symbol_kind::S_intlist: // intlist
         value.template destroy< std::vector<IntLitNode*> > ();
+        break;
+
+      case symbol_kind::S_casestatements: // casestatements
+        value.template destroy< std::vector<std::vector<DTL::StmtNode*>> > ();
         break;
 
       default:
@@ -1274,6 +1384,51 @@ switch (yykind)
 #if 201103L <= YY_CPLUSPLUS
       static
       symbol_type
+      make_LESSEQUAL (DTL::Token * v)
+      {
+        return symbol_type (token::LESSEQUAL, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_LESSEQUAL (const DTL::Token *& v)
+      {
+        return symbol_type (token::LESSEQUAL, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GREATER (DTL::Token * v)
+      {
+        return symbol_type (token::GREATER, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_GREATER (const DTL::Token *& v)
+      {
+        return symbol_type (token::GREATER, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_GREATEREQUAL (DTL::Token * v)
+      {
+        return symbol_type (token::GREATEREQUAL, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_GREATEREQUAL (const DTL::Token *& v)
+      {
+        return symbol_type (token::GREATEREQUAL, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
       make_LPAREN (DTL::Token * v)
       {
         return symbol_type (token::LPAREN, std::move (v));
@@ -1451,6 +1606,171 @@ switch (yykind)
         return symbol_type (token::RBRACKET, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_MINUS (DTL::Token * v)
+      {
+        return symbol_type (token::MINUS, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_MINUS (const DTL::Token *& v)
+      {
+        return symbol_type (token::MINUS, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_COLON (DTL::Token * v)
+      {
+        return symbol_type (token::COLON, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_COLON (const DTL::Token *& v)
+      {
+        return symbol_type (token::COLON, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_CASE (DTL::Token * v)
+      {
+        return symbol_type (token::CASE, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_CASE (const DTL::Token *& v)
+      {
+        return symbol_type (token::CASE, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_SWITCH (DTL::Token * v)
+      {
+        return symbol_type (token::SWITCH, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_SWITCH (const DTL::Token *& v)
+      {
+        return symbol_type (token::SWITCH, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_IF (DTL::Token * v)
+      {
+        return symbol_type (token::IF, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_IF (const DTL::Token *& v)
+      {
+        return symbol_type (token::IF, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ELSE (DTL::Token * v)
+      {
+        return symbol_type (token::ELSE, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_ELSE (const DTL::Token *& v)
+      {
+        return symbol_type (token::ELSE, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ISEVEN (DTL::Token * v)
+      {
+        return symbol_type (token::ISEVEN, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_ISEVEN (const DTL::Token *& v)
+      {
+        return symbol_type (token::ISEVEN, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ISEDGE (DTL::Token * v)
+      {
+        return symbol_type (token::ISEDGE, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_ISEDGE (const DTL::Token *& v)
+      {
+        return symbol_type (token::ISEDGE, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_OR (DTL::Token * v)
+      {
+        return symbol_type (token::OR, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_OR (const DTL::Token *& v)
+      {
+        return symbol_type (token::OR, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_AND (DTL::Token * v)
+      {
+        return symbol_type (token::AND, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_AND (const DTL::Token *& v)
+      {
+        return symbol_type (token::AND, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_PAD (DTL::Token * v)
+      {
+        return symbol_type (token::PAD, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_PAD (const DTL::Token *& v)
+      {
+        return symbol_type (token::PAD, v);
+      }
+#endif
 
 
     class context
@@ -1479,7 +1799,7 @@ switch (yykind)
 
 
     /// Stored state numbers (used for stacks).
-    typedef signed char state_type;
+    typedef unsigned char state_type;
 
     /// The arguments of the error message.
     int yy_syntax_error_arguments_ (const context& yyctx,
@@ -1519,7 +1839,7 @@ switch (yykind)
     // Tables.
     // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
     // STATE-NUM.
-    static const signed char yypact_[];
+    static const short yypact_[];
 
     // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
     // Performed when YYTABLE does not specify something else to do.  Zero
@@ -1527,7 +1847,7 @@ switch (yykind)
     static const signed char yydefact_[];
 
     // YYPGOTO[NTERM-NUM].
-    static const signed char yypgoto_[];
+    static const short yypgoto_[];
 
     // YYDEFGOTO[NTERM-NUM].
     static const signed char yydefgoto_[];
@@ -1535,9 +1855,9 @@ switch (yykind)
     // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
     // positive, shift that token.  If negative, reduce the rule whose
     // number is the opposite.  If YYTABLE_NINF, syntax error.
-    static const signed char yytable_[];
+    static const unsigned char yytable_[];
 
-    static const signed char yycheck_[];
+    static const short yycheck_[];
 
     // YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
     // state STATE-NUM.
@@ -1552,7 +1872,7 @@ switch (yykind)
 
 #if YYDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-    static const unsigned char yyrline_[];
+    static const short yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
     virtual void yy_reduce_print_ (int r) const;
     /// Print the state stack on the debug stream.
@@ -1779,8 +2099,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 78,     ///< Last index in yytable_.
-      yynnts_ = 16,  ///< Number of nonterminal symbols.
+      yylast_ = 247,     ///< Last index in yytable_.
+      yynnts_ = 21,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
 
@@ -1794,7 +2114,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 1798 "frontend.hh"
+#line 2118 "frontend.hh"
 
 
 

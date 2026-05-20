@@ -118,6 +118,36 @@ ASTNode *DTL::ForStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *eli
     return this;
 }
 
+
+ASTNode * DTL::IfStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {
+    assert(pass == 0); // pass 1 shouldn't reach here
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
+    assert(myTrueCases.size() == myFalseCases.size());
+    for (int i = 0; i < myTrueCases.size(); i++)
+    {
+        myTrueCases[i]->DeadCodeElimination(elim_pass, pass);
+        myFalseCases[i]->DeadCodeElimination(elim_pass, pass);
+    }
+    return this;
+}
+ 
+
+ASTNode *DTL::SwitchStmtNode::DeadCodeElimination( DTL::DeadCodeEliminationPass *elim_pass, int pass) 
+{
+    int caseSize = myCases[0].size();
+
+    for (auto& c: myCases)
+    {
+        for (int i = 0; i < c.size(); i++)
+        {
+            c[i] = (StmtNode*)c[i]->DeadCodeElimination(elim_pass, pass);
+        }
+    }
+
+    return this;
+}
+
+
 ASTNode *DTL::OutStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {
     assert(pass == 0); // pass 1 shouldn't reach here
     myExp->DeadCodeElimination(elim_pass, pass);

@@ -75,9 +75,23 @@ void DTL::ForStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 
 void DTL::OutStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 {
+    int depth = myExp->GetMaxDepth();
+    ra->currOutStmtDepth = depth;
     myExp->resourceAnalysis(ra, layer);
     ra->UseNewOutStatement(); // alloc outstatement at the end so we can zero index the resources
 }
+
+
+void DTL::IfStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer) 
+{
+    assert(false); // should already be collapsed in transform pass
+}
+
+void DTL::SwitchStmtNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+    assert(false); // should already be collapsed in transform pass
+}
+
 
 
 /*
@@ -112,6 +126,18 @@ void DTL::PlusNode::resourceAnalysis(ResourceAnalysis* ra, int layer)
 
     if (!isPassThrough())
         myExp2->resourceAnalysis(ra, layer+1);
+}
+
+
+void DTL::MinusNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+	ra->UseNewSubUnitLayer(layer);
+
+
+
+
+    myExp1->resourceAnalysis(ra, layer+1);
+    myExp2->resourceAnalysis(ra, layer+1);
 }
 
 

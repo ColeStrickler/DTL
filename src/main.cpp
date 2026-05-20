@@ -88,9 +88,20 @@ std::string FileToString(const std::string& file_)
 int main()
 {
 	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 9, 1, 2);
-	auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 1, 1, 2);
-	
-	hwStat->bytesCell = 2; // maxVarOutputs = 2
+	//auto hwStat = new DTL::AGUHardwareStat(4, 4, 5, 6, 5, 4, 8, 1, 2);
+	//auto hwStat = new DTL::AGUHardwareStat(3, 4, 5, 6, 5, 4, 1, 1, 2);
+
+  auto hwStat = new DTL::AGUHardwareStat({ // (nAdd, nMult, nSUb, nPassThru) 
+		{2,4,2,4},
+		{2,2,1,4},
+		{2,2,1,2},
+		{1,1,1,2},
+		{1,1,1,1},
+		{0,0,0,1},
+	}, 5, 6, 5, 2, 1, 2);
+  hwStat->nMaxConfigs = 8;
+  
+	//hwStat->bytesCell = 2; // maxVarOutputs = 2
 
     std::istringstream input(FileToString("./test.dtl"));
     DTL::ProgramNode * root = nullptr;
@@ -111,6 +122,8 @@ int main()
 
         return false;
     }
+	auto condInfo = ta->GetConditionalInfo();
+
 	root->PrintAST("out_untransform.ast");
 	printf("here\n");
 	
@@ -139,7 +152,7 @@ int main()
 		
 	std::cout << rsrc_string << "\n";
 
-    auto ralloc = DTL::ResourceAllocation::build(ra, hwStat);
+    auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
     if (ralloc == nullptr)
     {
         //ERR("ResourceAllocation failed\n");

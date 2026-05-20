@@ -152,6 +152,81 @@ void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
 	return;	
 }
 
+void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta ) 
+{
+
+	for (auto& myID: myIDs)
+	{
+		myID->typeAnalysis(ta);
+		auto type = ta->nodeType(myID);
+		if (!type->isInt())
+		{
+			ta->errAssignOpr(this->pos());
+			ta->nodeType(this, ErrorType::produce());
+			return;
+		}
+	}
+
+
+	if (myTrueCases.size() != myFalseCases.size())
+	{
+		ta->errUnbalancedCond(this->pos());
+		ta->nodeType(this, ErrorType::produce());
+		return;
+	}
+	printf("oUTpERcOND %d\n", myTrueCases.size());
+
+
+
+	switch (myType)
+	{
+		case IFSTMTTYPE::IS_EVEN: {ta->SetConditionalInfo(CondCode::ISEVEN, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::LT: 	{ta->SetConditionalInfo(CondCode::LT, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::LTE: 	{ta->SetConditionalInfo(CondCode::LTE, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::GT: 	{ta->SetConditionalInfo(CondCode::GT, myTrueCases.size(), myIDs);break;}
+		case IFSTMTTYPE::GTE: 	{ta->SetConditionalInfo(CondCode::GTE, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::EDGE:	{ta->SetConditionalInfo(CondCode::EDGE, myTrueCases.size(), myIDs); break;}
+		case IFSTMTTYPE::EDGE2OR: {ta->SetConditionalInfo(CondCode::EDGE2OR, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::EDGE2AND: {ta->SetConditionalInfo(CondCode::EDGE2AND, myTrueCases.size(),  myIDs); break;}
+		case IFSTMTTYPE::PAD: {ta->SetConditionalInfo(CondCode::PAD, myTrueCases.size(),  myIDs); break;}
+		default:
+			assert(false);
+	}
+	
+	ta->nodeType(this, BasicType::VOID());
+}
+
+
+
+void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta) 
+{
+	myID->typeAnalysis(ta);
+	auto type = ta->nodeType(myID);
+	if (!type->isInt())
+	{
+		ta->errAssignOpr(this->pos());
+		ta->nodeType(this, ErrorType::produce());
+		return;
+	}
+	int outPerCond = myCases[0].size();
+
+
+	for (auto& c: myCases)
+	{
+		if (c.size() != outPerCond) // we need this so hardware can use it properly. particularly L^(-1)
+		{
+			ta->errUnbalancedCond(this->pos());
+			ta->nodeType(this, ErrorType::produce());
+			return;
+		}
+	}
+
+	ta->SetConditionalInfo(CondCode::SWITCH, outPerCond, {myID});
+	ta->nodeType(this, BasicType::VOID());
+}
+
+
+
 void DTL::OutStmtNode::typeAnalysis(TypeAnalysis *ta)
 {
 	myExp->typeAnalysis(ta);
@@ -252,6 +327,35 @@ void DTL::PlusNode::typeAnalysis(TypeAnalysis* ta)
 	if (ok)
 		ta->nodeType(this, BasicType::INT());
 }
+
+void DTL::MinusNode::typeAnalysis(TypeAnalysis *ta)
+{
+	myExp1->typeAnalysis(ta);
+	myExp2->typeAnalysis(ta);
+
+	auto t1 = ta->nodeType(myExp1);
+	auto t2 = ta->nodeType(myExp2);
+
+	bool ok = true;
+	
+	if (!t1->isInt())
+	{
+		ta->errMathOpd(myExp1->pos());
+		ta->nodeType(this, ErrorType::produce());
+		ok = false;
+	}
+
+	if (!t2->isInt())
+	{
+		ta->errMathOpd(myExp2->pos());
+		ta->nodeType(this, ErrorType::produce());
+		ok = false;
+	}
+
+	if (ok)
+		ta->nodeType(this, BasicType::INT());
+}
+
 
 
 void DTL::TimesNode::typeAnalysis(TypeAnalysis* ta)

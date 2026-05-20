@@ -169,6 +169,8 @@ bool DTL::API::Compile(const std::string &dtlProgram)
         ERR("Failed Type Analysis");
         return false;
     }
+    auto condInfo = ta->GetConditionalInfo();
+
     root = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(root, DTL::DTL_OPTLEVEL::OPTMAX));
     root = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(root, DTL_OPT_MAX));
     if (root == nullptr)
@@ -185,7 +187,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     }
     ra->GetResources()->GetNeededResourceStats();
 
-    ralloc = DTL::ResourceAllocation::build(ra, hwStat);
+    ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
     if (ralloc == nullptr)
     {
         ERR("ResourceAllocation failed\n");
@@ -215,8 +217,10 @@ void DTL::API::ResetConfig(int config)
 {
     uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(config) + AGU_CONFIG_RST;
     WRITE_BOOL(config_n_rst, true);
-    while(READ_BOOL(config_n_rst) != true){};
-    WRITE_BOOL(config_n_rst, false);
+    while(READ_BOOL(config_n_rst) != true){
+        
+    };
+   // WRITE_BOOL(config_n_rst, false);
 }
 
 void DTL::API::DebugPrintAllocator() 
@@ -277,6 +281,7 @@ DTL::AGUHardwareStat *DTL::API::GetHWStat() { return hwStat; }
 
 uint64_t DTL::API::AllocateRegion(uint64_t size) 
 {
+    printf("size 0x%llx vs realBackingSize 0x%llx\n", size, m_RealBackingSize);
   assert(size <= m_RealBackingSize);
   uint64_t received_size = next_power_of_two(size);
   printf("AllocRegion() receivedSize %lld\n", received_size);
@@ -294,6 +299,10 @@ int DTL::API::AllocateConfig() {
             m_ConfigBitmap |= (1ULL << i);
             printf("Allocating config %d\n", i);
             assert(i < hwStat->nMaxConfigs);
+
+            uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(i) + AGU_CONFIG_RST;
+            WRITE_BOOL(config_n_rst, false);
+
             return i;
         }
     }
@@ -588,8 +597,6 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
     /*
         Will want to make this per config ?
-
-
 
         We need the DTU not the AGU config, because the DTU config is where the address indirection comes from
     */

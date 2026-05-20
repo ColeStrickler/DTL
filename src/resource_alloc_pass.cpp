@@ -86,7 +86,8 @@ void DTL::ForStmtNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 
 void DTL::OutStmtNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 {
-    ralloc->NewOutStatement();
+    int usedLayers = myExp->GetMaxDepth();
+    ralloc->NewOutStatement(usedLayers);
     myExp->resourceAllocation(ralloc, 0);
     ralloc->SetAnswer(myExp);
 }
@@ -164,6 +165,19 @@ void DTL::PlusNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 
 }
 
+
+void DTL::MinusNode::resourceAllocation(ResourceAllocation *ralloc, int depth) 
+{
+    auto outstmt = ralloc->GetCurrentOutStatement();
+    assert(outstmt != nullptr);
+
+    myExp1->resourceAllocation(ralloc, depth+1);
+    myExp2->resourceAllocation(ralloc, depth+1);
+    ralloc->SubUnit(depth, this, myExp1, myExp2);
+
+}
+
+
 void DTL::TimesNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 {
     auto outstmt = ralloc->GetCurrentOutStatement();
@@ -200,6 +214,22 @@ int DTL::ForStmtNode::Collapse(ResourceAllocation* ralloc)
     return 0;
 }
 
+int DTL::MinusNode::Collapse(ResourceAllocation *ralloc)
+{
+    assert(false);
+    return 0;
+}
+
+void DTL::IfStmtNode::resourceAllocation(ResourceAllocation *ralloc, int depth) 
+{
+    assert(false);  // should already be collapsed in transform pass
+}
+
+void DTL::SwitchStmtNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
+{
+    assert(false);  // should already be collapsed in transform pass
+}
+
 
 int DTL::ConstDeclNode::Collapse(ResourceAllocation* ralloc)
 {
@@ -215,7 +245,6 @@ int DTL::ConstArrayDeclNode::Collapse(ResourceAllocation *ralloc)
 }
 
 
-
 int DTL::IntLitNode::Collapse(ResourceAllocation* ralloc)
 {
     return myNum;
@@ -228,6 +257,18 @@ int DTL::OutStmtNode::Collapse(ResourceAllocation* ralloc)
     return 0;
 }
 
+int DTL::IfStmtNode::Collapse(ResourceAllocation *ralloc)
+{
+    assert(false); // should never hit
+    return 0;
+}
+
+
+int DTL::SwitchStmtNode::Collapse(ResourceAllocation *ralloc)
+{
+    assert(false); // should never hit
+    return 0;
+}
 
 int DTL::PlusNode::Collapse(ResourceAllocation* ralloc)
 {
@@ -411,6 +452,19 @@ std::string DTL::AddUnit::toString(int layer)
     return label + "\n" + inA + "\n" + inB + "\n";
 }
 
+
+std::string DTL::SubUnit::toString(int layer) {
+    std::string node_name = "\"" + std::to_string(layer) + "_" + std::to_string(RegAssignment) + "\"";
+    std::string label = node_name  + "[label=\"Sub" +  std::to_string(layer) + "_" + std::to_string(RegAssignment)+ "\"];";
+
+
+    std::string inA = "\"" + std::to_string(layer-1) + "_" + std::to_string(InputA) + "\"" + " -> " + node_name + ";";
+    std::string inB = "\"" + std::to_string(layer-1) + "_" + std::to_string(InputB) + "\"" + " -> " + node_name + ";";
+
+    return label + "\n" + inA + "\n" + inB + "\n";
+}
+
+
 void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, uint64_t baseaddr)
 {
         std::ofstream outfile(file, std::ios::app);  // open for writing
@@ -440,8 +494,21 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
 
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUTSTMT_REG) + "," + to_hex(static_cast<uint8_t>(OutStatementRouting.size())) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_FORLOOP_REG) + "," + to_hex(static_cast<uint8_t>(loopRegisters.size())) +   ");\n";
+                
+        write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUT_PERCOND_REG) + ","  +         \
+            to_hex(static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements))+");\n";;
+        write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDCODE_REG) + "," +               \
+            to_hex(static_cast<uint8_t>(CondInfo.conditionalCode)) + ");\n";
 
-        
+
+
+
+        for (int i = 0; i < CondInfo.condIndices.size(); i++)
+        {
+            printf("cond %s --> %d\n", CondInfo.condIndices[i]->getName().c_str(), ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray);
+             write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG+i) + "," +        \
+                to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
+        }
         outfile << write;
         outfile.close();
 }
@@ -465,6 +532,17 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
 
     WRITE_UINT8(baseAddr+USED_OUTSTMT_REG, static_cast<uint8_t>(OutStatementRouting.size()));
     WRITE_UINT8(baseAddr+USED_FORLOOP_REG, static_cast<uint8_t>(loopRegisters.size()));
+
+
+
+    WRITE_UINT8(baseAddr+USED_OUT_PERCOND_REG, static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ? CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements));
+    WRITE_UINT8(baseAddr+USE_CONDCODE_REG, static_cast<uint8_t>(CondInfo.conditionalCode));
+        for (int i = 0; i < CondInfo.condIndices.size(); i++)
+        {
+            
+             WRITE_UINT8(baseAddr+USE_CONDITIONAL_IDX_REG+i, (ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray));
+        }
+        
 }
 
 void DTL::ResourceAllocation::DoControlWrites(uint64_t baseaddr)
@@ -548,7 +626,7 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   addr = to_hex(addr_);
   write_value = to_hex(static_cast<uint64_t>(reg.increment_condition));
   ret += "\nWRITE_UINT32(" + addr + "," + write_value + ");\n";
-
+    printf("LoopRegsOffset 0x%x\n", GetLoopRegsOffset());
   /*
       We now can write the magic values
       These are implemented backwards in the hardware to facilitate the unroll
@@ -574,3 +652,5 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   ret += "\nWRITE_UINT8(" + addr + "," + write_value + ");\n";
   return ret;
 }
+
+

@@ -46,6 +46,37 @@ ASTNode *DTL::ForStmtNode::ConstFold(ConstantFoldPass* foldpass)
     return this;
 }
 
+
+ASTNode *DTL::IfStmtNode::ConstFold(DTL::ConstantFoldPass *foldpass) 
+{
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
+    assert(myTrueCases.size() == myFalseCases.size());
+    for (int i = 0; i < myTrueCases.size(); i++)
+    {
+        myTrueCases[i] = (StmtNode*)myTrueCases[i]->ConstFold(foldpass);
+        myFalseCases[i] = (StmtNode*)myFalseCases[i]->ConstFold(foldpass);
+    }
+    return this;
+}
+
+ASTNode *DTL::SwitchStmtNode::ConstFold(DTL::ConstantFoldPass *foldpass) 
+{
+    
+    int caseSize = myCases[0].size();
+
+
+    for (auto& c: myCases)
+    {
+        for (int i = 0; i < c.size(); i++)
+        {
+            c[i] = (StmtNode*)c[i]->ConstFold(foldpass);
+        }
+    }
+
+    return this;
+}
+
+
 ASTNode *DTL::OutStmtNode::ConstFold(ConstantFoldPass* foldpass) 
 {
     auto exp = myExp->ConstFold(foldpass);
@@ -161,6 +192,43 @@ ASTNode *DTL::TimesNode::ConstFold(ConstantFoldPass* foldpass)
     myExp2 = (ExpNode*)right;
     return this;
 }
+
+ASTNode *DTL::MinusNode::ConstFold(DTL::ConstantFoldPass *foldpass) {
+    auto left = myExp1->ConstFold(foldpass);
+    auto right = myExp2->ConstFold(foldpass);
+
+  
+    if (left->getTag() == DTL::NODETAG::INTLITNODE && right->getTag() == DTL::NODETAG::INTLITNODE)
+    {
+        foldpass->IncFoldCount();
+        auto lnode = reinterpret_cast<IntLitNode*>(left);
+        auto rnode = reinterpret_cast<IntLitNode*>(right);
+
+        auto lnode_val = lnode->GetVal();
+        auto rnode_val = rnode->GetVal();
+
+        /*
+            These nodes have no children, and one of them can be reused
+        */
+       lnode->myNum = lnode_val - rnode_val;
+       delete rnode; // delete rnode
+       /*
+            Delete current node
+
+            This should be fine and completely safe since we are only working on references internal to the AST
+       */
+       delete this; 
+       return lnode;     
+    }
+
+
+
+    myExp1 = (ExpNode*)left;
+    myExp2 = (ExpNode*)right;
+    return this;
+}
+
+
 
 
 ASTNode *DTL::LessNode::ConstFold(ConstantFoldPass* foldpass) 

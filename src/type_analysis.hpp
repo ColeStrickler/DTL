@@ -9,9 +9,36 @@
 
 namespace DTL {
 
+class IDNode;
 class ASTNode;
 class ProgramNode;
 class NameAnalysis;
+
+
+
+enum CondCode : unsigned char
+{
+	DISABLE,
+	ISEVEN,
+	SWITCH,
+	LT,
+	GT,
+	LTE,
+	GTE,
+	EDGE,
+	EDGE2OR,
+	EDGE2AND,
+	PAD
+};
+
+
+struct ConditionalInfo
+{
+	CondCode conditionalCode;
+	int outStatementsPerCond;
+	std::vector<IDNode*> condIndices;
+};
+
 
 // An instance of this class will be passed over the entire
 // AST. Rather than attaching types to each node, the
@@ -26,6 +53,9 @@ private:
 	// can only be created via the static build function
 	TypeAnalysis(){
 		hasError = false;
+		conditionalCode = CondCode::DISABLE;
+		outStatementsPerCond = 0;
+		condIndices = {};
 	}
 
 public:
@@ -208,12 +238,34 @@ public:
 		Report::fatal(pos,
 			"Non-lval assignment");
 	}
+
+
+	void errUnbalancedCond(const Position * pos){
+		hasError = true;
+		Report::fatal(pos,
+			"Unbalanced conditional statement.");
+	}
 private:
 	std::unordered_map<const ASTNode *, const DataType *> nodeToType;
 	//const FnType * currentFnType;
 	bool hasError;
 public:
 	ProgramNode * ast;
+
+	void SetConditionalInfo(CondCode code, int outPerCond, std::vector<IDNode*> cond_indices)
+	{
+		conditionalCode = code;
+		outStatementsPerCond = outPerCond; 
+		condIndices = cond_indices;
+	}
+
+
+	ConditionalInfo GetConditionalInfo() const {
+		return {conditionalCode, outStatementsPerCond, condIndices};
+	}
+	int outStatementsPerCond;
+	CondCode conditionalCode;
+	std::vector<IDNode*> condIndices;
 };
 
 }

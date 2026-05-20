@@ -92,6 +92,64 @@ std::string DTL::ForStmtNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
+std::string DTL::IfStmtNode::PrintAST(int &node_num, std::ofstream &outfile) {
+  	node_num++;
+	std::string name = "IfStmtNode" + std::to_string(node_num);
+	std::string t = "IfStmtNode" + std::to_string(node_num) + "true";
+	std::string f = "IfStmtNode" + std::to_string(node_num) + "false";
+	std::string idNodeString = "";
+	for (auto& myID: myIDs)
+	{
+		idNodeString = myID->PrintAST(node_num, outfile);
+	
+
+		outfile << name << " -> " << t << ";\n";
+		outfile << name << " -> " << f << ";\n";
+		outfile << name << " -> " << idNodeString << ";\n";
+
+	}
+		
+	for (auto& tc: myTrueCases)
+	{
+		auto trueNodeString = tc->PrintAST(node_num, outfile);
+		outfile << t << " -> " << tc << ";\n";
+	}
+	
+	for (auto& fc: myTrueCases)
+	{
+		auto falseNodeString = fc->PrintAST(node_num, outfile);
+		outfile << f << " -> " << fc << ";\n";
+	}
+
+
+	return name;
+}
+
+
+
+std::string DTL::SwitchStmtNode::PrintAST(int &node_num, std::ofstream &outfile) {
+    node_num++;
+	std::string name = "IfStmtNode" + std::to_string(node_num);
+
+	int case_num = 0;
+	for (int i = 0; i < myCases.size(); i++)
+	{
+		std::string caseName = name + "_Case" + std::to_string(case_num++);
+		outfile << name << " -> " << caseName << ";\n";
+		for (auto& o: myCases[i])
+		{
+			std::string o_name = o->PrintAST(node_num, outfile);
+			outfile <<  caseName << " -> " << o_name << ";\n";
+		}
+	}
+
+
+	return name;
+}
+
+
+
+
 
 std::string DTL::OutStmtNode::PrintAST(int &node_num, std::ofstream &outfile)
 {
@@ -145,6 +203,19 @@ std::string DTL::PlusNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
+std::string DTL::MinusNode::PrintAST(int &node_num, std::ofstream &outfile) {
+	node_num++;
+	std::string name = "Minus" + std::to_string(node_num);
+	auto exp1NodeString = myExp1->PrintAST(node_num, outfile);
+	auto exp2NodeString = myExp2->PrintAST(node_num, outfile);
+	outfile << name << " -> " << exp1NodeString << ";\n";
+	outfile << name << " -> " << exp2NodeString << ";\n";
+	
+	return name;
+}
+
+
+
 std::string DTL::LessEqNode::PrintAST(int &node_num, std::ofstream &outfile)
 {
 	node_num++;
@@ -157,3 +228,27 @@ std::string DTL::LessEqNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
+std::vector<DTL::StmtNode *> DTL::IfStmtNode::CollapseStatements() 
+{
+	std::vector<DTL::StmtNode*> ret;
+
+	for (auto& t: myTrueCases)
+		ret.push_back(t);
+
+	for (auto& t: myFalseCases)
+		ret.push_back(t);
+
+	return ret;
+}
+
+
+
+std::vector<DTL::StmtNode *> DTL::SwitchStmtNode::CollapseStatements() {
+  std::vector<DTL::StmtNode *> ret;
+
+  for (auto &c : myCases) {
+    ret.insert(ret.end(), c.begin(), c.end());
+  }
+
+  return ret;
+}

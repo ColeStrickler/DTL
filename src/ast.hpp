@@ -59,7 +59,10 @@ namespace DTL
 		OUTSTMTNODE,
 		CONSTARRAYDECLNODE,
 		ARRAYINDEXNODE,
-		UNARYEXPNODE
+		UNARYEXPNODE,
+		MINUSNODE,
+		IFSTMTNODE,
+		SWITCHSTMTNODE
 	};
 
 	class ASTNode
@@ -365,6 +368,89 @@ namespace DTL
 		ExpNode *myExp;
 	};
 
+
+
+	/*
+		Currently this is only an IsEven? conditional
+	*/
+
+	enum class IFSTMTTYPE{
+		IS_EVEN,
+		LT,
+		LTE,
+		GT,
+		GTE,
+		EDGE,
+		EDGE2OR,
+		EDGE2AND,
+		PAD
+	};
+	class IfStmtNode : public StmtNode
+	{
+	public:
+
+		IfStmtNode(const Position *p,const std::vector<IDNode*>& ids, std::vector<DTL::StmtNode*> trueCases, std::vector<DTL::StmtNode*> falseCases, IFSTMTTYPE type)
+			: StmtNode(p), myTrueCases(trueCases), myFalseCases(falseCases), myType(type), myIDs(ids) { myTag = NODETAG::IFSTMTNODE; }
+		// void unparse(std::ostream& out, int indent) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void typeAnalysis(TypeAnalysis *ta ) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int GetMaxDepth();
+
+		int maxDepth; // calling GetMaxDepth() will also set this value
+		std::vector<DTL::StmtNode*> CollapseStatements();
+		// virtual void to3AC(Procedure * prog) override;
+	private:
+		IFSTMTTYPE myType;
+		std::vector<IDNode*> myIDs;
+		std::vector<DTL::StmtNode*> myTrueCases;
+		std::vector<DTL::StmtNode*> myFalseCases;
+	};
+
+
+
+	class SwitchStmtNode : public StmtNode
+	{
+	public:
+		SwitchStmtNode(const Position *p, IDNode* id, std::vector<std::vector<DTL::StmtNode*>> cases)
+			: StmtNode(p), myCases(cases), myID(id) { myTag = NODETAG::SWITCHSTMTNODE; }
+		// void unparse(std::ostream& out, int indent) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int GetMaxDepth();
+		std::vector<DTL::StmtNode*> CollapseStatements();
+		int maxDepth; // calling GetMaxDepth() will also set this value
+
+		// virtual void to3AC(Procedure * prog) override;
+	private:
+		IDNode* myID;
+		std::vector<std::vector<DTL::StmtNode*>> myCases;
+	};
+
+
+
+
+
+
 	class TypeNode : public ASTNode
 	{
 	public:
@@ -584,6 +670,28 @@ namespace DTL
 		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
 		// virtual Opd * flatten(Procedure * prog) override;
 	};
+
+	class MinusNode : public BinaryExpNode
+	{
+	public:
+		MinusNode(const Position *p, ExpNode *e1In, ExpNode *e2In)
+			: BinaryExpNode(p, e1In, e2In) { myTag = NODETAG::MINUSNODE; }
+		// virtual bool nameAnalysis(SymbolTable * symTab) override;
+		// void unparse(std::ostream& out, int indent) override;
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int Collapse(ResourceAllocation *ralloc);
+		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) override;
+		virtual int GetMaxDepth();
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		// virtual Opd * flatten(Procedure * prog) override;
+	};
+
+
+
 
 	class LessNode : public BinaryExpNode
 	{

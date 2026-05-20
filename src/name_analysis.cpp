@@ -110,6 +110,50 @@ bool OutStmtNode::nameAnalysis(SymbolTable* symTab)
     return myExp->nameAnalysis(symTab);
 }
 
+
+bool DTL::IfStmtNode::nameAnalysis(SymbolTable *symTab) 
+{ 
+    for (auto& myID: myIDs)
+    {
+        if(!myID->nameAnalysis(symTab))
+            return false;
+    }
+
+
+    for (auto& s: myTrueCases)
+    {
+        if (!s->nameAnalysis(symTab))
+            return false;
+    }
+
+    for (auto& s: myFalseCases)
+    {
+        if (!s->nameAnalysis(symTab))
+            return false;
+    }
+
+    return true;
+}
+
+bool DTL::SwitchStmtNode::nameAnalysis(SymbolTable *symTab)
+{
+    if (!myID->nameAnalysis(symTab))
+        return false;
+
+
+    for (auto& c: myCases)
+    {
+        for (auto& s: c)
+        {
+            if (!s->nameAnalysis(symTab))
+                return false;
+        }
+    }
+    return true;
+}
+
+
+
 bool DTL::ArrayIndexNode::nameAnalysis(SymbolTable *symTab)
 {
     
@@ -129,6 +173,7 @@ bool IDNode::nameAnalysis(SymbolTable* symTab)
 	this->attachSymbol(sym);
 	return true;
 }
+
 
 
 

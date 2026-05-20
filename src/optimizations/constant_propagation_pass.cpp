@@ -68,6 +68,34 @@ ASTNode *DTL::ForStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_p
 
 }
 
+ASTNode * DTL::IfStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass) {
+    printf("%d,%d\n", myTrueCases.size(), myFalseCases.size());
+    assert(myTrueCases.size() == myFalseCases.size());
+    for (int i = 0; i < myTrueCases.size(); i++)
+    {
+        myTrueCases[i] = (StmtNode*)myTrueCases[i]->ConstPropagation(prop_pass);
+        myFalseCases[i] = (StmtNode*)myFalseCases[i]->ConstPropagation(prop_pass);
+    }
+    return this;
+} 
+
+ASTNode *DTL::SwitchStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass)
+{
+    
+    int caseSize = myCases[0].size();
+
+    for (auto& c: myCases)
+    {
+        for (int i = 0; i < c.size(); i++)
+        {
+            c[i] = (StmtNode*)c[i]->ConstPropagation(prop_pass);
+        }
+    }
+
+    return this;
+}
+
+
 
 ASTNode* DTL::OutStmtNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass) {
     auto exp = myExp->ConstPropagation(prop_pass);

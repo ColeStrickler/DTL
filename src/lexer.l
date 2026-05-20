@@ -47,6 +47,9 @@ int 	    { return makeBareToken(TokenKind::INT); }
 "+"         { return makeBareToken(TokenKind::CROSS); }
 "{"	    { return makeBareToken(TokenKind::LCURLY); }
 "<"	    { return makeBareToken(TokenKind::LESS); }
+"<="	    { return makeBareToken(TokenKind::LESSEQUAL); }
+">"	    { return makeBareToken(TokenKind::GREATER); }
+">="	    { return makeBareToken(TokenKind::GREATEREQUAL); }
 "("	    { return makeBareToken(TokenKind::LPAREN); }
 "++"	    { return makeBareToken(TokenKind::POSTINC); }
 "}"	    { return makeBareToken(TokenKind::RCURLY); }
@@ -56,6 +59,18 @@ int 	    { return makeBareToken(TokenKind::INT); }
 ","		{ return makeBareToken(TokenKind::COMMA); }
 "["		{ return makeBareToken(TokenKind::LBRACKET); }
 "]"		{ return makeBareToken(TokenKind::RBRACKET); }
+"-"		{ return makeBareToken(TokenKind::MINUS); }
+":"		{ return makeBareToken(TokenKind::COLON); }
+"||"		{ return makeBareToken(TokenKind::OR); }
+"&&"		{ return makeBareToken(TokenKind::AND); }
+"if"	{ return makeBareToken(TokenKind::IF); }
+"isEven?"	{ return makeBareToken(TokenKind::ISEVEN); }
+"isEdge?"	{ return makeBareToken(TokenKind::ISEDGE); }
+"switch"	{ return makeBareToken(TokenKind::SWITCH); }
+"case"	{ return makeBareToken(TokenKind::CASE); }
+"else"	{ return makeBareToken(TokenKind::ELSE); }
+"pad?" { return makeBareToken(TokenKind::PAD); }
+
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)* { 
 			  Position * pos = new Position(lineNum, colNum,

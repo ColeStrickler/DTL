@@ -40,6 +40,7 @@
    #include <iostream>
    #include <cstdlib>
    #include <fstream>
+   #include <algorithm>
 
    // Our code for interoperation between scanner/parser
    #include "scanner.hpp"
@@ -63,6 +64,9 @@
 %token	<DTL::IntLitToken *> INTLITERAL
 %token	<DTL::Token *>       LCURLY
 %token	<DTL::Token *>       LESS
+%token	<DTL::Token *>       LESSEQUAL
+%token	<DTL::Token *>       GREATER
+%token	<DTL::Token *>       GREATEREQUAL
 %token	<DTL::Token *>       LPAREN
 %token	<DTL::Token *>       CROSS
 %token	<DTL::Token *>       POSTINC
@@ -75,10 +79,23 @@
 %token  <DTL::Token *>       COMMA
 %token  <DTL::Token *>       LBRACKET
 %token  <DTL::Token *>       RBRACKET
+%token  <DTL::Token *>       MINUS
+%token  <DTL::Token *>       COLON
+%token  <DTL::Token *>       CASE
+%token  <DTL::Token *>       SWITCH
+%token  <DTL::Token *>       IF
+%token  <DTL::Token *>       ELSE
+%token  <DTL::Token *>       ISEVEN
+%token  <DTL::Token *>       ISEDGE
+%token  <DTL::Token *>       OR
+%token  <DTL::Token *>       AND
+%token  <DTL::Token *>       PAD
 
 %left LESS
 %left CROSS
-%left STAR 
+%left MINUS
+%left STAR
+
 
 %type <DTL::ProgramNode*> program
 %type <DTL::ExpNode*> factor
@@ -90,7 +107,12 @@
 %type <DTL::ForStmtNode*> forstatement
 %type <std::vector<DTL::StmtNode*>> constdecls
 %type <std::vector<DTL::StmtNode*>> outstatements
+%type <std::vector<DTL::StmtNode*>> innernest
 %type <DTL::StmtNode*> outstatement
+%type <DTL::StmtNode*> ifstatement
+%type <DTL::StmtNode*> switchstatement
+%type <std::vector<std::vector<DTL::StmtNode*>>> casestatements
+%type <std::vector<DTL::StmtNode*>> casestatement
 %type <DTL::LocNode*> loc
 %type <DTL::TypeNode*> type
 %type <DTL::IntLitNode*> intlit
@@ -160,7 +182,7 @@ forstatement: FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY forstate
             $$ = new ForStmtNode(p, $3, $4, $6, stmt_vec);
 
         }
-        | FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY outstatements RCURLY
+        | FOR LPAREN constdecl expr SEMICOL unarystmt RPAREN LCURLY innernest RCURLY
         {
             const Position * p = new Position($1->pos(), $10->pos());
             $$ = new ForStmtNode(p, $3, $4, $6, $9);
@@ -176,6 +198,89 @@ outstatements : outstatements outstatement
             stmt_vec.push_back($1);
             $$ = stmt_vec;
         }
+
+
+innernest: outstatements
+    {
+        $$ = $1;
+    }
+    | ifstatement
+    {
+        $$ = {$1};
+    }
+    | switchstatement
+    {
+        $$ = {$1};
+    }
+
+ifstatement : IF LPAREN ISEVEN id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4}, $7, $11, IFSTMTTYPE::IS_EVEN);
+        }
+        | IF LPAREN id LESS id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::LT);
+        }
+        | IF LPAREN id LESSEQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::LTE);
+        }
+        | IF LPAREN id GREATER id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::GT);
+        }
+        | IF LPAREN id GREATEREQUAL id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$3,$5}, $8, $12, IFSTMTTYPE::GTE);
+        }
+        | IF LPAREN ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4}, $7,  $11, IFSTMTTYPE::EDGE);
+        }
+        | IF LPAREN ISEDGE id OR ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4,$7}, $10, $14, IFSTMTTYPE::EDGE2OR);
+        }
+        | IF LPAREN ISEDGE id AND ISEDGE id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            $$ = new IfStmtNode($1->pos(), std::vector<IDNode*>{$4,$7}, $10, $14, IFSTMTTYPE::EDGE2AND);
+        }
+        | IF LPAREN PAD id id id id RPAREN LCURLY outstatements RCURLY ELSE LCURLY outstatements RCURLY
+        {
+            std::vector<IDNode*> ids = {$4, $5, $6, $7};
+            $$ = new IfStmtNode($1->pos(), ids, $10, $14, IFSTMTTYPE::PAD);
+        }
+
+
+
+
+
+
+
+switchstatement : SWITCH LPAREN id RPAREN LCURLY casestatements RCURLY
+        {
+            std::reverse($6.begin(), $6.end());
+            $$ = new SwitchStmtNode($1->pos(), $3, $6);
+        }
+
+
+casestatements : casestatement casestatements
+    {    
+        $2.push_back($1);
+        $$ = $2;
+    }
+    | casestatement
+    {
+        $$ = {$1};
+    }
+
+casestatement : CASE COLON outstatements
+    {
+        $$ = $3;
+    }
+
+
+
 outstatement : OUT ASSIGN expr SEMICOL
             {
                 const Position * p = new Position($1->pos(), $4->pos());
@@ -200,6 +305,11 @@ expr: expr CROSS expr
     {
         const Position * p = new Position($1->pos(), $3->pos());
         $$ = new TimesNode(p, $1, $3);
+    }
+    | expr MINUS expr
+    {
+        const Position * p = new Position($1->pos(), $3->pos());
+        $$ = new MinusNode(p, $1, $3);
     }
     | term
     {
