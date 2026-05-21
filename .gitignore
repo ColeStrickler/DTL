@@ -44,3 +44,7 @@
 .ast
 .out
 .png
+
+# vscode
+.vscode/
+src/dtlcompiler
