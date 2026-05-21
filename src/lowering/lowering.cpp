@@ -33,7 +33,8 @@ int lowering_main(DTL::ProgramNode* prog)
         mlir::arith::ArithDialect,
         mlir::scf::SCFDialect,
         mlir::func::FuncDialect,
-        mlir::memref::MemRefDialect>();
+        mlir::memref::MemRefDialect,
+        mlir::affine::AffineDialect>();
 
 
     //
@@ -140,10 +141,10 @@ void ASTMLIRLowerer::lowerForLoop(DTL::ForStmtNode *for_stmt)
     m_TotalShadowRegionSize *= maxVal; // we just calculate this on the fly
 
     auto loc = builder.getUnknownLoc();
-    auto init_op = builder.create<mlir::arith::ConstantIndexOp>(loc, initVal);
-    auto bounds_op = builder.create<mlir::arith::ConstantIndexOp>(loc, maxVal);
-    auto step_op = builder.create<mlir::arith::ConstantIndexOp>(loc, 1); // forced to 1
-    auto loop = builder.create<mlir::scf::ForOp>(loc, init_op, bounds_op, step_op);
+    //auto init_op = builder.create<mlir::arith::ConstantIndexOp>(loc, initVal);
+    //auto bounds_op = builder.create<mlir::arith::ConstantIndexOp>(loc, maxVal);
+    //auto step_op = builder.create<mlir::arith::ConstantIndexOp>(loc, 1); // forced to 1
+    auto loop = builder.create<mlir::affine::AffineForOp>(loc, initVal, maxVal, 1);
     mlir::Value iv = loop.getInductionVar();
 
     symbolTable[for_stmt->GetInitVar()] = iv;
@@ -214,8 +215,8 @@ void ASTMLIRLowerer::lowerOutStatement(DTL::OutStmtNode *out_stmt)
 
     auto load = builder.create<mlir::memref::LoadOp>(
         loc,
-        arr,
-        exp_val
+        arr,           // memref
+        exp_val        // index (can be one or more values)
     );
     return;
 }
