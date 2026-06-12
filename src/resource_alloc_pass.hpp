@@ -65,6 +65,7 @@ struct LoopReg
 
 struct ConstArray
 {
+    std::string id;
     std::vector<uint32_t> values; 
     int reg_num;
     int index_reg_num;
@@ -178,7 +179,7 @@ public:
     
     void DoConstRegWrite(uint64_t baseAddress, int constRegNum, int constRegvalue, uint32_t byte_width)
     {
-       printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
+      // printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
         uint64_t addr_ = baseAddress + GetConstantRegsOffset(byte_width) + constRegNum*byte_width;
          
         assert(byte_width == 4);
@@ -228,7 +229,7 @@ public:
 
     void DoConstArrayWrite(uint64_t baseAddress, ConstArray& constArray, uint32_t byte_width)
     {
-         printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
+      //   printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
         uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width);// + constArray.reg_num*(nConstArraySize*byte_width + 8);
 
         std::string ret;
@@ -238,14 +239,14 @@ public:
             assert(i < nConstArraySize);
             uint64_t write_value_ = cval;
             uint64_t addr = baddr + i*byte_width;
-            printf("ConstArrayWrite 0x%llx, 0x%x\n", addr, write_value_);
+         //   printf("ConstArrayWrite 0x%llx, 0x%x\n", addr, write_value_);
             WRITE_UINT32(addr, write_value_);
         }
 
 
         // we need the index reg number
         uint64_t addr = baddr + byte_width*nConstArraySize;
-        printf("ConstArray IndexSel 0x%x value %d\n", GetConstArrayOffset(byte_width)+byte_width*nConstArraySize, constArray.index_reg_num);
+        //printf("ConstArray IndexSel 0x%x value %d\n", GetConstArrayOffset(byte_width)+byte_width*nConstArraySize, constArray.index_reg_num);
         WRITE_UINT8(addr, static_cast<uint8_t>(constArray.index_reg_num));
     }
 
@@ -271,7 +272,7 @@ public:
         int cell_index = VarOutMap[hash_str];
         
         uint64_t offset = layerByteOffset + cellByteOffset + outStatementOffset + cell_index;
-        printf("DoControlWrite() 0x%x +0x%x\n", baseAddress, offset);
+        //printf("DoControlWrite() 0x%x +0x%x\n", baseAddress, offset);
         VarOutMap[hash_str]++;
         //std::cout << hash_str << "\n";
         
@@ -284,7 +285,7 @@ public:
 
         unsigned char write_val = static_cast<unsigned char>(outRegNumber);
         write_val |= (routingIdx << idxBit);
-        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
+      //  printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
 
         WRITE_UINT8(baseAddress+offset, write_val);
     }
@@ -601,7 +602,7 @@ public:
     {
         int mapping = usedPassThrough;
         usedPassThrough++;
-        printf("maxPassThrough %d, usedPassThrough %d\n", maxPassThrough, usedPassThrough);
+      //  printf("maxPassThrough %d, usedPassThrough %d\n", maxPassThrough, usedPassThrough);
         assert(usedPassThrough <= maxPassThrough);
         MapFuncUnit(unit);
         return maxAddUnit + maxMultUnit + mapping;
@@ -714,7 +715,7 @@ public:
             int LayerMultUnitCount      = hwStat->GetLayerMultUnits(UsedLayers-1-layer);
             int LayerPassThruCount      = hwStat->GetLayerPassThruUnits(UsedLayers-1-layer);
             int LayerSubUnitCount       = hwStat->GetLayerSubUnits(UsedLayers-1-layer);
-            printf("%d Layer %d,%d,%d,%d\n", layer, LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
+          //  printf("%d Layer %d,%d,%d,%d\n", layer, LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
             LayerRouting.insert(std::make_pair(layer, new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount)));
         }
 
@@ -808,7 +809,7 @@ public:
             LayerRouting[m] = new AGULayer(LayerAddUnitCount, LayerMultUnitCount, LayerPassThruCount, LayerSubUnitCount);
             int input = unit;
             unit = RequestPassThrough(m, unit);
-            printf("layer %d, passthru %d--->%d\n", m, input, unit);
+           // printf("layer %d, passthru %d--->%d\n", m, input, unit);
             m++;
         }
         
@@ -911,9 +912,9 @@ public:
         loopRegisters.push_back({initVal, maxVal, (rsrcAnalysis->GetResources()->ForLoopsNeeded - 1 - (int)loopRegisters.size())});
     }
 
-    void AllocConstArray(int constArrayNum, std::vector<uint32_t> values)
+    void AllocConstArray(std::string id, int constArrayNum, std::vector<uint32_t> values)
     {
-        constArrayRegisters.push_back({values, constArrayNum, 0});
+        constArrayRegisters.push_back({id, values, constArrayNum, 0});
     }
 
 
@@ -987,7 +988,7 @@ public:
         */
         assert(a != -1 && b != -1);
         int unit = currentOut->RequestMultUnit(layer, a, b);
-        printf("[mult layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+       // printf("[mult layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
         currentOut->MapNodeFuncUnit(multNode, unit, layer);
     }
 
@@ -1006,7 +1007,7 @@ public:
         assert(a != -1 && b != -1);
 
         int unit = currentOut->RequestSubUnit(layer, a, b);
-        printf("[sub layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+       // printf("[sub layer%d], a %d::%d, b %d::%d --> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
         currentOut->MapNodeFuncUnit(minusNode, unit, layer);
     }
 
@@ -1025,7 +1026,7 @@ public:
         */
         assert(a != -1 && b != -1);
         int unit = currentOut->RequestAddUnit(layer, a, b);
-        printf("[add layer%d], a %d::%d, b %d::%d ---> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
+       // printf("[add layer%d], a %d::%d, b %d::%d ---> %d\n", layer, a, fromA->myTag, b, fromB->myTag, unit);
         currentOut->MapNodeFuncUnit(plusNode, unit, layer);
     }
 
@@ -1039,7 +1040,7 @@ public:
         */
         assert(a != -1);
         int unit = currentOut->RequestPassThrough(layer, a);
-        printf("[passthru layer%d] passthru a %d::%d ---> %d\n", layer, a, fromA->myTag, unit);
+       // printf("[passthru layer%d] passthru a %d::%d ---> %d\n", layer, a, fromA->myTag, unit);
         currentOut->MapNodeFuncUnit(plusNode, unit, layer);
     }
 
@@ -1062,27 +1063,8 @@ public:
     void PrintControlWrites(const std::string& file, uint64_t baseaddr);
     
 
-    bool BindArrayIndex(int arrayReg, int ForLoopReg)
-    {
-        auto it = ArrayIndexBinding.find(arrayReg);
-        if (it != ArrayIndexBinding.end() && it->second != ForLoopReg)
-        {
-            printf("Error. Array is already bound to index.\n");
-            return false;
-        }
-
-
-        // we set the value here. We should be fine with for loop here
-        // as the number of constArrayRegisters will be 1-2
-        for (auto& constArray: constArrayRegisters)
-        {
-            if (constArray.reg_num == arrayReg)
-                constArray.index_reg_num = ForLoopReg;
-        }
-
-        ArrayIndexBinding[arrayReg] = ForLoopReg;
-        return true;
-    }
+    bool BindArrayIndex(int arrayReg, int ForLoopReg);
+    
 
 
 

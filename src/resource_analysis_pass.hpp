@@ -230,6 +230,10 @@ public:
 	}
 	int constReg = 0;
 	int constRegArray = 0;
+
+
+
+
 	void RegMapConst(std::string node_name, ResourceAnalysis* ra, int value)
 	{
 		//printf("Regmappingconst %d\n", value);

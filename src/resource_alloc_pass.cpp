@@ -46,7 +46,9 @@ void DTL::ConstArrayDeclNode::resourceAllocation(ResourceAllocation* ralloc, int
         values.push_back(static_cast<uint32_t>(val->GetVal()));
     }
 
-    ralloc->AllocConstArray(ralloc->rsrcAnalysis->GetConstArrayRegMapping(myID->getName()), values);
+
+    
+    ralloc->AllocConstArray(myID->getName(), ralloc->rsrcAnalysis->GetConstArrayRegMapping(myID->getName()), values);
 
     return; 
 
@@ -112,9 +114,11 @@ void DTL::ArrayIndexNode::resourceAllocation(ResourceAllocation *ralloc, int dep
     int array_id = ra->GetConstArrayRegRoutingIndex(myID->getName());
     assert(array_id != -1);
 
-    //printf("array_id %d\n", array_id);
+    printf("array_id %d index_id %d\n", array_id, index_id);
+
+    auto hwStat = ralloc->hwStat;
     // Ensure we do not already have a binding
-    assert(ralloc->BindArrayIndex(array_id, index_id));
+    assert(ralloc->BindArrayIndex(array_id - hwStat->nConstRegisters, index_id - hwStat->nConstRegisters - hwStat->nConstArray));
 
    // printf("ArrayIndexNode depth %d\n");
     out->MapNodeFuncUnit(this, array_id, depth);
@@ -581,6 +585,32 @@ void DTL::ResourceAllocation::PrintControlWrites(const std::string &file,uint64_
     */
 }
 
+bool DTL::ResourceAllocation::BindArrayIndex(int arrayReg, int ForLoopReg) {
+        auto it = ArrayIndexBinding.find(arrayReg);
+        if (it != ArrayIndexBinding.end() && it->second != ForLoopReg)
+        {
+            printf("Error. Array is already bound to index.\n");
+            return false;
+        }
+
+
+        // we set the value here. We should be fine with for loop here
+        // as the number of constArrayRegisters will be 1-2
+        for (auto& constArray: constArrayRegisters)
+        {
+            printf("ConstArray %d attempt bind %d to %d\n",constArray.reg_num, arrayReg, ForLoopReg);
+            if (constArray.reg_num == arrayReg)
+            {
+                constArray.index_reg_num = ForLoopReg;
+
+                
+            }
+        }
+
+        ArrayIndexBinding[arrayReg] = ForLoopReg;
+        return true;
+    }
+
 void DTL::AGUHardwareStat::DoForLoopWrite(uint64_t baseAddress, LoopReg &reg, uint32_t byte_width) 
 {
     uint64_t addr = baseAddress + GetLoopRegsOffset() + reg.reg_num*byte_width;
@@ -599,7 +629,7 @@ void DTL::AGUHardwareStat::DoForLoopWrite(uint64_t baseAddress, LoopReg &reg, ui
         These are implemented backwards in the hardware to facilitate the unroll unit
     */
     addr = baseAddress + GetMagicRegsOffset(byte_width) + ((nForLoopRegisters-1-reg.reg_num)*bytesMagic);
-    printf("Start MagicReg 0x%x, 0x%x\n", GetMagicRegsOffset(byte_width), GetMagicRegsOffset(byte_width) + ((nForLoopRegisters-1-reg.reg_num)*bytesMagic));
+   // printf("Start MagicReg 0x%x, 0x%x\n", GetMagicRegsOffset(byte_width), GetMagicRegsOffset(byte_width) + ((nForLoopRegisters-1-reg.reg_num)*bytesMagic));
     auto write_value64 = static_cast<uint64_t>(reg.hwDivMagic.M);
     WRITE_UINT64(addr, write_value64);
     addr += 0x8;
@@ -626,7 +656,7 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   addr = to_hex(addr_);
   write_value = to_hex(static_cast<uint64_t>(reg.increment_condition));
   ret += "\nWRITE_UINT32(" + addr + "," + write_value + ");\n";
-    printf("LoopRegsOffset 0x%x\n", GetLoopRegsOffset());
+  //  printf("LoopRegsOffset 0x%x\n", GetLoopRegsOffset());
   /*
       We now can write the magic values
       These are implemented backwards in the hardware to facilitate the unroll

@@ -205,7 +205,7 @@ bool DTL::API::ProgramHardware(EphemeralRegion* region)
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
 
-    printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
+   // printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
     ralloc->DoInitStateRegisters(config_n_base);
    // printf("FinishInitStateRegs\n");
     ralloc->DoControlWrites(config_n_base);
@@ -235,7 +235,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         We allocate a region offset from the buddy allocator
     */
     uint64_t region_offset = AllocateRegion(size_needed);
-    printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
+   // printf("DTL::API::AllocEphemeralRegion() region_offset 0x%x\n", region_offset);
     if (region_offset == BUDDY_ALLOC_FAILURE)
     {
         SetError(BUDDY_ALLOC_FAILURE);
@@ -248,7 +248,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         SetError(CONFIG_ALLOC_FAILURE);
         return nullptr;
     }
-   printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
+  // printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
     auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat);
     return ephemeral;
 }
@@ -281,10 +281,10 @@ DTL::AGUHardwareStat *DTL::API::GetHWStat() { return hwStat; }
 
 uint64_t DTL::API::AllocateRegion(uint64_t size) 
 {
-    printf("size 0x%llx vs realBackingSize 0x%llx\n", size, m_RealBackingSize);
+   // printf("size 0x%llx vs realBackingSize 0x%llx\n", size, m_RealBackingSize);
   assert(size <= m_RealBackingSize);
   uint64_t received_size = next_power_of_two(size);
-  printf("AllocRegion() receivedSize %lld\n", received_size);
+ // printf("AllocRegion() receivedSize %lld\n", received_size);
   return m_BuddyAllocator->AllocNode(size);
 }
 
@@ -297,7 +297,7 @@ int DTL::API::AllocateConfig() {
         if (((m_ConfigBitmap >> i) & 0x1ULL) == 0)
         {
             m_ConfigBitmap |= (1ULL << i);
-            printf("Allocating config %d\n", i);
+          //  printf("Allocating config %d\n", i);
             assert(i < hwStat->nMaxConfigs);
 
             uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(i) + AGU_CONFIG_RST;

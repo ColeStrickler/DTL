@@ -48,7 +48,7 @@ void DTL::ConstArrayDeclNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 void DTL::ArrayIndexNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 {
     // this actually needs to be bound to a for loop register
-   //ra->BindConstArrayIndex(myID->getName(), myIndexVar->getName(), ra);
+  // ra->BindConstArrayIndex(myID->getName(), myIndexVar->getName());
     return;
 }
 
@@ -167,9 +167,10 @@ std::string DTL::TimesNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
-int DTL::ResourceAnalysis::GetConstArrayRegOffset() const
-{
-    return hwStat->nConstRegisters;
+
+
+int DTL::ResourceAnalysis::GetConstArrayRegOffset() const {
+  return hwStat->nConstRegisters;
 }
 
 int DTL::ResourceAnalysis::GetConstArrayRegMapping(std::string node_name)
