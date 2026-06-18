@@ -1,0 +1,10 @@
+int col_offsets = {18,37,50,2,54,31,24,48};
+int row_size = 64;
+
+for (int j = 0; j < 8; j++)
+{
+    for (int i = 0; i < 500000; i++)
+    {
+        out = i*row_size + col_offsets[j];
+    }
+}
