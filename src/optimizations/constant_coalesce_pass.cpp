@@ -263,3 +263,9 @@ ASTNode *DTL::IntLitNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass
     assert(false); // only should be 1 or 0
 }
 
+
+ASTNode *DTL::MetadataStreamDeclNode::ConstCoalesce(DTL::ConstantCoalescePass *coalesce_pass, int pass)
+{
+    return this;
+}
+

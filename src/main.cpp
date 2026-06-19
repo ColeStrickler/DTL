@@ -110,18 +110,24 @@ int main()
     //parser.set_debug_level(1);  // Turn on debugging
     int err = parser.parse();
 	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
+	printf("successful parse\n");
 
     auto na = DTL::NameAnalysis::build(root);
 	if (na == nullptr) {
 
 		return false;
 	}
+
+
+
 	auto ta = DTL::TypeAnalysis::build(na);
 	if (ta == nullptr)
 	{
 
         return false;
     }
+		printf("name analysis\n");
+
 	auto condInfo = ta->GetConditionalInfo();
 
 	root->PrintAST("out_untransform.ast");
@@ -132,7 +138,6 @@ int main()
 	root->PrintAST("out_constfold.ast");
 
 
-
     root = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(root, DTL_OPT_MAX));
     if (root == nullptr)
     {     
@@ -140,8 +145,9 @@ int main()
         return false;
     }
 	root->PrintAST("out.ast");
-		
-	auto ra = DTL::ResourceAnalysis::build(root, hwStat);
+
+
+	auto ra = DTL::ResourceAnalysis::build(root, hwStat, ta);
     if (ra == nullptr)
     {
         //ERR("ResourceAnalysis Failed");

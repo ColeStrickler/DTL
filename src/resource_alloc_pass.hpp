@@ -30,8 +30,7 @@ namespace DTL
 #define USED_OUT_PERCOND_REG 0xf03
 #define USE_CONDCODE_REG 0xf04
 #define USE_CONDITIONAL_IDX_REG 0xf05
-#define USE_CONDITIONAL_IDX2_REG 0xf06
-
+#define USING_METADATATASTREAM_REG (0xf05 + loopRegisters.size())
 
 inline int log2ceil(int n) {
     if (n <= 0) {
@@ -71,6 +70,12 @@ struct ConstArray
     int index_reg_num;
 };
 
+struct MetadataStream
+{
+    uint64_t streamPhysStart;
+    uint32_t dataSize;
+};
+
 
 struct LayerConfig
 {
@@ -89,7 +94,7 @@ public:
     AGUHardwareStat(const std::vector<LayerConfig>& layerCfg, int nLayers, int nConst, int nForLoop, int nOutStatements, int nConstArray, int bytes_cell = 2) :\
        nConstRegisters(nConst), nForLoopRegisters(nForLoop),\
         nLayers(nLayers), nOutStatements(nOutStatements), nConstArray(nConstArray),\
-        nConstArraySize(32), nMaxConfigs(1), layerCfgs(layerCfg)
+        nConstArraySize(32), nMaxConfigs(1), layerCfgs(layerCfg), nMetadataStreams(1)
     {
                 assert(layerCfg.size() == nLayers+1);
         /*
@@ -165,12 +170,16 @@ public:
         return alignTo8(GetConstArrayOffset(byteWidth) + (nConstArray*nConstArraySize*byteWidth + 8));
     }
     
+    inline uint64_t GetMetaDataStreamRegOffset(uint32_t byteWidth) const
+    {
+        #define BYTES_PER_MAGIC 16
+        return GetMagicRegsOffset(byteWidth) + BYTES_PER_MAGIC*nForLoopRegisters;
+        #undef BYTES_PER_MAGIC 16
+    }
    
 
 
     void DoForLoopWrite(uint64_t baseAddress, LoopReg& reg, uint32_t byte_width);
-    
-
 
     /*
         We will return both the inc register write and the for loop write
@@ -250,6 +259,29 @@ public:
         WRITE_UINT8(addr, static_cast<uint8_t>(constArray.index_reg_num));
     }
 
+
+    void DoMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, uint32_t byte_width)
+    {
+        #define BYTES_METADATASTREAM 8 // write now we have the data size hardcoded
+        uint64_t baddr = baseAddress + GetMetaDataStreamRegOffset(byte_width);
+        WRITE_UINT64(baddr + BYTES_METADATASTREAM*stream_num, streamInfo.streamPhysStart);
+        #undef BYTES_METADATASTRAM
+    }
+
+    std::string PrintMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, uint32_t byte_width)
+    {
+        uint64_t baddr = baseAddress + GetMetaDataStreamRegOffset(byte_width);
+        std::string addr = to_hex(baddr+BYTES_METADATASTREAM*stream_num);
+
+
+
+        uint64_t write_value_ = streamInfo.streamPhysStart;
+        std::string write_value = to_hex(write_value_);
+
+        // ret to loop register
+        std::string ret = "WRITE_UINT64(" + addr + "," + write_value + ");";
+        return ret;
+    }
 
 
     void DoControlWrite(uint64_t baseAddress, int numOutStatement, int layer, int inRegNumber, int outRegNumber)
@@ -337,6 +369,48 @@ public:
     bool CheckMeetHardwareConstaints(DTLResources* rsrc) const
     {
         bool ret = true;
+
+        ret = (rsrc->MetadataStreamsNeeded <= nMetadataStreams);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->MetadataStreamsNeeded, nMetadataStreams);
+            std::cerr << "(rsrc->MetadataStreamsNeeded <= nMetadataStreams)\n"; goto end; 
+        }
+        ret = (rsrc->ForLoopsNeeded <= nForLoopRegisters);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->ForLoopsNeeded, nForLoopRegisters);
+            std::cerr << "(rsrc->ForLoopsNeeded <= nForLoopRegisters)\n"; goto end;
+        }
+        ret = (rsrc->nConstsNeeded <= nConstRegisters);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nConstsNeeded, nConstRegisters);
+            std::cerr << "(rsrc->nConstsNeeded <= nConstRegisters)\n"; goto end;
+        }
+        ret = (rsrc->nOutStatements <= nOutStatements);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nOutStatements, nOutStatements);
+            std::cerr << "(rsrc->nOutStatements <= nOutStatements)\n"; goto end;
+        }
+        ret = (rsrc->nConstArrayNeeded <= nConstArray);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nConstArrayNeeded, nConstArray);
+            std::cerr << "(rsrc->nConstArrayNeeded <= nConstArrays)\n"; goto end;
+        }
+        ret = (rsrc->nConstArraySizeNeeded <= nConstArraySize);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nConstArraySizeNeeded , nConstArraySize);
+            std::cerr << "(rsrc->nConstArraySizeNeeded  <= nConstArraySize)\n"; goto end;
+        }
+        /*
+            Our current convention is to use the last layer to route PassThru0 to the output,
+            so we need an extra layer to do this successfully. We can probably do this in a better way
+            later on
+        */
+        ret = (rsrc->nLayersNeeded + 1 <= nLayers);
+        if (!ret) {
+            printf("%d <= %d\n", rsrc->nLayersNeeded+1, nLayers);
+            std::cerr << "(rsrc->nLayersNeeded <= nLayers)\n"; goto end;
+        }
+
         for (int i  =  0; i <= nLayers; i++)
         {
             ret = (rsrc->AddUnitsNeededLayer(i) <= GetLayerAddUnits(i));
@@ -355,49 +429,10 @@ public:
                 printf("(Layer %d) %d <= %d\n", i, rsrc->SubUnitsNeededLayer(i), GetLayerSubUnits(i));
                 std::cerr << "(rsrc->nSubNeeded <= nLayerSubUnits)\n"; goto end;
             }
-
-            ret = (rsrc->ForLoopsNeeded <= nForLoopRegisters);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->ForLoopsNeeded, nForLoopRegisters);
-                std::cerr << "(rsrc->ForLoopsNeeded <= nForLoopRegisters)\n"; goto end;
-            }
-            ret = (rsrc->nConstsNeeded <= nConstRegisters);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->nConstsNeeded, nConstRegisters);
-                std::cerr << "(rsrc->nConstsNeeded <= nConstRegisters)\n"; goto end;
-            }
-
-            /*
-                Our current convention is to use the last layer to route PassThru0 to the output,
-                so we need an extra layer to do this successfully. We can probably do this in a better way
-                later on
-            */
-            ret = (rsrc->nLayersNeeded + 1 <= nLayers);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->nLayersNeeded+1, nLayers);
-                std::cerr << "(rsrc->nLayersNeeded <= nLayers)\n"; goto end;
-            }
             ret = (rsrc->PassThruUnitsNeededLayer(i) <= GetLayerPassThruUnits(i)); 
             if (!ret) {
                 printf("(Layer %d) %d <= %d\n", i, rsrc->PassThruUnitsNeededLayer(i), GetLayerPassThruUnits(i));
                 std::cerr << "(rsrc->nPassThrough <= nLayerPassThrough)\n"; goto end;
-            }
-            ret = (rsrc->nOutStatements <= nOutStatements);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->nOutStatements, nOutStatements);
-                std::cerr << "(rsrc->nOutStatements <= nOutStatements)\n"; goto end;
-            }
-            
-            ret = (rsrc->nConstArrayNeeded <= nConstArray);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->nConstArrayNeeded, nConstArray);
-                std::cerr << "(rsrc->nConstArrayNeeded <= nConstArrays)\n"; goto end;
-            }
-
-            ret = (rsrc->nConstArraySizeNeeded <= nConstArraySize);
-            if (!ret) {
-                printf("%d <= %d\n", rsrc->nConstArraySizeNeeded , nConstArraySize);
-                std::cerr << "(rsrc->nConstArraySizeNeeded  <= nConstArraySize)\n"; goto end;
             }
         }
         
@@ -444,7 +479,7 @@ public:
 
     int GetMaxFuncUnits() const 
     {
-        int ret = nForLoopRegisters + nConstRegisters + nConstArray;
+        int ret = nForLoopRegisters + nConstRegisters + nConstArray + nMetadataStreams;
         for (auto& layer: layerCfgs)
         {
             ret = std::max(ret, GetTotalFuncUnits(layer));
@@ -470,6 +505,7 @@ public:
     int nForLoopRegisters;
     int nOutStatements;
     int nMaxConfigs;
+    int nMetadataStreams;
 
 };
 
@@ -923,9 +959,31 @@ public:
         return hwStat->nConstRegisters + hwStat->nConstArray; // each const array can give 1 input at a time
     }
 
-    
+    int GetMetadataStreamOffset() const
+    {
+        return GetForLoopRegOffset() + hwStat->nForLoopRegisters;
+    }
 
+    void MapMetadataStream(std::string idName, MetadataStreamDeclNode* metadataStream)
+    {
+        
+        printf("metadatastream map size: %zu idName %s\n", idMetadataStreamRegMap.size(), idName.c_str());
+        assert(idMetadataStreamRegMap.find(idName) == idMetadataStreamRegMap.end());
+        idMetadataStreamRegMap.insert({idName, GetMetadataStreamOffset() + MetadataStreamCount});
+        MetadataStreamCount++;
+
+        auto streamInfo = MetadataStream{static_cast<uint64_t>(metadataStream->GetStreamAddress()), static_cast<uint32_t>(metadataStream->GetDataSize())};
+        MetadataStreamMMIOInfo.push_back(streamInfo);
+    }
+
+    int MetadataStreamIDToMapping(std::string idName)
+    {
+        auto it = idMetadataStreamRegMap.find(idName);
+        assert(it != idMetadataStreamRegMap.end());
+        return it->second;
+    }
     /*
+    
         We now know which for loop register is mapped to this ID
 
 
@@ -938,6 +996,7 @@ public:
         ReverseidForLoopRegMap[GetForLoopRegOffset() + (forloopsneeded - loopRegisters.size()-1)] = idName;
         //printf("For Loop reg %s --> %d\n", idName.c_str(), (forloopsneeded - loopRegisters.size()-1));
     }
+
 
     int ForLoopIDToMapping(std::string idName)
     {
@@ -1071,7 +1130,7 @@ public:
     AGUHardwareStat* hwStat;
     ConditionalInfo CondInfo;
     ResourceAnalysis* rsrcAnalysis;
-
+    int MetadataStreamCount = 0;
 private:
 
     // [OutStmtNode # -> [Layer # -> N]]
@@ -1080,6 +1139,8 @@ private:
     std::vector<ConstArray> constArrayRegisters;
     std::unordered_map<int, std::string> ReverseidForLoopRegMap;
     std::unordered_map<std::string, int> idForLoopRegMap;
+    std::unordered_map<std::string, int> idMetadataStreamRegMap;
+    std::vector<MetadataStream> MetadataStreamMMIOInfo;
     std::vector<LoopReg> loopRegisters;
 	ResourceAllocation() 
 	{

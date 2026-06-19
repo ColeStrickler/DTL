@@ -1,0 +1,7 @@
+cat metasim_stderr.out |grep AGU.fire > addr.gen
+scp ./addr.gen c674s876@abomasnow:/home/c674s876/Documents/agu_dtl/
+
+
+
+cat synthesized-prints.out0 |grep AGU.fire > addr.gen
+scp ./addr.gen c674s876@abomasnow:/home/c674s876/Documents/agu_dtl/

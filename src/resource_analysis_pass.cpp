@@ -45,6 +45,13 @@ void DTL::ConstArrayDeclNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
     
 }
 
+
+void DTL::MetadataStreamDeclNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+    ra->UseMetadataStream();
+}
+
+
 void DTL::ArrayIndexNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
 {
     // this actually needs to be bound to a for loop register
@@ -106,6 +113,29 @@ void DTL::IntLitNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
         ra->RegMapConst(std::to_string(myNum), ra, myNum); // assign constants a register number
     }
 }
+
+
+void DTL::IDNode::resourceAnalysis(ResourceAnalysis *ra, int layer)
+{
+    try {
+        // Nodes mapping to ForLoop IDs will also end up here
+        auto typed = ra->GetNodeType(this);
+        if (!typed || !typed->isMetadataStream())
+            return;
+        
+
+        
+    }
+    catch (const InternalError& e)
+    {
+        return;
+    }
+
+
+
+}
+
+
 
 void DTL::PlusNode::resourceAnalysis(ResourceAnalysis* ra, int layer)
 {
@@ -180,3 +210,6 @@ int DTL::ResourceAnalysis::GetConstArrayRegMapping(std::string node_name)
 		return it->second;
 	return -1;
 }
+
+
+

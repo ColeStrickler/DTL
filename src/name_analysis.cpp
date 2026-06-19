@@ -48,6 +48,24 @@ bool ForStmtNode::nameAnalysis(SymbolTable *symTab)
 }
 
 
+
+bool DTL::MetadataStreamDeclNode::nameAnalysis(SymbolTable *symTab)
+{
+    auto name = myID->getName();
+    auto type = myType->getType();
+    if (symTab->clash(name))
+        return NameErr::multiDecl(myID->pos());
+
+    if (type->asError() || type->isVoid())
+        return NameErr::badVarType(myID->pos());
+    auto sym = new VarSymbol(name, type);
+    myID->attachSymbol(sym);
+    symTab->insert(sym);
+    return true;
+}
+
+
+
 /*
     For now this is the only way we can declare variables
 */
@@ -173,9 +191,6 @@ bool IDNode::nameAnalysis(SymbolTable* symTab)
 	this->attachSymbol(sym);
 	return true;
 }
-
-
-
 
 
 

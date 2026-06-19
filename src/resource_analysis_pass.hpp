@@ -23,7 +23,8 @@ struct DTLUnitAllocation
 
 struct DTLResources
 {
-	DTLResources() : ForLoopsNeeded(0), nConstsNeeded(0), nOutStatements(0), nPassThrough(0), nConstArrayNeeded(0), nConstArraySizeNeeded(0), nSubNeeded(0)
+	DTLResources() : ForLoopsNeeded(0), nConstsNeeded(0), nOutStatements(0), nPassThrough(0), nConstArrayNeeded(0), nConstArraySizeNeeded(0), nSubNeeded(0), \
+		MetadataStreamsNeeded(0)
 	{
 
 	}
@@ -198,7 +199,7 @@ struct DTLResources
 
 
 	int CurrentOutStatement() {return nOutStatements;};
-
+	int MetadataStreamsNeeded;
 	int ForLoopsNeeded;
 	int nConstsNeeded;
 	int nOutStatements;
@@ -215,14 +216,15 @@ struct DTLResources
     
 class ResourceAnalysis{
 public:
-	static ResourceAnalysis * build(ProgramNode * astIn, AGUHardwareStat* hwstat) {
+	static ResourceAnalysis * build(ProgramNode * astIn, AGUHardwareStat* hwstat, TypeAnalysis* ta) {
 		ResourceAnalysis * resourceAnalysis = new ResourceAnalysis;
 		if (!resourceAnalysis) return nullptr;
 		
 		resourceAnalysis->hwStat = hwstat;
+		resourceAnalysis->ta = ta;
 		astIn->resourceAnalysis(resourceAnalysis, 0);
 		resourceAnalysis->ast = astIn;
-
+		
 		resourceAnalysis->GetResources()->GetLayersNeeded(); // must be computed
 		
 		return resourceAnalysis;
@@ -297,6 +299,7 @@ public:
 
 
 	ProgramNode * ast;
+	void UseMetadataStream()	{ResourcesNeeded->MetadataStreamsNeeded++;}
 	void UseForLoopRegister() 	{ResourcesNeeded->ForLoopsNeeded++;}
 	void UseNewConst() 			{ResourcesNeeded->nConstsNeeded++;}
 	void UseNewOutStatement()	{ResourcesNeeded->nOutStatements++;}
@@ -323,10 +326,14 @@ public:
 	}
 
 	DTLResources* GetResources() const {return ResourcesNeeded;}
+
+	const DTL::DataType* GetNodeType(const ASTNode* node) const {return  ta->nodeType(node);}
+
 	int currOutStmtDepth;
 private:
 	DTLResources* ResourcesNeeded;
 	AGUHardwareStat* hwStat;
+	TypeAnalysis* ta;
 	
 
 

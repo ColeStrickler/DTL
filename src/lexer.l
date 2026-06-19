@@ -25,7 +25,7 @@ using TokenKind = DTL::Parser::token;
 %option yyclass="DTL::Scanner"
 %option noyywrap
 %option c++
-
+HEXDIGIT [0-9a-fA-F]
 DIGIT [0-9]
 WHITESPACE [\040\t]
 LETTER [a-zA-Z]
@@ -43,6 +43,7 @@ out         { return makeBareToken(TokenKind::OUT); }
 nopt		{ return makeBareToken(TokenKind::NOPT); }
 for         {return makeBareToken(TokenKind::FOR); }
 int 	    { return makeBareToken(TokenKind::INT); }
+metadata_stream {return makeBareToken(TokenKind::METADATASTREAM);}
 "="         { return makeBareToken(TokenKind::ASSIGN); }
 "+"         { return makeBareToken(TokenKind::CROSS); }
 "{"	    { return makeBareToken(TokenKind::LCURLY); }
@@ -79,6 +80,30 @@ int 	    { return makeBareToken(TokenKind::INT); }
 		            new IDToken(pos, yytext));
 		            colNum += yyleng;
 		            return TokenKind::ID;
+}
+
+0[xX]{HEXDIGIT}+ {
+    long long val = strtoll(yytext, nullptr, 0);
+
+    bool overflow =
+        (val > INT_MAX) ||
+        (val < 0);
+
+    if (overflow) {
+        Position pos(lineNum, colNum, lineNum, colNum + yyleng);
+        errIntOverflow(&pos);
+        val = 0;
+    }
+
+    Position *pos = new Position(
+        lineNum, colNum,
+        lineNum, colNum + yyleng);
+
+    yylval->emplace<DTL::Token *>(
+        new IntLitToken(pos, (int)val));
+
+    colNum += yyleng;
+    return TokenKind::INTLITERAL;
 }
 
 {DIGIT}+	    {

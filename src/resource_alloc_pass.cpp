@@ -19,11 +19,6 @@ void DTL::ConstDeclNode::resourceAllocation(ResourceAllocation* ralloc, int dept
         We have already mapped the ID of the constant declared here to a register
         in ResourceAnalysis
     */
-
-   
-
-
-
     return; 
 
 }
@@ -100,6 +95,12 @@ void DTL::IntTypeNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
     return;
 }
 
+void DTL::MetadataStreamTypeNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
+{
+    return;
+}
+
+
 
 void DTL::ArrayIndexNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
 {
@@ -135,10 +136,15 @@ void DTL::IDNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
     auto& ra = ralloc->rsrcAnalysis;
 
     int id = ra->GetConstRegMapping(getName());
-
-    if (id == -1) // if a for loop register
-    {       
-        id = ralloc->ForLoopIDToMapping(getName());
+   // 
+    printf("ID %d %s\n", id, name.c_str());
+    if (id == -1) // if a for loop register or metadatatype
+    {   
+        auto type  = ralloc->rsrcAnalysis->GetNodeType(this);
+        if (type->isMetadataStream())
+            id = ralloc->MetadataStreamIDToMapping(getName());
+        else
+            id = ralloc->ForLoopIDToMapping(getName());
     }
 
     out->MapNodeFuncUnit(this, id, depth); // we just shift the mapping over
@@ -325,6 +331,12 @@ int DTL::IntTypeNode::Collapse(ResourceAllocation* ralloc)
     return 0;
 }
 
+int DTL::MetadataStreamTypeNode::Collapse(ResourceAllocation *ralloc)
+{
+    assert(false);
+    return 0;
+}
+
 bool DTL::OutStmtRouting::PrintDigraph(const std::string &file)
 {
 	std::ofstream outfile(file);  // open for writing
@@ -495,6 +507,17 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
             write += hwStat->PrintConstArrayWrite(baseaddr, c, 4);
         }
 
+        if (MetadataStreamMMIOInfo.size() != 0)
+            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",1)";
+        else
+            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",0)";
+
+  
+        for (int stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
+        {
+            auto& ms = MetadataStreamMMIOInfo[stream_num];
+            write += hwStat->PrintMetadataStreamWrite(baseaddr, ms, stream_num, 4);
+        }
 
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUTSTMT_REG) + "," + to_hex(static_cast<uint8_t>(OutStatementRouting.size())) +   ");\n";
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_FORLOOP_REG) + "," + to_hex(static_cast<uint8_t>(loopRegisters.size())) +   ");\n";
@@ -533,6 +556,19 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
     {
         hwStat->DoConstArrayWrite(baseAddr, ca, 4);
     }
+
+    if (MetadataStreamMMIOInfo.size() != 0)
+        WRITE_BOOL(baseAddr+USING_METADATATASTREAM_REG, 1);
+    else
+        WRITE_BOOL(baseAddr+USING_METADATATASTREAM_REG, 0);
+
+    
+    for (int stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
+    {
+        auto& ms = MetadataStreamMMIOInfo[stream_num];
+        hwStat->DoMetadataStreamWrite(baseAddr, ms, stream_num, 4);
+    }
+
 
     WRITE_UINT8(baseAddr+USED_OUTSTMT_REG, static_cast<uint8_t>(OutStatementRouting.size()));
     WRITE_UINT8(baseAddr+USED_FORLOOP_REG, static_cast<uint8_t>(loopRegisters.size()));
@@ -683,4 +719,11 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
   return ret;
 }
 
+
+
+void DTL::MetadataStreamDeclNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
+{
+    printf("HERE\n");
+    ralloc->MapMetadataStream(myID->getName(), this);
+}
 

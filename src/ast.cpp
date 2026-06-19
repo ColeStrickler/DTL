@@ -228,6 +228,17 @@ std::string DTL::LessEqNode::PrintAST(int &node_num, std::ofstream &outfile)
 	return name;
 }
 
+std::string DTL::MetadataStreamDeclNode::PrintAST(int &node_num, std::ofstream &outfile)
+{
+    return "MetadataStreamDeclNode " + myID->getName();
+}
+int DTL::MetadataStreamDeclNode::Collapse(ResourceAllocation *ralloc)
+{
+    return 0;
+}
+
+
+
 std::vector<DTL::StmtNode *> DTL::IfStmtNode::CollapseStatements() 
 {
 	std::vector<DTL::StmtNode*> ret;
@@ -252,3 +263,9 @@ std::vector<DTL::StmtNode *> DTL::SwitchStmtNode::CollapseStatements() {
 
   return ret;
 }
+
+std::string DTL::MetadataStreamTypeNode::PrintAST(int &node_num, std::ofstream &outfile)
+{
+    return "MetadataStreamTypeNode";
+}
+

@@ -25,6 +25,7 @@ public:
 
     void AddConstDecl(ConstDeclNode* constDecl);
     void AddConstArrayDecl(ConstArrayDeclNode* constArrayDecl);
+    void AddMetadataStreamDecl(MetadataStreamDeclNode* metadataDecl);
     void SetIsUsed(std::string id);
 
     bool isInDeclMap(std::string id);

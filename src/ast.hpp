@@ -62,7 +62,9 @@ namespace DTL
 		UNARYEXPNODE,
 		MINUSNODE,
 		IFSTMTNODE,
-		SWITCHSTMTNODE
+		SWITCHSTMTNODE,
+		METADATASTREAMDECLNODE,
+		METADATASTREAMTYPENODE
 	};
 
 	class ASTNode
@@ -216,6 +218,45 @@ namespace DTL
 		// virtual void to3AC(IRProgram * prog) = 0;
 		// virtual void to3AC(Procedure * proc) override = 0;
 	};
+
+
+	class MetadataStreamDeclNode : public DeclNode
+	{
+	public:
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr) : DeclNode(p), myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr)
+		{
+			myTag = NODETAG::METADATASTREAMDECLNODE;
+		}
+		
+
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+
+
+		void SetOpt(bool opt) {m_Opt = opt;}
+		bool GetOpt() {return m_Opt;}
+		std::string GetIDString() const;
+		
+		int GetDataSize() const;
+		int GetStreamAddress() const;
+	private:
+		bool m_Opt;
+		TypeNode *myType;
+		IDNode *myID;
+		IntLitNode *dataSize;
+		IntLitNode *metadataStreamAddress;
+	};
+
 
 	/*
 		We treat this as a generic VarDecl, not a constant. We can change the name later
@@ -487,6 +528,26 @@ namespace DTL
 		// virtual const DataType * getType() const override;
 	};
 
+	class MetadataStreamTypeNode : public TypeNode
+	{
+	public:
+		MetadataStreamTypeNode(const Position *p) : TypeNode(p) {
+			myTag = NODETAG::METADATASTREAMTYPENODE;
+		}
+
+		virtual const DataType *getType() const { return BasicType::produce(BaseType::METADATASTREAM); }
+		// virtual bool nameAnalysis(SymbolTable * symTab) override = 0;
+		// void unparse(std::ostream& out, int indent) override;
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		
+
+		// virtual const DataType * getType() const override;
+	};
+
+
+
 
 	class ArrayIndexNode : public LocNode
 	{
@@ -527,7 +588,7 @@ namespace DTL
 		// void unparseNested(std::ostream& out) override;
 		bool nameAnalysis(SymbolTable *symTab) override;
 		virtual void typeAnalysis(TypeAnalysis *ta) override;
-		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer) { return; };
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
 		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
 		virtual int Collapse(ResourceAllocation *ralloc) override;
 		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;

@@ -147,3 +147,8 @@ ASTNode *DTL::BinaryExpNode::ConstPropagation(DTL::ConstantPropagationPass *prop
 }
 
 
+ASTNode *DTL::MetadataStreamDeclNode::ConstPropagation(DTL::ConstantPropagationPass *prop_pass)
+{
+    return this;
+}
+

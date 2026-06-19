@@ -256,3 +256,9 @@ void DTL::ConstantFoldPass::IncFoldCount()
 }
 
 int DTL::ConstantFoldPass::GetFoldCount() { return m_FoldCount; }
+
+ASTNode *DTL::MetadataStreamDeclNode::ConstFold(DTL::ConstantFoldPass *foldpass)
+{
+   return this;
+}
+

@@ -422,15 +422,18 @@ namespace DTL {
       // loc
       char dummy7[sizeof (DTL::LocNode*)];
 
+      // metadatastreamdecl
+      char dummy8[sizeof (DTL::MetadataStreamDeclNode*)];
+
       // program
-      char dummy8[sizeof (DTL::ProgramNode*)];
+      char dummy9[sizeof (DTL::ProgramNode*)];
 
       // constdecl
       // ifstatement
       // switchstatement
       // outstatement
       // unarystmt
-      char dummy9[sizeof (DTL::StmtNode*)];
+      char dummy10[sizeof (DTL::StmtNode*)];
 
       // ASSIGN
       // NOPT
@@ -463,22 +466,23 @@ namespace DTL {
       // OR
       // AND
       // PAD
-      char dummy10[sizeof (DTL::Token *)];
+      // METADATASTREAM
+      char dummy11[sizeof (DTL::Token *)];
 
       // type
-      char dummy11[sizeof (DTL::TypeNode*)];
+      char dummy12[sizeof (DTL::TypeNode*)];
 
       // constdecls
       // outstatements
       // innernest
       // casestatement
-      char dummy12[sizeof (std::vector<DTL::StmtNode*>)];
+      char dummy13[sizeof (std::vector<DTL::StmtNode*>)];
 
       // intlist
-      char dummy13[sizeof (std::vector<IntLitNode*>)];
+      char dummy14[sizeof (std::vector<IntLitNode*>)];
 
       // casestatements
-      char dummy14[sizeof (std::vector<std::vector<DTL::StmtNode*>>)];
+      char dummy15[sizeof (std::vector<std::vector<DTL::StmtNode*>>)];
     };
 
     /// The size of the largest semantic type.
@@ -554,7 +558,8 @@ namespace DTL {
     ISEDGE = 287,                  // ISEDGE
     OR = 288,                      // OR
     AND = 289,                     // AND
-    PAD = 290                      // PAD
+    PAD = 290,                     // PAD
+    METADATASTREAM = 291           // METADATASTREAM
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -571,7 +576,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 36, ///< Number of tokens.
+        YYNTOKENS = 37, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -609,27 +614,29 @@ namespace DTL {
         S_OR = 33,                               // OR
         S_AND = 34,                              // AND
         S_PAD = 35,                              // PAD
-        S_YYACCEPT = 36,                         // $accept
-        S_program = 37,                          // program
-        S_constdecls = 38,                       // constdecls
-        S_constdecl = 39,                        // constdecl
-        S_intlist = 40,                          // intlist
-        S_forstatement = 41,                     // forstatement
-        S_outstatements = 42,                    // outstatements
-        S_innernest = 43,                        // innernest
-        S_ifstatement = 44,                      // ifstatement
-        S_switchstatement = 45,                  // switchstatement
-        S_casestatements = 46,                   // casestatements
-        S_casestatement = 47,                    // casestatement
-        S_outstatement = 48,                     // outstatement
-        S_type = 49,                             // type
-        S_expr = 50,                             // expr
-        S_unarystmt = 51,                        // unarystmt
-        S_term = 52,                             // term
-        S_factor = 53,                           // factor
-        S_intlit = 54,                           // intlit
-        S_loc = 55,                              // loc
-        S_id = 56                                // id
+        S_METADATASTREAM = 36,                   // METADATASTREAM
+        S_YYACCEPT = 37,                         // $accept
+        S_program = 38,                          // program
+        S_constdecls = 39,                       // constdecls
+        S_metadatastreamdecl = 40,               // metadatastreamdecl
+        S_constdecl = 41,                        // constdecl
+        S_intlist = 42,                          // intlist
+        S_forstatement = 43,                     // forstatement
+        S_outstatements = 44,                    // outstatements
+        S_innernest = 45,                        // innernest
+        S_ifstatement = 46,                      // ifstatement
+        S_switchstatement = 47,                  // switchstatement
+        S_casestatements = 48,                   // casestatements
+        S_casestatement = 49,                    // casestatement
+        S_outstatement = 50,                     // outstatement
+        S_type = 51,                             // type
+        S_expr = 52,                             // expr
+        S_unarystmt = 53,                        // unarystmt
+        S_term = 54,                             // term
+        S_factor = 55,                           // factor
+        S_intlit = 56,                           // intlit
+        S_loc = 57,                              // loc
+        S_id = 58                                // id
       };
     };
 
@@ -694,6 +701,10 @@ namespace DTL {
         value.move< DTL::LocNode* > (std::move (that.value));
         break;
 
+      case symbol_kind::S_metadatastreamdecl: // metadatastreamdecl
+        value.move< DTL::MetadataStreamDeclNode* > (std::move (that.value));
+        break;
+
       case symbol_kind::S_program: // program
         value.move< DTL::ProgramNode* > (std::move (that.value));
         break;
@@ -737,6 +748,7 @@ namespace DTL {
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
       case symbol_kind::S_PAD: // PAD
+      case symbol_kind::S_METADATASTREAM: // METADATASTREAM
         value.move< DTL::Token * > (std::move (that.value));
         break;
 
@@ -859,6 +871,18 @@ namespace DTL {
       {}
 #else
       basic_symbol (typename Base::kind_type t, const DTL::LocNode*& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, DTL::MetadataStreamDeclNode*&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const DTL::MetadataStreamDeclNode*& v)
         : Base (t)
         , value (v)
       {}
@@ -1002,6 +1026,10 @@ switch (yykind)
         value.template destroy< DTL::LocNode* > ();
         break;
 
+      case symbol_kind::S_metadatastreamdecl: // metadatastreamdecl
+        value.template destroy< DTL::MetadataStreamDeclNode* > ();
+        break;
+
       case symbol_kind::S_program: // program
         value.template destroy< DTL::ProgramNode* > ();
         break;
@@ -1045,6 +1073,7 @@ switch (yykind)
       case symbol_kind::S_OR: // OR
       case symbol_kind::S_AND: // AND
       case symbol_kind::S_PAD: // PAD
+      case symbol_kind::S_METADATASTREAM: // METADATASTREAM
         value.template destroy< DTL::Token * > ();
         break;
 
@@ -1771,6 +1800,21 @@ switch (yykind)
         return symbol_type (token::PAD, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_METADATASTREAM (DTL::Token * v)
+      {
+        return symbol_type (token::METADATASTREAM, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_METADATASTREAM (const DTL::Token *& v)
+      {
+        return symbol_type (token::METADATASTREAM, v);
+      }
+#endif
 
 
     class context
@@ -2099,8 +2143,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 247,     ///< Last index in yytable_.
-      yynnts_ = 21,  ///< Number of nonterminal symbols.
+      yylast_ = 231,     ///< Last index in yytable_.
+      yynnts_ = 22,  ///< Number of nonterminal symbols.
       yyfinal_ = 3 ///< Termination state number.
     };
 
@@ -2114,7 +2158,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 2118 "frontend.hh"
+#line 2162 "frontend.hh"
 
 
 

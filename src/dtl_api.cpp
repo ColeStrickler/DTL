@@ -179,7 +179,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
         return false;
     }
 		
-	auto ra = DTL::ResourceAnalysis::build(root, hwStat);
+	auto ra = DTL::ResourceAnalysis::build(root, hwStat, ta);
     if (ra == nullptr)
     {
         ERR("ResourceAnalysis Failed");

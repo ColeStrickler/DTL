@@ -152,6 +152,16 @@ void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
 	return;	
 }
 
+void DTL::MetadataStreamDeclNode::typeAnalysis(TypeAnalysis *ta)
+{
+
+	ta->nodeType(myID, BasicType::METADATASTREAM());
+	return;
+}
+
+
+
+
 void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta ) 
 {
 
@@ -310,14 +320,14 @@ void DTL::PlusNode::typeAnalysis(TypeAnalysis* ta)
 
 	bool ok = true;
 	
-	if (!t1->isInt())
+	if (!t1->isInt() && !t1->isMetadataStream())
 	{
 		ta->errMathOpd(myExp1->pos());
 		ta->nodeType(this, ErrorType::produce());
 		ok = false;
 	}
 
-	if (!t2->isInt())
+	if (!t2->isInt() && !t2->isMetadataStream())
 	{
 		ta->errMathOpd(myExp2->pos());
 		ta->nodeType(this, ErrorType::produce());
@@ -338,14 +348,14 @@ void DTL::MinusNode::typeAnalysis(TypeAnalysis *ta)
 
 	bool ok = true;
 	
-	if (!t1->isInt())
+	if (!t1->isInt() && !t1->isMetadataStream())
 	{
 		ta->errMathOpd(myExp1->pos());
 		ta->nodeType(this, ErrorType::produce());
 		ok = false;
 	}
 
-	if (!t2->isInt())
+	if (!t2->isInt() && !t2->isMetadataStream())
 	{
 		ta->errMathOpd(myExp2->pos());
 		ta->nodeType(this, ErrorType::produce());
@@ -368,14 +378,14 @@ void DTL::TimesNode::typeAnalysis(TypeAnalysis* ta)
 
 	bool ok = true;
 	
-	if (!t1->isInt())
+	if (!t1->isInt() && !t1->isMetadataStream())
 	{
 		ta->errMathOpd(myExp1->pos());
 		ta->nodeType(this, ErrorType::produce());
 		ok = false;
 	}
 
-	if (!t2->isInt())
+	if (!t2->isInt() && !t2->isMetadataStream())
 	{
 		ta->errMathOpd(myExp2->pos());
 		ta->nodeType(this, ErrorType::produce());

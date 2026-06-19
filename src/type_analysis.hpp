@@ -92,7 +92,7 @@ public:
 		const DataType * res = nodeToType[node];
 		if (res == nullptr){
 			const char * msg = "No type for node ";
-			throw new InternalError(msg);
+			throw InternalError(msg);
 		}
 		return nodeToType[node];
 	}

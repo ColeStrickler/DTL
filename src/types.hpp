@@ -11,7 +11,7 @@ class BasicType;
 class ErrorType;
 
 enum BaseType {
-    INT, BOOL, VOID, INTARRAY
+    INT, BOOL, VOID, INTARRAY, METADATASTREAM
 };
 
 
@@ -26,6 +26,7 @@ public:
 	virtual bool isInt() const { return false; }
 	virtual bool isBool() const { return false; }
 	virtual bool isIntArray() const { return false; }
+	virtual bool isMetadataStream() const {return false; }
 	//virtual bool isString() const { return false; }
 	//virtual bool isClass() const { return false; }
 	//virtual bool isImmutable() const { return false; }
@@ -77,6 +78,10 @@ public:
 
 	static BasicType * INTARRAY(){
 		return produce(BaseType::INTARRAY);
+	}
+
+	static BasicType* METADATASTREAM() {
+		return produce(BaseType::METADATASTREAM);
 	}
 	//static BasicType * STRING(){
 	//	return produce(BaseType::STRING);
@@ -133,6 +138,10 @@ public:
 
 	virtual bool isVoid() const override {
 		return myBaseType == BaseType::VOID;
+	}
+
+	bool isMetadataStream() const override {
+		return myBaseType == BaseType::METADATASTREAM;
 	}
 	//virtual bool isString() const override {
 	//	return myBaseType == BaseType::STRING;

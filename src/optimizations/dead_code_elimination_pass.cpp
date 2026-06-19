@@ -15,6 +15,11 @@ void DTL::DeadCodeEliminationPass::AddConstArrayDecl(ConstArrayDeclNode *constAr
     m_UsedConstDecls.insert(constArrayDecl->GetIDString());
 }
 
+void DTL::DeadCodeEliminationPass::AddMetadataStreamDecl(MetadataStreamDeclNode *metadataDecl)
+{
+    m_UsedConstDecls.insert(metadataDecl->GetIDString());
+}
+
 void DTL::DeadCodeEliminationPass::SetIsUsed(std::string id)
 {
     // may have already been erased - so we check first
@@ -104,6 +109,13 @@ ASTNode *DTL::ConstArrayDeclNode::DeadCodeElimination(DTL::DeadCodeEliminationPa
     elim_pass->AddConstArrayDecl(this);
     return this;
 }
+ASTNode *DTL::MetadataStreamDeclNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass)
+{
+    assert(pass == 0);
+
+    elim_pass->AddMetadataStreamDecl(this);
+    return this;
+}
 
 
 ASTNode *DTL::PostIncStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {
@@ -188,3 +200,4 @@ ASTNode *DTL::BinaryExpNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *e
     myExp2->DeadCodeElimination(elim_pass, pass);
     return this;
 }
+

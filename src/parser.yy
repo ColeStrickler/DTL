@@ -90,6 +90,7 @@
 %token  <DTL::Token *>       OR
 %token  <DTL::Token *>       AND
 %token  <DTL::Token *>       PAD
+%token  <DTL::Token *>       METADATASTREAM
 
 %left LESS
 %left CROSS
@@ -117,6 +118,7 @@
 %type <DTL::TypeNode*> type
 %type <DTL::IntLitNode*> intlit
 %type <DTL::IDNode*> id
+%type <DTL::MetadataStreamDeclNode*> metadatastreamdecl
 
 
 
@@ -131,12 +133,24 @@ constdecls: constdecls constdecl
         {
             $1.push_back($2);
             $$ = $1;
-        } 
+        }
+        | constdecls metadatastreamdecl
+        {
+            $1.push_back($2);
+            $$ = $1;
+        }
         | /* empty */ 
         {
             auto ret = std::vector<DTL::StmtNode*>();
             $$ = ret;
         }
+
+metadatastreamdecl: METADATASTREAM LESS intlit COMMA intlit GREATER id SEMICOL
+        {
+            const Position * p = new Position($1->pos(), $8->pos());
+            $$ = new MetadataStreamDeclNode(p, new MetadataStreamTypeNode($1->pos()), $7, $5, $3);
+        }
+
 constdecl: type id ASSIGN intlit SEMICOL
         {
             const Position * p = new Position($1->pos(), $5->pos());
