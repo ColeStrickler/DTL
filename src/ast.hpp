@@ -248,7 +248,7 @@ namespace DTL
 		std::string GetIDString() const;
 		
 		int GetDataSize() const;
-		int GetStreamAddress() const;
+		int64_t GetStreamAddress() const;
 	private:
 		bool m_Opt;
 		TypeNode *myType;
@@ -637,6 +637,12 @@ namespace DTL
 			{
 				myTag = NODETAG::INTLITNODE;
 			}
+
+		IntLitNode(const Position *p, int64_t numIn)
+			: ExpNode(p), myNum(numIn) 
+			{
+				myTag = NODETAG::INTLITNODE;
+			}
 		// virtual void unparseNested(std::ostream& out) override{
 		//	unparse(out, 0);
 		// }
@@ -655,9 +661,10 @@ namespace DTL
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth();
-		int GetVal() const {return myNum;}
+		int GetVal() const {return (int)myNum;}
+		int64_t GetVal64() const {return myNum;}
 		// virtual Opd * flatten(Procedure * prog) override;
-		int myNum;
+		int64_t myNum;
 	private:
 		
 	};

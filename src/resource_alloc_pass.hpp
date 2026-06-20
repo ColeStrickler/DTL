@@ -972,7 +972,10 @@ public:
         idMetadataStreamRegMap.insert({idName, GetMetadataStreamOffset() + MetadataStreamCount});
         MetadataStreamCount++;
 
-        auto streamInfo = MetadataStream{static_cast<uint64_t>(metadataStream->GetStreamAddress()), static_cast<uint32_t>(metadataStream->GetDataSize())};
+        MetadataStream streamInfo;
+        streamInfo.streamPhysStart = static_cast<uint64_t>(metadataStream->GetStreamAddress());
+        streamInfo.dataSize =  static_cast<uint32_t>(metadataStream->GetDataSize());
+        printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);
     }
 

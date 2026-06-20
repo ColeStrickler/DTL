@@ -34,11 +34,11 @@ private:
 
 class IntLitToken : public Token{
 public:
-	IntLitToken(Position * posIn, int numIn);
+	IntLitToken(Position * posIn, int64_t numIn);
 	virtual std::string toString() override;
-	int num() const;
+	int64_t num() const;
 private:
-	const int myNum;
+	const int64_t myNum;
 };
 }
 #endif

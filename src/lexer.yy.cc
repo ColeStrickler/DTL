@@ -862,24 +862,23 @@ case 34:
 YY_RULE_SETUP
 #line 86 "lexer.l"
 {
-    long long val = strtoll(yytext, nullptr, 0);
-
-    bool overflow =
-        (val > INT_MAX) ||
-        (val < 0);
-
-    if (overflow) {
-        Position pos(lineNum, colNum, lineNum, colNum + yyleng);
-        errIntOverflow(&pos);
-        val = 0;
-    }
+    uint64_t val = strtoull(yytext, nullptr, 0);
+	printf("LONG LONG %lx\n", val);
+    // bool overflow =
+    //     (val > INT_MAX) ||
+    //     (val < 0);
+    // if (overflow) {
+    //     Position pos(lineNum, colNum, lineNum, colNum + yyleng);
+    //     errIntOverflow(&pos);
+    //     val = 0;
+    // }
 
     Position *pos = new Position(
         lineNum, colNum,
         lineNum, colNum + yyleng);
 
     yylval->emplace<DTL::Token *>(
-        new IntLitToken(pos, (int)val));
+        new IntLitToken(pos, (int64_t)val));
 
     colNum += yyleng;
     return TokenKind::INTLITERAL;
@@ -887,7 +886,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 110 "lexer.l"
+#line 109 "lexer.l"
 {
 					  double asDouble = std::stod(yytext);
 			          int intVal = atoi(yytext);
@@ -920,17 +919,17 @@ YY_RULE_SETUP
 case 36:
 /* rule 36 can match eol */
 YY_RULE_SETUP
-#line 141 "lexer.l"
+#line 140 "lexer.l"
 { lineNum++; colNum = 1; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 144 "lexer.l"
+#line 143 "lexer.l"
 { colNum += yyleng; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 146 "lexer.l"
+#line 145 "lexer.l"
 { 
 		
 		    Position pos(lineNum,colNum,lineNum,colNum+yyleng);
@@ -943,10 +942,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 155 "lexer.l"
+#line 154 "lexer.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 950 "lexer.yy.cc"
+#line 949 "lexer.yy.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1909,5 +1908,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 155 "lexer.l"
+#line 154 "lexer.l"
 

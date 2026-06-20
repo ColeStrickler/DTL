@@ -242,7 +242,8 @@ void DTL::OutStmtNode::typeAnalysis(TypeAnalysis *ta)
 	myExp->typeAnalysis(ta);
 
 	auto type = ta->nodeType(myExp);
-	if (!type->isInt())
+	printf("type %s\n", type->getString().c_str());
+	if (!type->isInt() && !type->isMetadataStream())
 	{
 		ta->errAssignOpr(this->pos());
 		ta->nodeType(this, ErrorType::produce());

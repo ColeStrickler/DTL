@@ -1351,7 +1351,7 @@ namespace DTL {
 #line 149 "parser.yy"
         {
             const Position * p = new Position(yystack_[7].value.as < DTL::Token * > ()->pos(), yystack_[0].value.as < DTL::Token * > ()->pos());
-            yylhs.value.as < DTL::MetadataStreamDeclNode* > () = new MetadataStreamDeclNode(p, new MetadataStreamTypeNode(yystack_[7].value.as < DTL::Token * > ()->pos()), yystack_[1].value.as < DTL::IDNode* > (), yystack_[3].value.as < DTL::IntLitNode* > (), yystack_[5].value.as < DTL::IntLitNode* > ());
+            yylhs.value.as < DTL::MetadataStreamDeclNode* > () = new MetadataStreamDeclNode(p, new MetadataStreamTypeNode(yystack_[7].value.as < DTL::Token * > ()->pos()), yystack_[1].value.as < DTL::IDNode* > (), yystack_[5].value.as < DTL::IntLitNode* > (), yystack_[3].value.as < DTL::IntLitNode* > ());
         }
 #line 1357 "parser.cc"
     break;

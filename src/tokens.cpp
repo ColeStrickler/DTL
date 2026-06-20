@@ -59,7 +59,7 @@ const std::string IDToken::value() const {
 	return this->myValue; 
 }
 
-IntLitToken::IntLitToken(Position * pos, int numIn)
+IntLitToken::IntLitToken(Position * pos, int64_t numIn)
   : Token(pos, TokenKind::INTLITERAL), myNum(numIn){}
 
 std::string IntLitToken::toString(){
@@ -68,7 +68,7 @@ std::string IntLitToken::toString(){
 	+ myPos->begin();
 }
 
-int IntLitToken::num() const {
+int64_t IntLitToken::num() const {
 	return this->myNum;
 }
 

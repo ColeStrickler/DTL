@@ -2,12 +2,12 @@ int col_offsets = {18,37,50,2,54,31,24,48};
 int row_size = 0x20;
 
 
-metadata_stream<4,0x17800000> x;
+metadata_stream<4,0x178000000> x;
 
 for (int j = 0; j < 8; j++)
 {
     for (int i = 0; i < 500000; i++)
     {
-        out = i*row_size + col_offsets[j] + x;
+        out = x;
     }
 }

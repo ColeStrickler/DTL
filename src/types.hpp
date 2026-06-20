@@ -150,7 +150,19 @@ public:
 	//	return !isVoid();
 	//}
 	virtual BaseType getBaseType() const { return myBaseType; }
-	virtual std::string getString() const {return "BasicType";}
+	virtual std::string getString() const {
+		switch(myBaseType)
+		{
+			case BaseType::BOOL: return "BOOL";
+			case BaseType::VOID: return "VOID";
+			case BaseType::INTARRAY: return "INTARRAY";
+			case BaseType::METADATASTREAM: return "METADATASTREAM";
+			default:
+				return "BasicType::NIL";
+		}
+
+
+	}
 
 
 	//virtual size_t getSize() const override {

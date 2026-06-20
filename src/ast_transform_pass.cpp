@@ -139,9 +139,9 @@ int DTL::MetadataStreamDeclNode::GetDataSize() const
     {return dataSize->GetVal();}
 }
 
-int DTL::MetadataStreamDeclNode::GetStreamAddress() const
+int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const
 {
-    {return metadataStreamAddress->GetVal();}
+    {return metadataStreamAddress->GetVal64();}
 }
 
 ASTNode *DTL::PostIncStmtNode::TransformPass(uint8_t opt_flags)

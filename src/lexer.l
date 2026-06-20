@@ -83,24 +83,23 @@ metadata_stream {return makeBareToken(TokenKind::METADATASTREAM);}
 }
 
 0[xX]{HEXDIGIT}+ {
-    long long val = strtoll(yytext, nullptr, 0);
-
-    bool overflow =
-        (val > INT_MAX) ||
-        (val < 0);
-
-    if (overflow) {
-        Position pos(lineNum, colNum, lineNum, colNum + yyleng);
-        errIntOverflow(&pos);
-        val = 0;
-    }
+    uint64_t val = strtoull(yytext, nullptr, 0);
+	printf("LONG LONG %lx\n", val);
+    // bool overflow =
+    //     (val > INT_MAX) ||
+    //     (val < 0);
+    // if (overflow) {
+    //     Position pos(lineNum, colNum, lineNum, colNum + yyleng);
+    //     errIntOverflow(&pos);
+    //     val = 0;
+    // }
 
     Position *pos = new Position(
         lineNum, colNum,
         lineNum, colNum + yyleng);
 
     yylval->emplace<DTL::Token *>(
-        new IntLitToken(pos, (int)val));
+        new IntLitToken(pos, (int64_t)val));
 
     colNum += yyleng;
     return TokenKind::INTLITERAL;

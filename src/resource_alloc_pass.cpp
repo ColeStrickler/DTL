@@ -508,9 +508,9 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
         }
 
         if (MetadataStreamMMIOInfo.size() != 0)
-            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",1)";
+            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",1);";
         else
-            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",0)";
+            write += "WRITE_BOOL(" + to_hex(baseaddr+USING_METADATATASTREAM_REG) + ",0);";
 
   
         for (int stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
