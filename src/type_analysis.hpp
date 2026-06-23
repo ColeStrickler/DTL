@@ -70,6 +70,8 @@ public:
 		return !hasError;
 	}
 
+
+
 	//void setCurrentFnType(const FnType * type){
 	//	currentFnType = type;
 	//}
@@ -266,6 +268,7 @@ public:
 	int outStatementsPerCond;
 	CondCode conditionalCode;
 	std::vector<IDNode*> condIndices;
+
 };
 
 }

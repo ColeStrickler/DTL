@@ -16,10 +16,12 @@ TypeAnalysis * TypeAnalysis::build(NameAnalysis * nameAnalysis){
 	if (typeAnalysis->hasError){
 		return nullptr;
 	}
+
 	
 	return typeAnalysis;
 
 }
+
 
 
 void DTL::ProgramNode::typeAnalysis(TypeAnalysis *ta)

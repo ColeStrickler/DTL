@@ -114,7 +114,7 @@ int main()
 
     auto na = DTL::NameAnalysis::build(root);
 	if (na == nullptr) {
-
+		printf("Failed name analysis\n");
 		return false;
 	}
 

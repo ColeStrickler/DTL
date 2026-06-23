@@ -11,6 +11,9 @@
 namespace DTL
 {
 
+
+
+
 #define WRITE_BOOL(addr, value)(*(bool*)(addr) = value)
 #define WRITE_UINT8(addr, value)(*(uint8_t*)(addr) = value)
 #define WRITE_UINT16(addr, value)(*(uint16_t*)(addr) = value)
@@ -54,6 +57,8 @@ inline std::string to_hex(uint64_t val) {
     ss << "0x" << std::hex << std::setw(16) << std::setfill('0') << val;
     return ss.str();
 }
+
+class ResourceAllocation;
 struct LoopReg
 {
     int init_value;
@@ -74,6 +79,7 @@ struct MetadataStream
 {
     uint64_t streamPhysStart;
     uint32_t dataSize;
+    std::string id_index;
 };
 
 
@@ -260,15 +266,16 @@ public:
     }
 
 
-    void DoMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, uint32_t byte_width)
+    void DoMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, int stream_loop_reg, uint32_t byte_width)
     {
         #define BYTES_METADATASTREAM 8 // write now we have the data size hardcoded
         uint64_t baddr = baseAddress + GetMetaDataStreamRegOffset(byte_width);
         WRITE_UINT64(baddr + BYTES_METADATASTREAM*stream_num, streamInfo.streamPhysStart);
+        WRITE_UINT8(baddr + BYTES_METADATASTREAM*nMetadataStreams + stream_num, stream_loop_reg);
         #undef BYTES_METADATASTRAM
     }
 
-    std::string PrintMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, uint32_t byte_width)
+    std::string PrintMetadataStreamWrite(uint64_t baseAddress, MetadataStream& streamInfo, int stream_num, int stream_loop_reg, uint32_t byte_width)
     {
         uint64_t baddr = baseAddress + GetMetaDataStreamRegOffset(byte_width);
         std::string addr = to_hex(baddr+BYTES_METADATASTREAM*stream_num);
@@ -279,7 +286,13 @@ public:
         std::string write_value = to_hex(write_value_);
 
         // ret to loop register
-        std::string ret = "WRITE_UINT64(" + addr + "," + write_value + ");";
+        std::string ret = "WRITE_UINT64(" + addr + "," + write_value + ");\n";
+
+
+        std::string addr2 = to_hex(baddr + BYTES_METADATASTREAM*nMetadataStreams+stream_num);
+        std::string write_value2 = std::to_string(stream_loop_reg);
+        ret += "WRITE_UINT8(" + addr2 + "," + write_value2 + ");";
+
         return ret;
     }
 
@@ -506,8 +519,10 @@ public:
     int nOutStatements;
     int nMaxConfigs;
     int nMetadataStreams;
-
+    ResourceAllocation* ra;
 };
+
+
 
 
 
@@ -975,6 +990,7 @@ public:
         MetadataStream streamInfo;
         streamInfo.streamPhysStart = static_cast<uint64_t>(metadataStream->GetStreamAddress());
         streamInfo.dataSize =  static_cast<uint32_t>(metadataStream->GetDataSize());
+        streamInfo.id_index = metadataStream->GetIndexIDString();
         printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);
     }
@@ -1004,7 +1020,7 @@ public:
     int ForLoopIDToMapping(std::string idName)
     {
         auto it = idForLoopRegMap.find(idName);
-
+        std::cout << idName << "\n";
         // should always be mapped
 
         assert(it != idForLoopRegMap.end());
@@ -1150,6 +1166,12 @@ private:
 
 	}
 };
+
+
+
+
+
+
 
 }
 

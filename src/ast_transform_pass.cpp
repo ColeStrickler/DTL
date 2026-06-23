@@ -134,6 +134,11 @@ std::string DTL::MetadataStreamDeclNode::GetIDString() const
     return myID->getName();
 }
 
+std::string DTL::MetadataStreamDeclNode::GetIndexIDString() const
+{
+    return indexNode->getName();
+}
+
 int DTL::MetadataStreamDeclNode::GetDataSize() const
 {
     {return dataSize->GetVal();}

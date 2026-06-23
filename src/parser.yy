@@ -145,10 +145,10 @@ constdecls: constdecls constdecl
             $$ = ret;
         }
 
-metadatastreamdecl: METADATASTREAM LESS intlit COMMA intlit GREATER id SEMICOL
+metadatastreamdecl: METADATASTREAM LESS intlit COMMA intlit COMMA id GREATER id SEMICOL
         {
             const Position * p = new Position($1->pos(), $8->pos());
-            $$ = new MetadataStreamDeclNode(p, new MetadataStreamTypeNode($1->pos()), $7, $3, $5);
+            $$ = new MetadataStreamDeclNode(p, new MetadataStreamTypeNode($1->pos()), $9, $3, $5, $7);
         }
 
 constdecl: type id ASSIGN intlit SEMICOL

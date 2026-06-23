@@ -12,6 +12,7 @@
 namespace DTL
 {
 
+    class NameAnalysis;
     enum SymbolType
     {
         VAR,
@@ -107,6 +108,8 @@ namespace DTL
         // }
         void print();
 
+
+        NameAnalysis* na;
     private:
         std::vector<ScopeTable *> *scopeTableChain;
     };

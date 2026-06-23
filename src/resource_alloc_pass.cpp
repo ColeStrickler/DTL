@@ -516,7 +516,7 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
         for (int stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
         {
             auto& ms = MetadataStreamMMIOInfo[stream_num];
-            write += hwStat->PrintMetadataStreamWrite(baseaddr, ms, stream_num, 4);
+            write += hwStat->PrintMetadataStreamWrite(baseaddr, ms, stream_num, ForLoopIDToMapping(ms.id_index),4);
         }
 
         write += "\nWRITE_UINT8(" + to_hex(baseaddr+USED_OUTSTMT_REG) + "," + to_hex(static_cast<uint8_t>(OutStatementRouting.size())) +   ");\n";
@@ -566,7 +566,7 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
     for (int stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
     {
         auto& ms = MetadataStreamMMIOInfo[stream_num];
-        hwStat->DoMetadataStreamWrite(baseAddr, ms, stream_num, 4);
+        hwStat->DoMetadataStreamWrite(baseAddr, ms, stream_num, ForLoopIDToMapping(ms.id_index), 4);
     }
 
 
@@ -587,6 +587,7 @@ void DTL::ResourceAllocation::DoInitStateRegisters(uint64_t baseAddr)
 
 void DTL::ResourceAllocation::DoControlWrites(uint64_t baseaddr)
 {
+
     for (int i = 0; i < OutStatementRouting.size(); i++)
     {
         auto& outstmt = OutStatementRouting[i];

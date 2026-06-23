@@ -223,7 +223,8 @@ namespace DTL
 	class MetadataStreamDeclNode : public DeclNode
 	{
 	public:
-		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr) : DeclNode(p), myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr)
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr, IDNode* index_node) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), indexNode(index_node)
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 		}
@@ -246,10 +247,12 @@ namespace DTL
 		void SetOpt(bool opt) {m_Opt = opt;}
 		bool GetOpt() {return m_Opt;}
 		std::string GetIDString() const;
+		std::string GetIndexIDString() const;
 		
 		int GetDataSize() const;
 		int64_t GetStreamAddress() const;
 	private:
+		IDNode* indexNode;
 		bool m_Opt;
 		TypeNode *myType;
 		IDNode *myID;
@@ -576,7 +579,8 @@ namespace DTL
 		IDNode* myIndexVar;
 	};
 
-	
+
+
 
 	class IDNode : public LocNode
 	{

@@ -25,7 +25,8 @@ bool ForStmtNode::nameAnalysis(SymbolTable *symTab)
 {
     symTab->enterScope();
     auto init =  myInit->nameAnalysis(symTab);
-
+    auto& declared = symTab->na->m_Declared;
+    declared.insert(GetInitVar());
     /*
         We need to impose the constraint of making sure the init variable is the same
         as the left hand side of the condition statement
@@ -61,6 +62,9 @@ bool DTL::MetadataStreamDeclNode::nameAnalysis(SymbolTable *symTab)
     auto sym = new VarSymbol(name, type);
     myID->attachSymbol(sym);
     symTab->insert(sym);
+
+   symTab->na->AddDeferred(indexNode);
+
     return true;
 }
 
@@ -83,6 +87,16 @@ bool ConstDeclNode::nameAnalysis(SymbolTable* symTab)
     auto sym = new VarSymbol(name, type);
     myID->attachSymbol(sym);
     symTab->insert(sym);
+
+
+    /*
+        For now, the deferred name analysis system is only used for metadata streams,
+        and therefore we only need to use it on for loop variable declarations
+    */
+    //auto& declared = symTab->na->m_Declared;
+    //declared.insert(myID->getName());
+
+
     return myVal->nameAnalysis(symTab);
 }
 
@@ -192,5 +206,20 @@ bool IDNode::nameAnalysis(SymbolTable* symTab)
 	return true;
 }
 
+void DTL::NameAnalysis::AddDeferred(IDNode *node)
+{
+    m_Deferred.push_back(node);
+}
 
-
+bool DTL::NameAnalysis::CheckDeferred(SymbolTable* symTab)
+{
+    for (auto& node: m_Deferred)
+    {
+        if (m_Declared.find(node->getName()) == m_Declared.end())
+        {
+            std::cout << "ERROR: Variable " << node->getName() << " set for deferral not declared.\n";
+            return false;
+        }
+    }
+    return true;
+}
