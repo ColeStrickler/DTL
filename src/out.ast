@@ -13,7 +13,7 @@ ConstDeclNode12 -> IntTypeNode13;
 ConstDeclNode12 -> IDNode14_a;
 ConstDeclNode12 -> IntLitNode15_0;
 LessNode16 -> IDNode17_a;
-LessNode16 -> IntLitNode18_500000;
+LessNode16 -> IntLitNode18_50;
 PostIncStmtNode19 -> IDNode20_a;
 ForStmtNode11 -> ConstDeclNode12;
 ForStmtNode11 -> LessNode16;

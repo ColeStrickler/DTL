@@ -1,9 +1,9 @@
 
-metadata_stream<4,0x178000000, a> x;
+metadata_stream<4,0x178000000, j> x;
 
 for (int j = 0; j < 8; j++)
 {
-    for (int a = 0; a < 500000; a++)
+    for (int a = 0; a < 50; a++)
     {
         out = x;
     }
