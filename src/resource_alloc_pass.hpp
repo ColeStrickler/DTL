@@ -33,7 +33,7 @@ namespace DTL
 #define USED_OUT_PERCOND_REG 0xf03
 #define USE_CONDCODE_REG 0xf04
 #define USE_CONDITIONAL_IDX_REG 0xf05
-#define USING_METADATATASTREAM_REG (0xf05 + loopRegisters.size())
+#define USING_METADATATASTREAM_REG (0xf05 + hwStat->nForLoopRegisters)
 
 inline int log2ceil(int n) {
     if (n <= 0) {
@@ -982,7 +982,7 @@ public:
     void MapMetadataStream(std::string idName, MetadataStreamDeclNode* metadataStream)
     {
         
-        printf("metadatastream map size: %zu idName %s\n", idMetadataStreamRegMap.size(), idName.c_str());
+        //printf("metadatastream map size: %zu idName %s\n", idMetadataStreamRegMap.size(), idName.c_str());
         assert(idMetadataStreamRegMap.find(idName) == idMetadataStreamRegMap.end());
         idMetadataStreamRegMap.insert({idName, GetMetadataStreamOffset() + MetadataStreamCount});
         MetadataStreamCount++;
@@ -991,7 +991,7 @@ public:
         streamInfo.streamPhysStart = static_cast<uint64_t>(metadataStream->GetStreamAddress());
         streamInfo.dataSize =  static_cast<uint32_t>(metadataStream->GetDataSize());
         streamInfo.id_index = metadataStream->GetIndexIDString();
-        printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
+        //printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);
     }
 
