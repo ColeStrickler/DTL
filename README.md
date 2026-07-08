@@ -17,14 +17,14 @@ This repository contains:
 # Motivation
 Modern tensor frameworks routinely perform transformations such as:
 
-NHWC → NCHW permutations
-Im2Col
-Vol2Col
-tensor unfolding
-image augmentation
-projections
-rotations/reflections
-reshape operations
+- NHWC → NCHW permutations
+- Im2Col
+- Vol2Col
+- Tensor unfolding
+- Image augmentation
+- Projections
+- Rotations/reflections
+- Reshape operations
 
 These transformations are often implemented through explicit materialization:
 Input Tensor
