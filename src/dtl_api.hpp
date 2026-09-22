@@ -38,9 +38,9 @@ typedef struct RemapPARequest
 #define AGU_CONFIG_BASE 0x4000000ULL
 #define AGU_CONFIG_RST 0xf00
 
-
+#define DTU_CONFIG_BASE_COLUMNWIDTH 0x40ULL
 #define AGU_CONFIG_OFFSET(config) (config*0x1000)
-#define DTU_UNCACHED_REGION_ADDR 0x180000000ULL
+#define DTU_UNCACHED_REGION_ADDR 0x170000000ULL
 #define DTU_UNCACHED_REGION_SIZE 0x10000000ULL
 
 
@@ -84,7 +84,7 @@ public:
    
    */
 
-
+    void SetDataSize(uint8_t size);
     int Sync(); //
 
     void* GetHeadlessReadRegion(); // get raw pointer to ephemeral region, no bounds checking, writes allowed
@@ -110,6 +110,7 @@ private:
     void* m_EphemeralRegionAccess;
     void* m_UncachedRegionAccess;
     int m_Regionfd;
+    int m_Positionalfd;
     int m_DTURuntimeDriverfd;
     void* m_DTUConfigRegion;
     AGUHardwareStat* hwStat;

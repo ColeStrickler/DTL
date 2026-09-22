@@ -102,7 +102,7 @@ public:
         nLayers(nLayers), nOutStatements(nOutStatements), nConstArray(nConstArray),\
         nConstArraySize(32), nMaxConfigs(1), layerCfgs(layerCfg), nMetadataStreams(1)
     {
-                assert(layerCfg.size() == nLayers+1);
+        assert(layerCfg.size() == nLayers+1);
         /*
             1 config per out statement,
             1 routing config per layer,

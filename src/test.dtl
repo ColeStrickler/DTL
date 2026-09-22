@@ -1,7 +1,9 @@
-
-metadata_stream<4,0x178000000, j> x;
-
-for (int j = 0; j < 1000; j++)
+int offsets = {0};
+metadata_stream<4, 0x178000000, record> x;
+for (int record = 0; record < 100000; record++)
 {
-    out = x;
+    for (int d = 0; d < 1; d++)
+    {
+        out = x*3 + offsets[d]; 
+    }
 }

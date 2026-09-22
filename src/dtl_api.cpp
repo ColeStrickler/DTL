@@ -647,7 +647,14 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
 
 
-    m_UncachedRegionAccess = mmap(NULL, DTU_UNCACHED_REGION_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, m_Regionfd, region_offset + DTU_UNCACHED_REGION_ADDR);
+   m_Positionalfd = open("/dev/mem", O_RDWR);
+    m_UncachedRegionAccess =
+        mmap(nullptr,
+            m_RegionSize,
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED,
+            m_Positionalfd,
+            m_PhysBackingStart + m_RegionOffset);
     assert(m_UncachedRegionAccess != nullptr && m_UncachedRegionAccess != MAP_FAILED);
 
 
@@ -660,10 +667,11 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 DTL::EphemeralRegion::~EphemeralRegion()
 {
     munmap(m_EphemeralRegionAccess, m_RegionSize);
-    munmap(m_UncachedRegionAccess, DTU_UNCACHED_REGION_SIZE);
+    munmap(m_UncachedRegionAccess, m_RegionSize);
     munmap(m_DTUConfigRegion, DTU_CONFIG_SIZE);
     close(m_Regionfd);
     close(m_DTURuntimeDriverfd);
+    close(m_Positionalfd);
 }
 
 DTL::EphemeralRegion *DTL::EphemeralRegion::Clone(int new_config)
@@ -671,19 +679,25 @@ DTL::EphemeralRegion *DTL::EphemeralRegion::Clone(int new_config)
     return new EphemeralRegion(GetRegionOffset(), m_RegionSize, new_config, m_PhysBackingStart, hwStat);
 }
 
-int DTL::EphemeralRegion::Sync() {
-  RemapPARequest req;
-  req.u_VA = m_EphemeralRegionAccess;
-  int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
-  if (ret == 0) // if successful, update config mapping
-  {
-    m_CurrentEphemeralPhysicalAddr = (uint64_t)req.u_NewPA;
-    UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion,
-                          m_ConfigNum,
-                          hwStat->nMaxConfigs,
-                          m_CurrentEphemeralPhysicalAddr);
-    //printf("new PA 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
-  } else
+void DTL::EphemeralRegion::SetDataSize(uint8_t size)
+{
+    WRITE_UINT8(m_DTUConfigRegion + DTU_CONFIG_BASE_COLUMNWIDTH, log2ceil(size));
+}
+
+int DTL::EphemeralRegion::Sync()
+{
+    RemapPARequest req;
+    req.u_VA = m_EphemeralRegionAccess;
+    int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
+    if (ret == 0) // if successful, update config mapping
+    {
+        m_CurrentEphemeralPhysicalAddr = (uint64_t)req.u_NewPA;
+        UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion,
+                              m_ConfigNum,
+                              hwStat->nMaxConfigs,
+                              m_CurrentEphemeralPhysicalAddr);
+        // printf("new PA 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
+    } else
         printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
 
   return ret;

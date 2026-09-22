@@ -1,6 +1,7 @@
 #ifndef DTL_AST_HPP
 #define DTL_AST_HPP
 
+#include <stdint.h>
 #include <ostream>
 #include <sstream>
 #include <string.h>
