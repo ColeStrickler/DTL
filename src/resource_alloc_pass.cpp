@@ -137,7 +137,7 @@ void DTL::IDNode::resourceAllocation(ResourceAllocation* ralloc, int depth)
 
     int id = ra->GetConstRegMapping(getName());
    // 
-    printf("ID %d %s\n", id, name.c_str());
+   // printf("ID %d %s\n", id, name.c_str());
     if (id == -1) // if a for loop register or metadatatype
     {   
         auto type  = ralloc->rsrcAnalysis->GetNodeType(this);
@@ -357,7 +357,7 @@ bool DTL::OutStmtRouting::PrintDigraph(const std::string &file)
     for (auto& e: LayerRouting)
     {
         int i = e.first;
-        printf("i %d\n", i);
+        //printf("i %d\n", i);
         outfile << e.second->PrintDigraph(i+1);
     }
 
@@ -535,7 +535,7 @@ void DTL::ResourceAllocation::PrintInitStateRegisters(const std::string &file, u
 
         for (int i = 0; i < CondInfo.condIndices.size(); i++)
         {
-            printf("cond %s --> %d\n", CondInfo.condIndices[i]->getName().c_str(), ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray);
+            //printf("cond %s --> %d\n", CondInfo.condIndices[i]->getName().c_str(), ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray);
              write  += "\nWRITE_UINT8(" + to_hex(baseaddr+USE_CONDITIONAL_IDX_REG+i) + "," +        \
                 to_hex(static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) - hwStat->nConstRegisters - hwStat->nConstArray)) + ");\n";
         }
@@ -638,7 +638,7 @@ bool DTL::ResourceAllocation::BindArrayIndex(int arrayReg, int ForLoopReg) {
         // as the number of constArrayRegisters will be 1-2
         for (auto& constArray: constArrayRegisters)
         {
-            printf("ConstArray %d attempt bind %d to %d\n",constArray.reg_num, arrayReg, ForLoopReg);
+            //printf("ConstArray %d attempt bind %d to %d\n",constArray.reg_num, arrayReg, ForLoopReg);
             if (constArray.reg_num == arrayReg)
             {
                 constArray.index_reg_num = ForLoopReg;
@@ -727,7 +727,7 @@ std::string DTL::AGUHardwareStat::PrintForLoopWrite(uint64_t baseAddress,
 
 void DTL::MetadataStreamDeclNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
 {
-    printf("HERE\n");
+   // printf("HERE\n");
     ralloc->MapMetadataStream(myID->getName(), this);
 }
 

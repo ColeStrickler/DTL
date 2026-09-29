@@ -186,7 +186,7 @@ void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta )
 		ta->nodeType(this, ErrorType::produce());
 		return;
 	}
-	printf("oUTpERcOND %d\n", myTrueCases.size());
+	//printf("oUTpERcOND %d\n", myTrueCases.size());
 
 
 
@@ -244,7 +244,7 @@ void DTL::OutStmtNode::typeAnalysis(TypeAnalysis *ta)
 	myExp->typeAnalysis(ta);
 
 	auto type = ta->nodeType(myExp);
-	printf("type %s\n", type->getString().c_str());
+	//printf("type %s\n", type->getString().c_str());
 	if (!type->isInt() && !type->isMetadataStream())
 	{
 		ta->errAssignOpr(this->pos());

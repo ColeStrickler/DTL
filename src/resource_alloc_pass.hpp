@@ -203,7 +203,7 @@ public:
 
     std::string PrintConstRegWrite(uint64_t baseAddress, int constRegNum, int constRegvalue, uint32_t byte_width)
     {
-         printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
+         //printf("ConstRegOffset() 0x%x, 0x%x\n",  GetConstantRegsOffset(byte_width), GetConstantRegsOffset(byte_width) + constRegNum*byte_width);
         uint64_t addr_ = baseAddress + GetConstantRegsOffset(byte_width) +constRegNum*byte_width;
         std::string addr = to_hex(addr_);
 
@@ -220,7 +220,7 @@ public:
 
     std::string PrintConstArrayWrite(uint64_t baseAddress, ConstArray& constArray, uint32_t byte_width)
     {
-        printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
+       // printf("Const array offset 0x%x\n", GetConstArrayOffset(byte_width));
         uint64_t baddr = baseAddress + GetConstArrayOffset(byte_width);// + constArray.reg_num*(nConstArraySize*byte_width + 8);
 
         std::string ret;
@@ -370,7 +370,7 @@ public:
         //printf("0x%x, 0x%x, 0x%x, 0x%x\n", layerByteOffset, cellByteOffset, outStatementOffset, cell_index);
         //printf("0x%x nOut %d, layer %d, inReg %d, outReg %d 0x%x\n", baseAddress, numOutStatement, layer, inRegNumber, outRegNumber, offset);
         std::string write_value = std::to_string(static_cast<unsigned char>(write_val));
-        printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
+        //printf("controlWrite  [layer %d] %d->%d idx(%d) idxbit=%d\n", layer, inRegNumber, outRegNumber, routingIdx, idxBit);
         return "WRITE_UINT8(" + addr + ", " + write_value + ");\n";  
     }
 

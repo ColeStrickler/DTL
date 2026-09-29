@@ -40,8 +40,8 @@ typedef struct RemapPARequest
 
 #define DTU_CONFIG_BASE_COLUMNWIDTH 0x40ULL
 #define AGU_CONFIG_OFFSET(config) (config*0x1000)
-#define DTU_UNCACHED_REGION_ADDR 0x170000000ULL
-#define DTU_UNCACHED_REGION_SIZE 0x10000000ULL
+#define DTU_REGION_ADDR 0x100000000ULL
+#define DTU_REGION_SIZE 0x80000000ULL
 
 
 
@@ -240,8 +240,11 @@ private:
 class API
 {
 public:
-    API(uint64_t realBackingStart = 0x170000000UL, uint64_t realBackingSize = 0x10000000UL); // if we allow automatically reading 
-    API(AGUHardwareStat* hwStat, uint64_t realBackingStart = 0x170000000UL, uint64_t realBackingSize = 0x10000000UL); // if we want to manually configure
+    API(uint64_t realBackingStart = DTU_REGION_ADDR,
+        uint64_t realBackingSize = DTU_REGION_SIZE); // if we allow automatically reading
+    API(AGUHardwareStat* hwStat,
+        uint64_t realBackingStart = DTU_REGION_ADDR,
+        uint64_t realBackingSize = DTU_REGION_SIZE); // if we want to manually configure
     ~API();
 
     /*

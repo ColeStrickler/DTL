@@ -51,7 +51,9 @@ static uint64_t va_to_pa(void *va) {
 
 
 
-DTL::API::API(uint64_t realBackingStart, uint64_t realBackingSize) : m_ConfigBitmap(0)
+DTL::API::API(uint64_t realBackingStart, uint64_t realBackingSize)
+    : m_ConfigBitmap(0), m_RealBackingStart(realBackingStart),
+      m_RealBackingSize(realBackingSize)
 {
     ReadHardwareInfo();
 
@@ -714,7 +716,7 @@ void *DTL::EphemeralRegion::GetHeadlessWriteregion()
 
 void DTL::EphemeralRegion::GuardedWrite_8(uint64_t offset, uint8_t data)
 {
-    assert(offset < DTU_UNCACHED_REGION_SIZE);
+    assert(offset < m_RegionSize);
     WRITE_UINT8(m_UncachedRegionAccess + offset, data);
 }
 
