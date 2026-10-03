@@ -165,8 +165,8 @@ int main()
         return false;
     }
 
-	ralloc->PrintControlWrites("regwrites.out", AGU_CONFIG_BASE);
-	ralloc->PrintInitStateRegisters("regwrites.out", AGU_CONFIG_BASE);
+	ralloc->PrintControlWrites("regwrites.out", AGU_CONFIG_BASE+0x1000);
+	ralloc->PrintInitStateRegisters("regwrites.out", AGU_CONFIG_BASE+0x1000);
 	
     printf("Successfully parsed!\n");
     
