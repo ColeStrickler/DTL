@@ -120,34 +120,6 @@ ASTNode *DTL::ConstArrayDeclNode::TransformPass(int currDepth, int RequiredDepth
 }
 
 
-std::string DTL::ConstDeclNode::GetIDString() const
-{
-    return myID->getName();
-}
-
-std::string DTL::ConstArrayDeclNode::GetIDString() const {
-  return myID->getName();
-}
-
-std::string DTL::MetadataStreamDeclNode::GetIDString() const
-{
-    return myID->getName();
-}
-
-std::string DTL::MetadataStreamDeclNode::GetIndexIDString() const
-{
-    return indexNode->getName();
-}
-
-int DTL::MetadataStreamDeclNode::GetDataSize() const
-{
-    {return dataSize->GetVal();}
-}
-
-int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const
-{
-    {return metadataStreamAddress->GetVal64();}
-}
 
 ASTNode *DTL::PostIncStmtNode::TransformPass(uint8_t opt_flags)
 {

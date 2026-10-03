@@ -422,7 +422,9 @@ void DTL::ArrayIndexNode::typeAnalysis(TypeAnalysis *ta)
 	assert(myIndexVar->getSymbol() != nullptr);
 	auto idType = myID->getSymbol()->getDataType();
 	auto indexType = myIndexVar->getSymbol()->getDataType();
-	if (!idType->isIntArray())
+	
+	
+	if (!idType->isIntArray() && !idType->isMetadataStream())
 	{
 		ta->errArrIndex(myID->pos());
 		ta->nodeType(this, ErrorType::produce());
@@ -435,7 +437,10 @@ void DTL::ArrayIndexNode::typeAnalysis(TypeAnalysis *ta)
 	else
 	{
 		// this will be interpreted as an
-		ta->nodeType(this, BasicType::produce(BaseType::INT));
+		if (idType->isMetadataStream())
+			ta->nodeType(this, BasicType::produce(BaseType::METADATASTREAM));
+		else
+			ta->nodeType(this, BasicType::produce(BaseType::INT));
 	}
 }
 

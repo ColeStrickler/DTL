@@ -104,8 +104,21 @@ void DTL::MetadataStreamTypeNode::resourceAllocation(ResourceAllocation *ralloc,
 
 void DTL::ArrayIndexNode::resourceAllocation(ResourceAllocation *ralloc, int depth)
 {
+
     auto out = ralloc->GetCurrentOutStatement();
     auto& ra = ralloc->rsrcAnalysis;
+
+    if (isMetaStreamIndex) // we perform the mapping in the decl because we have all the bindings there
+    {
+        int unit = ralloc->MetadataStreamIDToMapping(myID->getName());
+        out->MapNodeFuncUnit(this, unit, depth);
+        return;
+    }
+
+
+    
+
+
 
     //int index_id = ra->GetConstRegMapping(myIndexVar->getName());
     //assert(index_id == -1); // We should never be indexing with a non loop

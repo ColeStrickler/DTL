@@ -11,7 +11,7 @@
 
 namespace DTL
 {
-
+    class ASTNode;
     class NameAnalysis;
     enum SymbolType
     {
@@ -25,8 +25,8 @@ namespace DTL
     class SemSymbol
     {
     public:
-        SemSymbol(std::string nameIn, const DataType *typeIn)
-            : myName(nameIn), myType(typeIn)
+        SemSymbol(std::string nameIn, const DataType *typeIn, ASTNode* node)
+            : myName(nameIn), myType(typeIn), myNode(node)
         {
             if (myType == nullptr)
             {
@@ -36,6 +36,7 @@ namespace DTL
         virtual std::string toString()  const = 0;
         std::string getName() const { return myName; }
         virtual SymbolType getSymbolType() const = 0;
+        ASTNode* GetNode() {return myNode; }
 
         virtual const DataType *getDataType() const
         {
@@ -52,6 +53,7 @@ namespace DTL
         }
 
     protected:
+        ASTNode* myNode;
         std::string myName;
         const DataType *myType;
     };
@@ -59,8 +61,8 @@ namespace DTL
     class VarSymbol : public SemSymbol
     {
     public:
-        VarSymbol(std::string name, const DataType *type)
-            : SemSymbol(name, type) {}
+        VarSymbol(std::string name, const DataType *type, ASTNode* node)
+            : SemSymbol(name, type, node) {}
         virtual SymbolType getSymbolType() const override { return VAR; }
         std::string toString() const override {
             return myType->getString() + ":" + getName();
@@ -76,9 +78,9 @@ namespace DTL
         bool insert(SemSymbol *symbol);
         bool clash(std::string name);
         std::string toString() const;
-        void addVar(std::string name, const DataType *type)
+        void addVar(std::string name, const DataType *type, ASTNode* node)
         {
-            insert(new VarSymbol(name, type));
+            insert(new VarSymbol(name, type, node));
         }
         // FnSymbol * addFn(std::string name, FnType * type){
         //	FnSymbol * sym = new FnSymbol(name, type);
@@ -99,9 +101,9 @@ namespace DTL
         bool insert(SemSymbol *symbol);
         SemSymbol *find(std::string varName);
         bool clash(std::string name);
-        void addVar(std::string name, const DataType *type)
+        void addVar(std::string name, const DataType *type, ASTNode* node)
         {
-            getCurrentScope()->addVar(name, type);
+            getCurrentScope()->addVar(name, type, node);
         }
         // SemSymbol * addFn(std::string name, FnType * type){
         //	return getCurrentScope()->addFn(name, type);

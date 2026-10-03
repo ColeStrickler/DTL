@@ -9,7 +9,9 @@ PostIncStmtNode9 -> IDNode10_record;
 ForStmtNode1 -> ConstDeclNode2;
 ForStmtNode1 -> LessNode6;
 ForStmtNode1 -> PostIncStmtNode9;
-OutStmtNode11 -> IDNode12_x;
+ArrayIndexNode12 -> IDNode13_x;
+ArrayIndexNode12 -> IDNode14_record;
+OutStmtNode11 -> ArrayIndexNode12;
 ForStmtNode1 -> OutStmtNode11;
 ProgramNode -> ForStmtNode1;
 }

@@ -59,11 +59,11 @@ bool DTL::MetadataStreamDeclNode::nameAnalysis(SymbolTable *symTab)
 
     if (type->asError() || type->isVoid())
         return NameErr::badVarType(myID->pos());
-    auto sym = new VarSymbol(name, type);
+    auto sym = new VarSymbol(name, type, this);
     myID->attachSymbol(sym);
     symTab->insert(sym);
 
-   symTab->na->AddDeferred(indexNode);
+   //symTab->na->AddDeferred(indexNode);
 
     return true;
 }
@@ -84,7 +84,7 @@ bool ConstDeclNode::nameAnalysis(SymbolTable* symTab)
         return NameErr::badVarType(myID->pos());
 
 
-    auto sym = new VarSymbol(name, type);
+    auto sym = new VarSymbol(name, type, this);
     myID->attachSymbol(sym);
     symTab->insert(sym);
 
@@ -114,7 +114,7 @@ bool DTL::ConstArrayDeclNode::nameAnalysis(SymbolTable *symTab)
         return NameErr::badVarType(myID->pos());
 
 
-    auto sym = new VarSymbol(name, type); 
+    auto sym = new VarSymbol(name, type, this); 
     myID->attachSymbol(sym);
     symTab->insert(sym);
     return true;
@@ -188,8 +188,23 @@ bool DTL::SwitchStmtNode::nameAnalysis(SymbolTable *symTab)
 
 bool DTL::ArrayIndexNode::nameAnalysis(SymbolTable *symTab)
 {
+
+    bool res = myID->nameAnalysis(symTab) && myIndexVar->nameAnalysis(symTab);
+    if (!res)
+        return false;
+    SemSymbol* id_sym = symTab->find(myID->getName());
+
+    const DataType* id_type = id_sym->getDataType();
+
+    if (id_type->isMetadataStream())
+    {
+        auto metadata_stream_node = static_cast<MetadataStreamDeclNode*>(id_sym->GetNode());
+        assert(NODETAG::METADATASTREAMDECLNODE == metadata_stream_node->getTag());
+        metadata_stream_node->BindIndexNode(myIndexVar->getName());
+        SetIsMetaStreamIndex();
+    }
     
-    return myID->nameAnalysis(symTab) && myIndexVar->nameAnalysis(symTab);
+    return res;
 }
 
 

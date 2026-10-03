@@ -224,13 +224,12 @@ namespace DTL
 	class MetadataStreamDeclNode : public DeclNode
 	{
 	public:
-		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr, IDNode* index_node) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), indexNode(index_node)
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), index_id("")
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 		}
 		
-
 		virtual void typeAnalysis(TypeAnalysis *ta) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
 		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
@@ -250,10 +249,14 @@ namespace DTL
 		std::string GetIDString() const;
 		std::string GetIndexIDString() const;
 		
+
+		void BindIndexNode(std::string index_node_id) {index_id = index_node_id;}
+		
 		int GetDataSize() const;
 		int64_t GetStreamAddress() const;
 	private:
-		IDNode* indexNode;
+		std::string index_id; 
+		//IDNode* indexNode; // deprecated
 		bool m_Opt;
 		TypeNode *myType;
 		IDNode *myID;
@@ -557,7 +560,7 @@ namespace DTL
 	{
 	public:
 		ArrayIndexNode(const Position *p, IDNode* id, IDNode* index_id)
-			: myID(id), myIndexVar(index_id), LocNode(p) { myTag = NODETAG::ARRAYINDEXNODE; }
+			: myID(id), myIndexVar(index_id), LocNode(p), isMetaStreamIndex(false) { myTag = NODETAG::ARRAYINDEXNODE; }
 		//std::string getName() { return name; }
 		// void unparse(std::ostream& out, int indent) override;
 		// void unparseNested(std::ostream& out) override;
@@ -574,8 +577,10 @@ namespace DTL
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth();
+		void SetIsMetaStreamIndex() {isMetaStreamIndex = true;}
 		// virtual Opd * flatten(Procedure * proc) override;
 	private:
+		bool isMetaStreamIndex;
 		IDNode* myID;
 		IDNode* myIndexVar;
 	};

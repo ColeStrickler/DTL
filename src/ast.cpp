@@ -269,3 +269,33 @@ std::string DTL::MetadataStreamTypeNode::PrintAST(int &node_num, std::ofstream &
     return "MetadataStreamTypeNode";
 }
 
+
+std::string DTL::ConstDeclNode::GetIDString() const
+{
+    return myID->getName();
+}
+
+std::string DTL::ConstArrayDeclNode::GetIDString() const {
+  return myID->getName();
+}
+
+std::string DTL::MetadataStreamDeclNode::GetIDString() const
+{
+    return myID->getName();
+}
+
+std::string DTL::MetadataStreamDeclNode::GetIndexIDString() const
+{
+	assert(index_id.size() > 0);
+    return index_id;
+}
+
+int DTL::MetadataStreamDeclNode::GetDataSize() const
+{
+    {return dataSize->GetVal();}
+}
+
+int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const
+{
+    {return metadataStreamAddress->GetVal64();}
+}
