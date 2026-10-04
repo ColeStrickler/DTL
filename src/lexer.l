@@ -71,6 +71,8 @@ metadata_stream {return makeBareToken(TokenKind::METADATASTREAM);}
 "case"	{ return makeBareToken(TokenKind::CASE); }
 "else"	{ return makeBareToken(TokenKind::ELSE); }
 "pad?" { return makeBareToken(TokenKind::PAD); }
+"DTL" {return makeBareToken(TokenKind::DTL); }
+"active" {return makeBareToken(TokenKind::ACTIVE);}
 
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)* { 

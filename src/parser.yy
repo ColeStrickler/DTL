@@ -14,7 +14,7 @@
 %code requires{
 	#include <list>
 	#include "tokens.hpp"
-	#include "ast.hpp"
+	#include "transform_graph.hpp"
 	namespace DTL {
 		class Scanner;
 	}
@@ -34,7 +34,7 @@
 }
 
 %parse-param { DTL::Scanner &scanner }
-%parse-param { DTL::ProgramNode** root}
+%parse-param { DTL::TransformGraph** root}
 %code {
    // C std code for utility functions
    #include <iostream>
@@ -91,6 +91,8 @@
 %token  <DTL::Token *>       AND
 %token  <DTL::Token *>       PAD
 %token  <DTL::Token *>       METADATASTREAM
+%token  <DTL::Token *>       DTL
+%token  <DTL::Token *>       ACTIVE
 
 %left LESS
 %left CROSS
@@ -119,15 +121,70 @@
 %type <DTL::IntLitNode*> intlit
 %type <DTL::IDNode*> id
 %type <DTL::MetadataStreamDeclNode*> metadatastreamdecl
-
+%type <DTL::TransformGraph*> transformgraph
+%type <DTL::IDNode*> activenode
+%type <std::vector<DTL::DTLKernelNode*>> kernellist
+%type <DTL::DTLKernelNode*> kernel
+%type <std::vector<DTL::IDNode*>> inputlistwrapper
+%type <std::vector<DTL::IDNode*>> inputlist
 
 
 %%
+transformgraph: kernellist activenode
+        {
+            $$ = new TransformGraph($1, $2);
+            *root = $$;
+        }
+
+activenode : ACTIVE id SEMICOL
+        {
+            $$ = $2;
+        }
+
+kernellist: kernel kernellist
+        {
+            $$ = std::vector<DTL::DTLKernelNode*>();
+            $$.push_back($1);
+            $$.insert($$.end(), $2.begin(), $2.end());
+        }
+        | /* empty */
+        {
+            $$ = std::vector<DTL::DTLKernelNode*>();
+        }
+
+
+kernel: DTL id inputlistwrapper ASSIGN LCURLY program RCURLY
+        {
+            $$ = new DTLKernelNode($2, $3, $6);
+        }
+
+inputlistwrapper: COLON inputlist
+        {
+            $$ = $2;
+        }
+        |
+        {
+            $$ = std::vector<IDNode*>();
+        }
+
+inputlist: id COMMA inputlist
+        {
+            $$ = std::vector<IDNode*>();
+            $$.push_back($1);
+            $$.insert($$.end(), $3.begin(), $3.end());
+        }
+        | id
+        {
+            $$ = std::vector<IDNode*>();
+            $$.push_back($1);
+        }
+
+
 program: constdecls forstatement 
         {
             $1.push_back($2);
-            *root = new ProgramNode($1);
-            $$ = *root;
+            $$ = new ProgramNode($1);
+  
         }
 constdecls: constdecls constdecl
         {

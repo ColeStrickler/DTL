@@ -49,7 +49,7 @@
 
 	#include <list>
 	#include "tokens.hpp"
-	#include "ast.hpp"
+	#include "transform_graph.hpp"
 	namespace DTL {
 		class Scanner;
 	}
@@ -399,41 +399,45 @@ namespace DTL {
     /// An auxiliary type to compute the largest semantic type.
     union union_type
     {
+      // kernel
+      char dummy1[sizeof (DTL::DTLKernelNode*)];
+
       // expr
       // term
       // factor
-      char dummy1[sizeof (DTL::ExpNode*)];
+      char dummy2[sizeof (DTL::ExpNode*)];
 
       // forstatement
-      char dummy2[sizeof (DTL::ForStmtNode*)];
+      char dummy3[sizeof (DTL::ForStmtNode*)];
 
+      // activenode
       // id
-      char dummy3[sizeof (DTL::IDNode*)];
+      char dummy4[sizeof (DTL::IDNode*)];
 
       // ID
-      char dummy4[sizeof (DTL::IDToken *)];
+      char dummy5[sizeof (DTL::IDToken *)];
 
       // intlit
-      char dummy5[sizeof (DTL::IntLitNode*)];
+      char dummy6[sizeof (DTL::IntLitNode*)];
 
       // INTLITERAL
-      char dummy6[sizeof (DTL::IntLitToken *)];
+      char dummy7[sizeof (DTL::IntLitToken *)];
 
       // loc
-      char dummy7[sizeof (DTL::LocNode*)];
+      char dummy8[sizeof (DTL::LocNode*)];
 
       // metadatastreamdecl
-      char dummy8[sizeof (DTL::MetadataStreamDeclNode*)];
+      char dummy9[sizeof (DTL::MetadataStreamDeclNode*)];
 
       // program
-      char dummy9[sizeof (DTL::ProgramNode*)];
+      char dummy10[sizeof (DTL::ProgramNode*)];
 
       // constdecl
       // ifstatement
       // switchstatement
       // outstatement
       // unarystmt
-      char dummy10[sizeof (DTL::StmtNode*)];
+      char dummy11[sizeof (DTL::StmtNode*)];
 
       // ASSIGN
       // NOPT
@@ -467,22 +471,34 @@ namespace DTL {
       // AND
       // PAD
       // METADATASTREAM
-      char dummy11[sizeof (DTL::Token *)];
+      // DTL
+      // ACTIVE
+      char dummy12[sizeof (DTL::Token *)];
+
+      // transformgraph
+      char dummy13[sizeof (DTL::TransformGraph*)];
 
       // type
-      char dummy12[sizeof (DTL::TypeNode*)];
+      char dummy14[sizeof (DTL::TypeNode*)];
+
+      // kernellist
+      char dummy15[sizeof (std::vector<DTL::DTLKernelNode*>)];
+
+      // inputlistwrapper
+      // inputlist
+      char dummy16[sizeof (std::vector<DTL::IDNode*>)];
 
       // constdecls
       // outstatements
       // innernest
       // casestatement
-      char dummy13[sizeof (std::vector<DTL::StmtNode*>)];
+      char dummy17[sizeof (std::vector<DTL::StmtNode*>)];
 
       // intlist
-      char dummy14[sizeof (std::vector<IntLitNode*>)];
+      char dummy18[sizeof (std::vector<IntLitNode*>)];
 
       // casestatements
-      char dummy15[sizeof (std::vector<std::vector<DTL::StmtNode*>>)];
+      char dummy19[sizeof (std::vector<std::vector<DTL::StmtNode*>>)];
     };
 
     /// The size of the largest semantic type.
@@ -559,7 +575,9 @@ namespace DTL {
     OR = 288,                      // OR
     AND = 289,                     // AND
     PAD = 290,                     // PAD
-    METADATASTREAM = 291           // METADATASTREAM
+    METADATASTREAM = 291,          // METADATASTREAM
+    DTL = 292,                     // DTL
+    ACTIVE = 293                   // ACTIVE
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -576,7 +594,7 @@ namespace DTL {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 37, ///< Number of tokens.
+        YYNTOKENS = 39, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end file"
         S_YYerror = 1,                           // error
@@ -615,28 +633,36 @@ namespace DTL {
         S_AND = 34,                              // AND
         S_PAD = 35,                              // PAD
         S_METADATASTREAM = 36,                   // METADATASTREAM
-        S_YYACCEPT = 37,                         // $accept
-        S_program = 38,                          // program
-        S_constdecls = 39,                       // constdecls
-        S_metadatastreamdecl = 40,               // metadatastreamdecl
-        S_constdecl = 41,                        // constdecl
-        S_intlist = 42,                          // intlist
-        S_forstatement = 43,                     // forstatement
-        S_outstatements = 44,                    // outstatements
-        S_innernest = 45,                        // innernest
-        S_ifstatement = 46,                      // ifstatement
-        S_switchstatement = 47,                  // switchstatement
-        S_casestatements = 48,                   // casestatements
-        S_casestatement = 49,                    // casestatement
-        S_outstatement = 50,                     // outstatement
-        S_type = 51,                             // type
-        S_expr = 52,                             // expr
-        S_unarystmt = 53,                        // unarystmt
-        S_term = 54,                             // term
-        S_factor = 55,                           // factor
-        S_intlit = 56,                           // intlit
-        S_loc = 57,                              // loc
-        S_id = 58                                // id
+        S_DTL = 37,                              // DTL
+        S_ACTIVE = 38,                           // ACTIVE
+        S_YYACCEPT = 39,                         // $accept
+        S_transformgraph = 40,                   // transformgraph
+        S_activenode = 41,                       // activenode
+        S_kernellist = 42,                       // kernellist
+        S_kernel = 43,                           // kernel
+        S_inputlistwrapper = 44,                 // inputlistwrapper
+        S_inputlist = 45,                        // inputlist
+        S_program = 46,                          // program
+        S_constdecls = 47,                       // constdecls
+        S_metadatastreamdecl = 48,               // metadatastreamdecl
+        S_constdecl = 49,                        // constdecl
+        S_intlist = 50,                          // intlist
+        S_forstatement = 51,                     // forstatement
+        S_outstatements = 52,                    // outstatements
+        S_innernest = 53,                        // innernest
+        S_ifstatement = 54,                      // ifstatement
+        S_switchstatement = 55,                  // switchstatement
+        S_casestatements = 56,                   // casestatements
+        S_casestatement = 57,                    // casestatement
+        S_outstatement = 58,                     // outstatement
+        S_type = 59,                             // type
+        S_expr = 60,                             // expr
+        S_unarystmt = 61,                        // unarystmt
+        S_term = 62,                             // term
+        S_factor = 63,                           // factor
+        S_intlit = 64,                           // intlit
+        S_loc = 65,                              // loc
+        S_id = 66                                // id
       };
     };
 
@@ -671,6 +697,10 @@ namespace DTL {
       {
         switch (this->kind ())
     {
+      case symbol_kind::S_kernel: // kernel
+        value.move< DTL::DTLKernelNode* > (std::move (that.value));
+        break;
+
       case symbol_kind::S_expr: // expr
       case symbol_kind::S_term: // term
       case symbol_kind::S_factor: // factor
@@ -681,6 +711,7 @@ namespace DTL {
         value.move< DTL::ForStmtNode* > (std::move (that.value));
         break;
 
+      case symbol_kind::S_activenode: // activenode
       case symbol_kind::S_id: // id
         value.move< DTL::IDNode* > (std::move (that.value));
         break;
@@ -749,11 +780,26 @@ namespace DTL {
       case symbol_kind::S_AND: // AND
       case symbol_kind::S_PAD: // PAD
       case symbol_kind::S_METADATASTREAM: // METADATASTREAM
+      case symbol_kind::S_DTL: // DTL
+      case symbol_kind::S_ACTIVE: // ACTIVE
         value.move< DTL::Token * > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_transformgraph: // transformgraph
+        value.move< DTL::TransformGraph* > (std::move (that.value));
         break;
 
       case symbol_kind::S_type: // type
         value.move< DTL::TypeNode* > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_kernellist: // kernellist
+        value.move< std::vector<DTL::DTLKernelNode*> > (std::move (that.value));
+        break;
+
+      case symbol_kind::S_inputlistwrapper: // inputlistwrapper
+      case symbol_kind::S_inputlist: // inputlist
+        value.move< std::vector<DTL::IDNode*> > (std::move (that.value));
         break;
 
       case symbol_kind::S_constdecls: // constdecls
@@ -789,6 +835,18 @@ namespace DTL {
 #else
       basic_symbol (typename Base::kind_type t)
         : Base (t)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, DTL::DTLKernelNode*&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const DTL::DTLKernelNode*& v)
+        : Base (t)
+        , value (v)
       {}
 #endif
 
@@ -925,12 +983,48 @@ namespace DTL {
 #endif
 
 #if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, DTL::TransformGraph*&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const DTL::TransformGraph*& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
       basic_symbol (typename Base::kind_type t, DTL::TypeNode*&& v)
         : Base (t)
         , value (std::move (v))
       {}
 #else
       basic_symbol (typename Base::kind_type t, const DTL::TypeNode*& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::vector<DTL::DTLKernelNode*>&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::vector<DTL::DTLKernelNode*>& v)
+        : Base (t)
+        , value (v)
+      {}
+#endif
+
+#if 201103L <= YY_CPLUSPLUS
+      basic_symbol (typename Base::kind_type t, std::vector<DTL::IDNode*>&& v)
+        : Base (t)
+        , value (std::move (v))
+      {}
+#else
+      basic_symbol (typename Base::kind_type t, const std::vector<DTL::IDNode*>& v)
         : Base (t)
         , value (v)
       {}
@@ -996,6 +1090,10 @@ namespace DTL {
         // Value type destructor.
 switch (yykind)
     {
+      case symbol_kind::S_kernel: // kernel
+        value.template destroy< DTL::DTLKernelNode* > ();
+        break;
+
       case symbol_kind::S_expr: // expr
       case symbol_kind::S_term: // term
       case symbol_kind::S_factor: // factor
@@ -1006,6 +1104,7 @@ switch (yykind)
         value.template destroy< DTL::ForStmtNode* > ();
         break;
 
+      case symbol_kind::S_activenode: // activenode
       case symbol_kind::S_id: // id
         value.template destroy< DTL::IDNode* > ();
         break;
@@ -1074,11 +1173,26 @@ switch (yykind)
       case symbol_kind::S_AND: // AND
       case symbol_kind::S_PAD: // PAD
       case symbol_kind::S_METADATASTREAM: // METADATASTREAM
+      case symbol_kind::S_DTL: // DTL
+      case symbol_kind::S_ACTIVE: // ACTIVE
         value.template destroy< DTL::Token * > ();
+        break;
+
+      case symbol_kind::S_transformgraph: // transformgraph
+        value.template destroy< DTL::TransformGraph* > ();
         break;
 
       case symbol_kind::S_type: // type
         value.template destroy< DTL::TypeNode* > ();
+        break;
+
+      case symbol_kind::S_kernellist: // kernellist
+        value.template destroy< std::vector<DTL::DTLKernelNode*> > ();
+        break;
+
+      case symbol_kind::S_inputlistwrapper: // inputlistwrapper
+      case symbol_kind::S_inputlist: // inputlist
+        value.template destroy< std::vector<DTL::IDNode*> > ();
         break;
 
       case symbol_kind::S_constdecls: // constdecls
@@ -1216,7 +1330,7 @@ switch (yykind)
     };
 
     /// Build a parser object.
-    Parser (DTL::Scanner &scanner_yyarg, DTL::ProgramNode** root_yyarg);
+    Parser (DTL::Scanner &scanner_yyarg, DTL::TransformGraph** root_yyarg);
     virtual ~Parser ();
 
 #if 201103L <= YY_CPLUSPLUS
@@ -1815,6 +1929,36 @@ switch (yykind)
         return symbol_type (token::METADATASTREAM, v);
       }
 #endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_DTL (DTL::Token * v)
+      {
+        return symbol_type (token::DTL, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_DTL (const DTL::Token *& v)
+      {
+        return symbol_type (token::DTL, v);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ACTIVE (DTL::Token * v)
+      {
+        return symbol_type (token::ACTIVE, std::move (v));
+      }
+#else
+      static
+      symbol_type
+      make_ACTIVE (const DTL::Token *& v)
+      {
+        return symbol_type (token::ACTIVE, v);
+      }
+#endif
 
 
     class context
@@ -2143,22 +2287,22 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 231,     ///< Last index in yytable_.
-      yynnts_ = 22,  ///< Number of nonterminal symbols.
-      yyfinal_ = 3 ///< Termination state number.
+      yylast_ = 268,     ///< Last index in yytable_.
+      yynnts_ = 28,  ///< Number of nonterminal symbols.
+      yyfinal_ = 7 ///< Termination state number.
     };
 
 
     // User arguments.
     DTL::Scanner &scanner;
-    DTL::ProgramNode** root;
+    DTL::TransformGraph** root;
 
   };
 
 
 #line 5 "parser.yy"
 } // DTL
-#line 2162 "frontend.hh"
+#line 2306 "frontend.hh"
 
 
 

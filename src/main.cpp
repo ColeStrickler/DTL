@@ -12,7 +12,7 @@
 #include "dtl_api.hpp"
 #include "optimizations/optimization_passes.hpp"
 
-
+/*
 static void writeTokenStream(const char * inPath, const char * outPath){
 	std::ifstream inStream(inPath);
 	if (!inStream.good()){
@@ -64,7 +64,7 @@ static DTL::ProgramNode * parse(const char * inFile){
 
 
 
-
+*/
 
 
 
@@ -105,13 +105,23 @@ int main()
 
     std::istringstream input(FileToString("./test.dtl"));
     DTL::ProgramNode * root = nullptr;
+	DTL::TransformGraph* graph;
     DTL::Scanner scanner(&input);
-	DTL::Parser parser(scanner, &root);
+	//DTL::Parser parser(scanner, &root);
+
+	DTL::Parser parser(scanner, &graph);
     //parser.set_debug_level(1);  // Turn on debugging
     int err = parser.parse();
 	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
-	printf("successful parse\n");
+	//printf("successful parse\n");
 
+
+	std::cout << graph->PrintDotGraph() << "\n";
+	return 0;
+}
+
+
+/*
     auto na = DTL::NameAnalysis::build(root);
 	if (na == nullptr) {
 		printf("Failed name analysis\n");
@@ -173,4 +183,4 @@ int main()
 	
 	std::cout << rsrc_string << "\n";
 	return 0;
-}
+}*/

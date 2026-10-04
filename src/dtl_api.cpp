@@ -149,12 +149,16 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     /*
         May want to handle memory management here differently to prevent leaks!
     */
-
+    return true;
 
     std::istringstream input(dtlProgram);
     DTL::ProgramNode * root = nullptr;
+
+    DTL::TransformGraph* graph;
     DTL::Scanner scanner(&input);
-	DTL::Parser parser(scanner, &root);
+	DTL::Parser parser(scanner, &graph);
+
+    /*
     //parser.set_debug_level(1);  // Turn on debugging
     int err = parser.parse();
 	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
@@ -199,6 +203,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     hwStat->VarOutMap.clear(); // otherwise we we will get subsequent collisions
     hwStat->IdxOutMap.clear();
     return true;
+    */
 }
 
 

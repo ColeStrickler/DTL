@@ -65,7 +65,8 @@ namespace DTL
 		IFSTMTNODE,
 		SWITCHSTMTNODE,
 		METADATASTREAMDECLNODE,
-		METADATASTREAMTYPENODE
+		METADATASTREAMTYPENODE,
+		DTLKERNELNODE,
 	};
 
 	class ASTNode
@@ -125,6 +126,39 @@ namespace DTL
 	private:
 		std::vector<StmtNode *> myStatements;
 	};
+
+
+	/*
+		DTLKernelNode does not inherit from the ASTNode, as we would then have to implement the AST optimization
+		methods, but these would have no meaning.
+
+
+		These optimizations will only work inside of ProgramNode* 
+	*/
+	class DTLKernelNode
+	{
+	public:
+		DTLKernelNode(IDNode* id, std::vector<IDNode*> inputArgs, ProgramNode* prog) 
+			: m_ID(id), m_Arguments(inputArgs), m_Program(prog)
+		{
+			myTag = NODETAG::DTLKERNELNODE;
+		}
+		~DTLKernelNode()
+		{
+
+		}
+		NODETAG getTag() const { return myTag; }
+		std::string GetIDString() const;
+		std::vector<DTL::IDNode*> GetArguments() const;
+
+	private:
+		NODETAG myTag;
+		IDNode* m_ID;
+		std::vector<IDNode*> m_Arguments;
+		ProgramNode* m_Program;
+
+	};
+
 
 	class ExpNode : public ASTNode
 	{

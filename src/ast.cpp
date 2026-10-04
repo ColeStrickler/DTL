@@ -299,3 +299,13 @@ int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const
 {
     {return metadataStreamAddress->GetVal64();}
 }
+
+std::string DTL::DTLKernelNode::GetIDString() const
+{
+    return m_ID->getName();
+}
+
+std::vector<DTL::IDNode *> DTL::DTLKernelNode::GetArguments() const
+{
+    return m_Arguments;
+}

@@ -5,7 +5,7 @@ DTL transform1 =
     }
 <|
 
-DTL transform2 =
+DTL transform2 : transform1 =
 |>
     metadata_stream<4, transform1, i> x;
 

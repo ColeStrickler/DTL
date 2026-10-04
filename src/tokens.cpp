@@ -24,6 +24,8 @@ static std::string tokenKindString(int tokKind){
         case TokenKind::FOR: return "FOR";
         case TokenKind::LESS: return "LESS";
         case TokenKind::OUT: return "OUT";
+		case TokenKind::DTL: return "DTL";
+		case TokenKind::ACTIVE: return "ACTIVE";
 		default:
 			return "OTHER"; //This should never happen
 	}

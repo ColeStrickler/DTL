@@ -1,5 +1,33 @@
-metadata_stream<4, 0x2000000000> x; 
-for (int record = 0; record < 100000; record++)
-{
-    out = x[record];
+DTL kernel_d  = {
+    for (int i = 0; i < 1000; i++) {
+        out = i;
+    }
 }
+
+
+DTL kernel_c : kernel_d = {
+    for (int i = 0; i < 1000; i++) {
+        out = i;
+    }
+}
+
+DTL kernel_a : kernel_c = {
+    for (int i = 0; i < 1000; i++) {
+        out = i;
+    }
+}
+
+DTL kernel_b = {
+    for (int i = 0; i < 1000; i++) {
+        out = i;
+    }
+}
+
+
+DTL kernel: kernel_a, kernel_b = {
+    for (int i = 0; i < 1000; i++) {
+        out = i;
+    }
+}
+
+active kernel;
