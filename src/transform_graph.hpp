@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <queue>
+#include <unordered_set>
 #include "ast.hpp"
 
 
@@ -34,17 +35,25 @@ class TransformGraph
 public:
     TransformGraph(std::vector<DTLKernelNode*> kernels, IDNode* active);
     ~TransformGraph();
+    bool AssertNoCycles();
     void CreateTransformDependencyDAG();
+    void ReverseTopologicalSortNodes();
     DTLKernelNode* GetActiveKernel();
     DTLKernelNode* GetKernelNodeByID(const std::string& id);
-
-
+    std::vector<TransformGraphNode*>& BeginReverseTopologicalOrder();
+    TransformGraphNode* GetActiveNode();
     std::string PrintDotGraph();
 private:
+    void ReverseTopSortHelper(std::vector<TransformGraphNode*>& rtop_order, TransformGraphNode* curr);
+
+
+
+
     std::unordered_map<std::string, DTLKernelNode*> m_KernelIDMap;
     std::unordered_map<std::string, TransformGraphNode*> m_NodeIDMap;
     std::vector<DTLKernelNode*> m_Kernels;
     IDNode* m_ActiveKernel;
+    std::vector<TransformGraphNode*> m_ReverseTopologicalOrderGraph;
 
 };
 

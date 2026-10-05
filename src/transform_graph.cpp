@@ -10,10 +10,41 @@ DTL::TransformGraph::TransformGraph(std::vector<DTL::DTLKernelNode*> kernels, ID
 
 
     CreateTransformDependencyDAG();
+    assert(AssertNoCycles());
+    ReverseTopologicalSortNodes();
+
+
+
 }
 
 DTL::TransformGraph::~TransformGraph()
 {
+}
+
+bool DTL::TransformGraph::AssertNoCycles()
+{
+    TransformGraphNode* active_node = GetActiveNode();
+
+    std::unordered_set<TransformGraphNode*> cycle_check_set;
+    std::queue<TransformGraphNode*> q;
+    q.push(active_node);
+
+    while (!q.empty())
+    {
+        int qsize = q.size();
+        for (int i = 0; i < qsize; i++)
+        {
+            TransformGraphNode* curr = q.front();
+            q.pop();
+            if (cycle_check_set.count(curr)) // found a cycle
+                return false; 
+
+            cycle_check_set.insert(curr);
+            for (auto& incoming: curr->m_EdgeIn)
+                q.push(incoming);
+        }
+    }
+    return true;
 }
 
 void DTL::TransformGraph::CreateTransformDependencyDAG()
@@ -52,6 +83,32 @@ void DTL::TransformGraph::CreateTransformDependencyDAG()
     }
 }
 
+
+/*
+    We are guaranteed to have a DAG by the time this is called
+
+    There is no chance that we run into cycles at this point
+*/
+void DTL::TransformGraph::ReverseTopologicalSortNodes()
+{
+    std::vector<TransformGraphNode*> rtop_order;
+    TransformGraphNode* active_node = GetActiveNode();
+    ReverseTopSortHelper(rtop_order, active_node);
+    m_ReverseTopologicalOrderGraph = std::move(rtop_order);
+}
+
+void DTL::TransformGraph::ReverseTopSortHelper(std::vector<TransformGraphNode*>& rtop_order, TransformGraphNode* curr)
+{
+    assert(curr != nullptr);
+
+    // DFS, but we do not reverse -- giving reverse top sort order
+    for (auto& incoming: curr->m_EdgeIn)
+        ReverseTopSortHelper(rtop_order, incoming);
+    
+    rtop_order.push_back(curr);
+}
+
+
 DTL::DTLKernelNode *DTL::TransformGraph::GetActiveKernel()
 {
     std::string activeKernelID = m_ActiveKernel->getName();
@@ -70,6 +127,19 @@ DTL::DTLKernelNode *DTL::TransformGraph::GetKernelNodeByID(const std::string &id
     if (m_KernelIDMap.find(id) != m_KernelIDMap.end())
         return m_KernelIDMap.at(id);
     return nullptr;
+}
+
+std::vector<DTL::TransformGraphNode*>& DTL::TransformGraph::BeginReverseTopologicalOrder() {
+    return m_ReverseTopologicalOrderGraph;
+}
+
+DTL::TransformGraphNode *DTL::TransformGraph::GetActiveNode()
+{
+    DTLKernelNode* active = GetActiveKernel();
+    std::string active_kernel_id = active->GetIDString();
+    assert(m_NodeIDMap.find(active_kernel_id) != m_NodeIDMap.end());
+    TransformGraphNode* active_node = m_NodeIDMap.at(active_kernel_id);
+    return active_node;
 }
 
 std::string DTL::TransformGraph::PrintDotGraph()
@@ -97,3 +167,4 @@ std::string DTL::TransformGraph::PrintDotGraph()
 
     return ret;
 }
+

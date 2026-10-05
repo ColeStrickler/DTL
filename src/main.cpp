@@ -117,6 +117,12 @@ int main()
 
 
 	std::cout << graph->PrintDotGraph() << "\n";
+
+	std::cout << "\nRTOP ORDER\n" << "\n";
+	for (auto& node: graph->BeginReverseTopologicalOrder())
+	{
+		std::cout << node->m_Kernel->GetIDString() << "\n";
+	}
 	return 0;
 }
 
