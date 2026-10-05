@@ -119,72 +119,100 @@ int main()
 	std::cout << graph->PrintDotGraph() << "\n";
 
 	std::cout << "\nRTOP ORDER\n" << "\n";
+
+	std::unordered_map<std::string, uint64_t> boundPhysAddresses;
+
+	/*
+		We do not currently allocate any shadow_pa when compiling x86,
+		so we can just have a dummy address here that we pass into dependent
+		kernels as arguments
+	*/
+	uint64_t compiled_phys_backing = 0; 
 	for (auto& node: graph->BeginReverseTopologicalOrder())
 	{
-		std::cout << node->m_Kernel->GetIDString() << "\n";
+		auto& kernel = node->m_Kernel;
+		std::string kernel_id = kernel->GetIDString();
+		std::cout <<  kernel_id << "\n";
+		DTL::ProgramNode* prog = kernel->GetProgram();
+
+		for (auto& arg: kernel->GetArguments())
+		{
+			std::string argParam = arg->getName();
+			assert(boundPhysAddresses.find(argParam) != boundPhysAddresses.end());
+			DTL::DTLProgramArg inputArg;
+			inputArg.id = argParam;
+			inputArg.bound_address = boundPhysAddresses.at(argParam); 
+		}
+
+		auto na = DTL::NameAnalysis::build(prog);
+		if (na == nullptr) {
+			printf("Failed name analysis\n");
+			return false;
+		}
+
+		/*
+			Each program can have args, we need to pass in this state 
+		*/
+
+
+		auto ta = DTL::TypeAnalysis::build(na);
+		if (ta == nullptr)
+			return false;
+		
+
+		auto condInfo = ta->GetConditionalInfo();
+
+		//root->PrintAST("out_untransform.ast");
+		printf("here\n");
+		
+
+		prog = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(prog, DTL::DTL_OPTLEVEL::OPTMAX));
+		prog->PrintAST("out_constfold.ast");
+		
+
+		prog = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(prog, DTL_OPT_MAX));
+		if (prog == nullptr)
+		{     
+
+			return false;
+		}
+		prog->PrintAST("out.ast");
+
+
+		auto ra = DTL::ResourceAnalysis::build(prog, hwStat, ta);
+		if (ra == nullptr)
+		{
+			//ERR("ResourceAnalysis Failed");
+			return false;
+		}
+		ra->GetResources()->GetNeededResourceStats();
+		auto rsrc_string = ra->GetResources()->toString();
+			
+		std::cout << rsrc_string << "\n";
+
+		auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
+		if (ralloc == nullptr)
+		{
+			//ERR("ResourceAllocation failed\n");
+			return false;
+		}
+
+		ralloc->PrintControlWrites("regwrites.out", AGU_CONFIG_BASE+0x1000);
+		ralloc->PrintInitStateRegisters("regwrites.out", AGU_CONFIG_BASE+0x1000);
+		
+		printf("Successfully parsed %s\n", kernel_id.c_str());
+		boundPhysAddresses.insert({kernel_id, compiled_phys_backing});
+		compiled_phys_backing++;
 	}
 	return 0;
 }
 
 
 /*
-    auto na = DTL::NameAnalysis::build(root);
-	if (na == nullptr) {
-		printf("Failed name analysis\n");
-		return false;
-	}
+    
 
 
 
-	auto ta = DTL::TypeAnalysis::build(na);
-	if (ta == nullptr)
-	{
-
-        return false;
-    }
-		printf("name analysis\n");
-
-	auto condInfo = ta->GetConditionalInfo();
-
-	root->PrintAST("out_untransform.ast");
-	printf("here\n");
-	
-
-	root = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(root, DTL::DTL_OPTLEVEL::OPTMAX));
-	root->PrintAST("out_constfold.ast");
-
-
-    root = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(root, DTL_OPT_MAX));
-    if (root == nullptr)
-    {     
-
-        return false;
-    }
-	root->PrintAST("out.ast");
-
-
-	auto ra = DTL::ResourceAnalysis::build(root, hwStat, ta);
-    if (ra == nullptr)
-    {
-        //ERR("ResourceAnalysis Failed");
-        return false;
-    }
-    ra->GetResources()->GetNeededResourceStats();
-	auto rsrc_string = ra->GetResources()->toString();
-		
-	std::cout << rsrc_string << "\n";
-
-    auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
-    if (ralloc == nullptr)
-    {
-        //ERR("ResourceAllocation failed\n");
-        return false;
-    }
-
-	ralloc->PrintControlWrites("regwrites.out", AGU_CONFIG_BASE+0x1000);
-	ralloc->PrintInitStateRegisters("regwrites.out", AGU_CONFIG_BASE+0x1000);
-	
-    printf("Successfully parsed!\n");
     
 	
 	std::cout << rsrc_string << "\n";

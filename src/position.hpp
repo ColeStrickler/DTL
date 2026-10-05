@@ -7,7 +7,8 @@ namespace DTL {
 
 
 class Position{
-public: 
+public:
+	Position() = default;
 	Position(size_t lineI, size_t colI, size_t lineE, size_t colE)
 	: myLineI(lineI), myColI(colI), myLineE(lineE), myColE(colE){
 	}

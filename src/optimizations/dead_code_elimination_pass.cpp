@@ -96,6 +96,7 @@ ASTNode *DTL::ProgramNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *eli
     assert(false);
 }
 
+
 ASTNode *DTL::ConstDeclNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {
     assert(pass == 0); // pass 1 shouldn't reach here
 
@@ -116,6 +117,7 @@ ASTNode *DTL::MetadataStreamDeclNode::DeadCodeElimination(DTL::DeadCodeEliminati
     elim_pass->AddMetadataStreamDecl(this);
     return this;
 }
+
 
 
 ASTNode *DTL::PostIncStmtNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *elim_pass, int pass) {

@@ -1,17 +1,14 @@
 digraph G {
-ProgramNode -> MetadataStreamDeclNode x;
 ConstDeclNode2 -> IntTypeNode3;
-ConstDeclNode2 -> IDNode4_record;
+ConstDeclNode2 -> IDNode4_i;
 ConstDeclNode2 -> IntLitNode5_0;
-LessNode6 -> IDNode7_record;
-LessNode6 -> IntLitNode8_100000;
-PostIncStmtNode9 -> IDNode10_record;
+LessNode6 -> IDNode7_i;
+LessNode6 -> IntLitNode8_1000;
+PostIncStmtNode9 -> IDNode10_i;
 ForStmtNode1 -> ConstDeclNode2;
 ForStmtNode1 -> LessNode6;
 ForStmtNode1 -> PostIncStmtNode9;
-ArrayIndexNode12 -> IDNode13_x;
-ArrayIndexNode12 -> IDNode14_record;
-OutStmtNode11 -> ArrayIndexNode12;
+OutStmtNode11 -> IDNode12_i;
 ForStmtNode1 -> OutStmtNode11;
 ProgramNode -> ForStmtNode1;
 }

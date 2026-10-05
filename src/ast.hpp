@@ -94,13 +94,30 @@ namespace DTL
 		const Position *myPos = nullptr;
 	};
 
+
+
+	/*
+		For now we shall assume that the only argument passed
+		into a DTL Program are DTL kernels to be used as metadata
+		
+
+		We will add a short preprocessing phase that will replace the idnodes with
+		the value
+	*/
+	struct DTLProgramArg
+	{
+		std::string id;
+		uint64_t bound_address;
+	};
+
 	class ProgramNode : public ASTNode
 	{
 	public:
-		ProgramNode(std::vector<StmtNode *> globalStatements)
-			: ASTNode(nullptr), myStatements(globalStatements)
+		ProgramNode(std::vector<StmtNode *> globalStatements, std::vector<DTLProgramArg> args = {})
+			: ASTNode(nullptr), myStatements(globalStatements), myArguments(args)
 		{
 			myTag = NODETAG::PROGRAMNODE;
+			PreprocessArgs(); // basically just sub in metadata
 		}
 		// void unparse(std::ostream&, int) override;
 		virtual bool nameAnalysis(SymbolTable *) override;
@@ -119,11 +136,15 @@ namespace DTL
 		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
-
+		void SetInputArguments(const std::vector<DTLProgramArg>& args) {myArguments = args;}
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
 
 	private:
+
+
+		void PreprocessArgs();
+		std::vector<DTLProgramArg> myArguments; 
 		std::vector<StmtNode *> myStatements;
 	};
 
@@ -149,7 +170,8 @@ namespace DTL
 		}
 		NODETAG getTag() const { return myTag; }
 		std::string GetIDString() const;
-		std::vector<DTL::IDNode*> GetArguments() const;
+		std::vector<DTL::IDNode*> GetArguments() const; 
+		ProgramNode* GetProgram() {return m_Program;}
 
 	private:
 		NODETAG myTag;
@@ -259,7 +281,14 @@ namespace DTL
 	{
 	public:
 		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), index_id("")
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), index_id(""), metadataStreamAddressID(nullptr)
+		{
+			myTag = NODETAG::METADATASTREAMDECLNODE;
+		}
+
+
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IDNode* metadataStreamAddrID) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID)
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 		}
@@ -271,12 +300,14 @@ namespace DTL
 		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
 		virtual int Collapse(ResourceAllocation *ralloc) override;
 		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
-		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags);
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth,uint8_t opt_flags);
 		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
 		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 
+
+		void PreprocessArgs(std::vector<DTLProgramArg>& args);
 
 		void SetOpt(bool opt) {m_Opt = opt;}
 		bool GetOpt() {return m_Opt;}
@@ -296,6 +327,7 @@ namespace DTL
 		IDNode *myID;
 		IntLitNode *dataSize;
 		IntLitNode *metadataStreamAddress;
+		IDNode* metadataStreamAddressID;
 	};
 
 

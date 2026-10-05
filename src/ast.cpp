@@ -309,3 +309,30 @@ std::vector<DTL::IDNode *> DTL::DTLKernelNode::GetArguments() const
 {
     return m_Arguments;
 }
+
+void DTL::ProgramNode::PreprocessArgs()
+{
+    if (!myArguments.size())
+        return;
+
+    for (auto& stmt: myStatements)
+    {
+        if (stmt->getTag() == NODETAG::METADATASTREAMDECLNODE)
+            static_cast<MetadataStreamDeclNode*>(stmt)->PreprocessArgs(myArguments);
+    }
+}
+
+void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &args)
+{
+    auto streamID = metadataStreamAddressID;
+    if (streamID == nullptr) // initialized with an intlit, no need to preprocess
+        return;
+    for (auto& arg: args)
+    {
+        if (arg.id == streamID->getName()) // we have a match, need to sub in node
+        {
+            assert(metadataStreamAddress == nullptr); // lets track this invariant for now
+            metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(arg.bound_address));
+        }
+    }
+}

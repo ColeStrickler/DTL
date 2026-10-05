@@ -984,6 +984,7 @@ public:
         
         //printf("metadatastream map size: %zu idName %s\n", idMetadataStreamRegMap.size(), idName.c_str());
         assert(idMetadataStreamRegMap.find(idName) == idMetadataStreamRegMap.end());
+        assert(metadataStream->GetStreamAddress() != 0); // uninitialized
         idMetadataStreamRegMap.insert({idName, GetMetadataStreamOffset() + MetadataStreamCount});
         MetadataStreamCount++;
 

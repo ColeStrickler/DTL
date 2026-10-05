@@ -9,7 +9,7 @@ using namespace DTL;
 
 bool ProgramNode::nameAnalysis(SymbolTable *symTab)
 {
-   
+    PreprocessArgs(); // replace args with proper input
     symTab->enterScope();
     for (auto& stmt: myStatements)
     {

@@ -11,7 +11,7 @@ class BasicType;
 class ErrorType;
 
 enum BaseType {
-    INT, BOOL, VOID, INTARRAY, METADATASTREAM
+    INT, BOOL, VOID, INTARRAY, METADATASTREAM, DTLPROGRAM
 };
 
 

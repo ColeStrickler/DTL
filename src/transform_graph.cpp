@@ -1,7 +1,11 @@
 #include "transform_graph.hpp"
 
 
+/*
+    For now, kernel arguments can only be used as metadata
 
+    Later we will add an explicit `Compose()` call, to target transformed objects as well
+*/
 
 DTL::TransformGraph::TransformGraph(std::vector<DTL::DTLKernelNode*> kernels, IDNode* active) : m_Kernels(kernels), m_ActiveKernel(active)
 {
@@ -21,6 +25,10 @@ DTL::TransformGraph::~TransformGraph()
 {
 }
 
+
+/*
+    Besides just a DAG, currently we require a tree
+*/
 bool DTL::TransformGraph::AssertNoCycles()
 {
     TransformGraphNode* active_node = GetActiveNode();
