@@ -93,6 +93,6 @@ lexer.yy.cc: lexer.l
 # === Clean ==================================================
 # ============================================================
 clean:
-	rm -rf *.o *.x86.o *.d *.output *.cc *.hh parser.dot parser.png \
+	rm -rf *.o *.x86.o *.d *.output *.cc *.hh parser.dot parser.png optimizations/*.o optimizations/*.d \
 	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh 
 	

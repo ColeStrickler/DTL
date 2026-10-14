@@ -150,6 +150,13 @@ DTL::TransformGraphNode *DTL::TransformGraph::GetActiveNode()
     return active_node;
 }
 
+ProgramNode *DTL::TransformGraph::GetActiveProgram()
+{
+    std::string active_kernel_id = m_ActiveKernel->getName();
+    DTLKernelNode* active_kernel = m_KernelIDMap.at(active_kernel_id);
+    return active_kernel->GetProgram();
+}
+
 std::string DTL::TransformGraph::PrintDotGraph()
 {
     std::string ret;

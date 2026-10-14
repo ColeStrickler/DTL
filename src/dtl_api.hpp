@@ -54,6 +54,113 @@ typedef struct RemapPARequest
 
 
 
+enum BYTEW_SIZE
+{
+    UINT8,
+    UINT16,
+    UINT32,
+    UINT64
+};
+
+enum DTL_API_ERROR
+{
+    NO_ERROR_OK,
+    DEFAULT_ERROR,
+    RESOURCES_INSUFFICIENT,
+    COMPILE_ERROR
+};
+
+enum DTL_KERNEL_DEPENDENCY
+{
+    METADATA,
+    BASE_OBJECT
+};
+
+
+/*
+    A compiled view is just a vector of ByteWrites
+
+    Each ByteWrite configures an MMIO register in the DTU
+*/
+struct ByteWrite
+{
+    ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size);
+    ~ByteWrite() = default;
+
+    uint64_t m_Offset;
+    uint64_t m_Value;
+    BYTEW_SIZE m_SizeWrite;
+    void DoWrite(uint64_t base_addr);
+}
+
+struct CompiledView
+{
+    CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite>& bytewrites);
+    ~CompiledView() = default;
+
+
+    uint64_t m_BaseObjectSize;      // Physical Address space needed
+    uint64_t m_ViewSize;            // Virtual Address space needed
+    std::vector<ByteWrite> m_ByteWrites;
+    std::string m_ViewName;
+    std::vector<CompiledView*> m_Dependencies;
+};
+
+
+
+/*
+    We can save this structure, and pass into MapOntoDTUHardware() later
+    without having to recompile 
+*/
+struct CompiledDTLProgram
+{
+    CompiledDTLProgram();
+    ~CompiledDTLProgram();
+    DTL_API_ERROR m_Error;
+    std::vector<CompiledView> m_Views;
+};
+
+class DTUResourceHandle;
+class EphemeralRegion;
+struct KernelDependency
+{
+    DTUResourceHandle* m_UpstreamDependency;
+    DTL_KERNEL_DEPENDENCY m_DependencyType;
+    uint8_t m_DependencyNumber;
+};
+
+
+struct MetadataRegion
+{
+    // Basically, we want r/w pointers that are different if this is a 
+
+
+    inline bool IsDTURegion() {return isDTURegion;};                // !isNormalMemoryRegion()
+    inline bool isNormalMemoryRegion() {return !IsDTURegion();};    // !IsDTURegion()
+    bool isDTURegion;
+    void* m_WriteRegion; // IsDTURegion() ? (!= m_ReadRegion) : (= m_ReadRegion)
+    void* m_ReadRegion; 
+    DTUResourceHandle* m_ResourceHandle; // corresponding resource handle
+    int m_MmapFD;
+};
+
+
+class DTUResourceHandle
+{
+    std::unordered_map<std::string, MetadataRegion*> m_MetaDataRegions; 
+    EphemeralRegion* m_MainRegion;
+    std::unordered_map<std::string, DTUResourceHandle*> m_SubHandles; // get kernel by name
+    std::vector<KernelDependency> m_DependencyOf; // Track all kernels that are dependent on this one
+    
+    // If we sync the base object, we also have to sync the upstream objects as well
+    // This may require either updating the metadata object or base object, depending
+    // on what kind of dependency the object is
+        
+    void Sync();
+    void SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple);
+}
+
+
 
 
 
@@ -61,7 +168,7 @@ typedef struct RemapPARequest
 class EphemeralRegion
 {
 public:
-    EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat);
+    EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base);
     ~EphemeralRegion();
     EphemeralRegion* Clone(int new_config);
     /*
@@ -87,6 +194,11 @@ public:
     void SetDataSize(uint8_t size);
     int Sync(); //
 
+
+    void UpdateBackingObjectAddr(uint64_t addr);
+    void UpdateMetadataObjectAddr(uint8_t metadataObjectNumber, uint64_t addr);
+
+
     void* GetHeadlessReadRegion(); // get raw pointer to ephemeral region, no bounds checking, writes allowed
     void* GetHeadlessWriteregion();
 
@@ -102,10 +214,22 @@ public:
 
     inline int GetConfig() {return m_ConfigNum;}
 
+
+    /*
+        We return {virtual, shadow PA, positional PA}
+    */
+    inline std::tuple<uint64_t, uint64_t, uint64> GetAddrMappingTriple() 
+    { return std::make_tuple(
+        reinterpret_cast<uint64_t>(m_EphemeralRegionAccess),
+        m_CurrentEphemeralPhysicalAddr,
+        m_PhysBackingStart + m_RegionOffset);
+    }
+
 private:
     uint64_t m_RegionOffset;
     uint64_t m_PhysBackingStart;
     uint64_t m_RegionSize;
+    uint64_t m_AGUControlRegionBase;
     int m_ConfigNum;
     void* m_EphemeralRegionAccess;
     void* m_UncachedRegionAccess;

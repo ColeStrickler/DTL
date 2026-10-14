@@ -4,16 +4,17 @@ DTL kernel_d  = {
     }
 }
 
-
 DTL kernel_c : kernel_d = {
+    metadata_stream<4, kernel_d> kd;
     for (int i = 0; i < 1000; i++) {
-        out = i;
+        out = kd[i];
     }
 }
 
 DTL kernel_a : kernel_c = {
+    metadata_stream<4, kernel_c> kc;
     for (int i = 0; i < 1000; i++) {
-        out = i;
+        out = kc[i];
     }
 }
 
@@ -23,10 +24,9 @@ DTL kernel_b = {
     }
 }
 
-
 DTL kernel: kernel_a, kernel_b = {
     for (int i = 0; i < 1000; i++) {
-        out = i;
+        out = i ;
     }
 }
 

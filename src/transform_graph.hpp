@@ -42,6 +42,9 @@ public:
     DTLKernelNode* GetKernelNodeByID(const std::string& id);
     std::vector<TransformGraphNode*>& BeginReverseTopologicalOrder();
     TransformGraphNode* GetActiveNode();
+
+
+    ProgramNode* GetActiveProgram(); // Backwards compatibility with legacy DTLAPI;
     std::string PrintDotGraph();
 private:
     void ReverseTopSortHelper(std::vector<TransformGraphNode*>& rtop_order, TransformGraphNode* curr);

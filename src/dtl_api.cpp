@@ -144,6 +144,79 @@ static void writeTokenStream(const char * inPath, const char * outPath){
 }
 
 
+
+/*
+    compiled_program = api->CompileProgram(program_string)
+    if (compiled_program->HasErrors())
+        return compiled_program->DumpError();
+
+    
+    if (!api->CheckAvailableResources(compiled_program))
+        return RESOURCES_INSUFFICIENT;
+
+    DTUResourceHandle* handle = api->MapToDTUHardware(compiled_program);
+    if (!handle)
+        return DTU_HANDLE_INVALID;
+
+    void* read = handle->GetMainReadRegion();
+    void* write = handle->GetMainWriteRegion();
+    void* metadataK = hangle->GetMetadataRegion("k");
+
+    struct ByteWrite
+    {
+        ByteWrite(enum size, value, offset);
+        void DoWrite(base);
+    }
+
+    struct CompiledView
+    {
+        uint64_t base_object_size;
+        uint64_t view_size;
+        std::vector<ByteWrite> bytewrites;
+
+        std::string m_ViewName;
+        std::vector<CompiledView*> m_Dependencies;
+    };
+
+    struct KernelDependency
+    {
+        DTUResourceHandle* UpstreamDependency;
+        ENUM DependencyType;
+        uint8_t DependencyNumber;
+    };
+
+    struct CompiledDTLProgram
+    {
+        DTL_API_ERROR errors;
+        std::vector<CompiledView> views;
+    };
+
+
+
+    class DTUResourceHandle
+    {
+        std::unordered_map<std::string, MetadataRegion*> MetaDataRegions;
+        EphemeralRegion* MainRegion;
+        std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
+        std::vector<> DependencyOf; // Track all kernels that are dependent on this one
+        CompiledDTLProgram
+
+        void Sync() {
+            // If we sync the base object, we also have to sync the upstream objects as well
+
+            // This may require either updating the metadata object or base object, depending
+            // on what kind of dependency the object is
+        }
+    }
+
+*/
+
+
+/*
+    This function is deprecated, and is only maintained to work with legacy DTL::API code
+
+    Please see `DTL::API::CompileProgram()`
+*/
 bool DTL::API::Compile(const std::string &dtlProgram)
 {
     /*
@@ -157,12 +230,12 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     DTL::TransformGraph* graph;
     DTL::Scanner scanner(&input);
 	DTL::Parser parser(scanner, &graph);
-
-    /*
     //parser.set_debug_level(1);  // Turn on debugging
     int err = parser.parse();
 	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
 
+
+    DTL::ProgramNode* root = graph->GetActiveProgram();
     auto na = DTL::NameAnalysis::build(root);
 	if (na == nullptr)
 	{
@@ -203,7 +276,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     hwStat->VarOutMap.clear(); // otherwise we we will get subsequent collisions
     hwStat->IdxOutMap.clear();
     return true;
-    */
+    
 }
 
 
@@ -256,7 +329,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         return nullptr;
     }
   // printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
-    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat);
+    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat, m_AGUControlRegionfd+AGU_CONFIG_OFFSET(config));
     return ephemeral;
 }
 
@@ -592,8 +665,9 @@ DTL::BuddyNode *DTL::BuddyAllocator::FindNode(uint64_t offset, BuddyNode* currNo
     return nullptr;
 }
 
-DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat)
-    : m_RegionOffset(region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start), m_RegionSize(region_size), hwStat(hwStat)
+DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base)
+    : m_RegionOffset(region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
+      m_RegionSize(region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base)
 {
     printf("EphemeralRegion()\n");
     m_Regionfd = open_fd("/dev/mem");
@@ -710,6 +784,20 @@ int DTL::EphemeralRegion::Sync()
   return ret;
 }
 
+
+
+void DTL::EphemeralRegion::UpdateBackingObjectAddr(uint64_t addr)
+{
+    UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, addr);
+}
+
+void DTL::EphemeralRegion::UpdateMetadataObjectAddr(uint8_t metadataObjectNumber, uint64_t addr)
+{
+    uint32_t metadataRegOffset = hwStat->GetMetaDataStreamRegOffset(4) + BYTES_METADATASTREAM*metadataObjectNumber;
+    uint64_t metadataObjMMIOAddr = m_AGUControlRegionBase + metadataRegOffset;
+    WRITE_UINT64(metadataObjMMIOAddr, addr);
+}
+
 void *DTL::EphemeralRegion::GetHeadlessReadRegion() {
   return m_EphemeralRegionAccess;
 }
@@ -749,3 +837,91 @@ float DTL::EphemeralRegion::GuardedRead_Float(uint64_t offset) {
   assert(offset < m_RegionSize);
   return *((float *)m_EphemeralRegionAccess);
 }
+
+
+
+
+/*
+    Byte Write
+*/
+
+DTL::ByteWrite::ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size) : m_Offset(offset), m_Value(value), m_SizeWrite(size)
+{
+}
+
+void DTL::ByteWrite::DoWrite(uint64_t base_addr)
+{
+    switch(m_SizeWrite)
+    {
+        case BYTEW_SIZE::UINT8:     WRITE_UINT8(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT16:    WRITE_UINT16(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT32:    WRITE_UINT32(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT64:    WRITE_UINT64(base_addr + m_Offset, m_Value); break;
+        default:
+            assert(false); // never should happen
+    }
+}
+
+DTL::CompiledView::CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite> &bytewrites) 
+    : m_BaseObjectSize(base_object_size), m_ViewSize(view_size), m_ByteWrites(bytewrites), m_ViewName(view_name)
+{
+}
+
+
+/*
+    We also need to sync upstream dependents
+*/
+void DTL::DTUResourceHandle::Sync()
+{
+    m_MainRegion->Sync();
+    std::tuple<uint64_t, uint64_t, uint64_t> addressTriple = m_MainRegion->GetAddrMappingTriple();
+    for (auto& dep: m_DependencyOf)
+    {
+        DTL::DTUResourceHandle* dependencyHandle = dep.m_UpstreamDependency;
+        dependencyHandle->SyncDependent(dep, addressTriple);
+    }
+}
+
+
+/*
+    The dependency will call this on the kernel that holds this dependency
+
+    For example if we have a dependency chain of A <--dependent on-- B
+
+    A will call:
+        B->SyncDependent(dep, A's new synced address)
+*/
+void DTL::DTUResourceHandle::SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple)
+{
+    /*
+        So here, we need to update addresses/MMIOs
+
+        We want to avoid recompiling
+    */
+    #define VA_IDX 0 
+    #define SHADOWPA_IDX 1
+    #define POSITIONALPA_IDX 2
+    
+    switch (dep.m_DependencyType)
+    {
+        case DTL_KERNEL_DEPENDENCY::BASE_OBJECT: // we just update the base object addr in MMIO for the config
+        {
+            m_MainRegion->UpdateBackingObjectAddr(std::get<SHADOWPA_IDX>(addrTriple));
+            break;
+        }
+        case DTL_KERNEL_DEPENDENCY::METADATA: // we just update the metadata object addr in MMIO for the config
+        {
+            m_MainRegion->UpdateMetadataObjectAddr(std::get<SHADOWPA_IDX>(addrTriple));
+            break;
+        }
+        default:
+            assert(false); // should never happen
+    }
+
+
+
+    #undef VA_IDX 0 
+    #undef SHADOWPA_IDX 1
+    #undef POSITIONALPA_IDX 2
+}
+

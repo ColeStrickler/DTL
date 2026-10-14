@@ -127,7 +127,7 @@ int main()
 		so we can just have a dummy address here that we pass into dependent
 		kernels as arguments
 	*/
-	uint64_t compiled_phys_backing = 0; 
+	uint64_t compiled_phys_backing = 0x100; 
 	for (auto& node: graph->BeginReverseTopologicalOrder())
 	{
 		auto& kernel = node->m_Kernel;
@@ -135,6 +135,7 @@ int main()
 		std::cout <<  kernel_id << "\n";
 		DTL::ProgramNode* prog = kernel->GetProgram();
 
+		std::vector<DTL::DTLProgramArg> prog_args;
 		for (auto& arg: kernel->GetArguments())
 		{
 			std::string argParam = arg->getName();
@@ -142,18 +143,16 @@ int main()
 			DTL::DTLProgramArg inputArg;
 			inputArg.id = argParam;
 			inputArg.bound_address = boundPhysAddresses.at(argParam); 
+			prog_args.push_back(inputArg);
 		}
+
+		prog->SetInputArguments(prog_args);
 
 		auto na = DTL::NameAnalysis::build(prog);
 		if (na == nullptr) {
 			printf("Failed name analysis\n");
 			return false;
 		}
-
-		/*
-			Each program can have args, we need to pass in this state 
-		*/
-
 
 		auto ta = DTL::TypeAnalysis::build(na);
 		if (ta == nullptr)
