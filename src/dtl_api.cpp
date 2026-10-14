@@ -235,7 +235,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
 	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
 
 
-    DTL::ProgramNode* root = graph->GetActiveProgram();
+    root = graph->GetActiveProgram();
     auto na = DTL::NameAnalysis::build(root);
 	if (na == nullptr)
 	{
@@ -329,7 +329,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         return nullptr;
     }
   // printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
-    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat, m_AGUControlRegionfd+AGU_CONFIG_OFFSET(config));
+    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat, AGUControlRegionBaseAddress+AGU_CONFIG_OFFSET(config));
     return ephemeral;
 }
 
@@ -757,7 +757,7 @@ DTL::EphemeralRegion::~EphemeralRegion()
 
 DTL::EphemeralRegion *DTL::EphemeralRegion::Clone(int new_config)
 {
-    return new EphemeralRegion(GetRegionOffset(), m_RegionSize, new_config, m_PhysBackingStart, hwStat);
+    return new EphemeralRegion(GetRegionOffset(), m_RegionSize, new_config, m_PhysBackingStart, hwStat, m_AGUControlRegionBase-AGU_CONFIG_OFFSET(m_ConfigNum)+AGU_CONFIG_OFFSET(new_config));
 }
 
 void DTL::EphemeralRegion::SetDataSize(uint8_t size)
@@ -841,27 +841,6 @@ float DTL::EphemeralRegion::GuardedRead_Float(uint64_t offset) {
 
 
 
-/*
-    Byte Write
-*/
-
-DTL::ByteWrite::ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size) : m_Offset(offset), m_Value(value), m_SizeWrite(size)
-{
-}
-
-void DTL::ByteWrite::DoWrite(uint64_t base_addr)
-{
-    switch(m_SizeWrite)
-    {
-        case BYTEW_SIZE::UINT8:     WRITE_UINT8(base_addr + m_Offset, m_Value); break;
-        case BYTEW_SIZE::UINT16:    WRITE_UINT16(base_addr + m_Offset, m_Value); break;
-        case BYTEW_SIZE::UINT32:    WRITE_UINT32(base_addr + m_Offset, m_Value); break;
-        case BYTEW_SIZE::UINT64:    WRITE_UINT64(base_addr + m_Offset, m_Value); break;
-        default:
-            assert(false); // never should happen
-    }
-}
-
 DTL::CompiledView::CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite> &bytewrites) 
     : m_BaseObjectSize(base_object_size), m_ViewSize(view_size), m_ByteWrites(bytewrites), m_ViewName(view_name)
 {
@@ -911,7 +890,7 @@ void DTL::DTUResourceHandle::SyncDependent(KernelDependency dep, std::tuple<uint
         }
         case DTL_KERNEL_DEPENDENCY::METADATA: // we just update the metadata object addr in MMIO for the config
         {
-            m_MainRegion->UpdateMetadataObjectAddr(std::get<SHADOWPA_IDX>(addrTriple));
+            m_MainRegion->UpdateMetadataObjectAddr(dep.m_DependencyNumber, std::get<SHADOWPA_IDX>(addrTriple));
             break;
         }
         default:

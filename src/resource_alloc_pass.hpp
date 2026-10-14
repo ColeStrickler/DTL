@@ -27,6 +27,26 @@ namespace DTL
 #define READ_UINT64(addr)(*(uint64_t*)(addr))
 #define READ_INT32(addr)(*(int*)(addr))
 
+enum BYTEW_SIZE
+{
+    UINT8,
+    UINT16,
+    UINT32,
+    UINT64
+};
+
+struct ByteWrite
+{
+    ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size);
+    ~ByteWrite() = default;
+
+    uint64_t m_Offset;
+    uint64_t m_Value;
+    BYTEW_SIZE m_SizeWrite;
+    void DoWrite(uint64_t base_addr);
+    std::string PrintString(uint64_t base_addr);
+};
+
 
 #define USED_OUTSTMT_REG 0xf01
 #define USED_FORLOOP_REG 0xf02
@@ -377,6 +397,9 @@ public:
     std::unordered_map<std::string, int> VarOutMap;
     std::unordered_map<std::string, int> IdxOutMap;
 
+    void AppendControlWrite(std::vector<ByteWrite>& writes, int numOutStatement,
+                            int layer, int inRegNumber, int outRegNumber);
+
 
 
     bool CheckMeetHardwareConstaints(DTLResources* rsrc) const
@@ -720,6 +743,8 @@ public:
 
     std::string PrintControlWrites(uint64_t baseaddr, int numOutStmt, int layer, AGUHardwareStat* hwstat);
     void DoControlWrites(uint64_t baseaddr, int numOutStmt, int layer, AGUHardwareStat* hwstat);
+    void AppendControlWrites(std::vector<ByteWrite>& writes, int numOutStmt,
+                             int layer, AGUHardwareStat* hwstat);
 
     std::string PrintDigraph(int layer) const;
 private:
@@ -875,6 +900,7 @@ public:
     std::string PrintDigraph(const std::string& file) const;
     std::string PrintControlWrites(uint64_t baseaddr, int numoutstatement) const;
     void DoControlWrites(uint64_t baseaddr, int numoutstatement) const;
+    void AppendControlWrites(std::vector<ByteWrite>& writes, int numoutstatement) const;
 
 private:
     std::unordered_map<ASTNode*, std::pair<int, int>> OpFuncUnitMapping;
@@ -1140,6 +1166,10 @@ public:
     void DoInitStateRegisters(uint64_t baseAddr);
     void DoControlWrites(uint64_t baseaddr);
     void PrintControlWrites(const std::string& file, uint64_t baseaddr);
+
+    // Compile initialization and routing writes without accessing MMIO.
+    // Each m_Offset is relative to the configuration base passed to DoWrite().
+    std::vector<ByteWrite> GetByteWrites();
     
 
     bool BindArrayIndex(int arrayReg, int ForLoopReg);

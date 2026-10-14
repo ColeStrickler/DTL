@@ -1,6 +1,149 @@
 #include "resource_alloc_pass.hpp"
 #include "ast.hpp"
 
+DTL::ByteWrite::ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size)
+    : m_Offset(offset), m_Value(value), m_SizeWrite(size)
+{
+}
+
+void DTL::ByteWrite::DoWrite(uint64_t base_addr)
+{
+    switch(m_SizeWrite)
+    {
+        case BYTEW_SIZE::UINT8:     WRITE_UINT8(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT16:    WRITE_UINT16(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT32:    WRITE_UINT32(base_addr + m_Offset, m_Value); break;
+        case BYTEW_SIZE::UINT64:    WRITE_UINT64(base_addr + m_Offset, m_Value); break;
+        default:
+            assert(false);
+    }
+}
+
+std::string DTL::ByteWrite::PrintString(uint64_t base_addr)
+{
+    switch(m_SizeWrite)
+    {
+        case BYTEW_SIZE::UINT8:     return "WRITE_UINT8( " + to_hex(base_addr + m_Offset) + "," + to_hex(m_Value) + ");\n"; break;
+        case BYTEW_SIZE::UINT16:    return "WRITE_UINT16(" + to_hex(base_addr + m_Offset) + "," + to_hex(m_Value) + ");\n"; break;
+        case BYTEW_SIZE::UINT32:    return "WRITE_UINT32(" + to_hex(base_addr + m_Offset) + "," + to_hex(m_Value) + ");\n"; break;
+        case BYTEW_SIZE::UINT64:    return "WRITE_UINT64(" + to_hex(base_addr + m_Offset) + "," + to_hex(m_Value) + ");\n"; break;
+        default:
+            assert(false);
+    }
+}
+
+void DTL::AGUHardwareStat::AppendControlWrite(std::vector<ByteWrite>& writes,
+                                            int numOutStatement, int layer,
+                                            int inRegNumber, int outRegNumber)
+{
+    if (outRegNumber == 255 || inRegNumber == 255)
+        return;
+    assert(outRegNumber < __UINT8_MAX__);
+
+    unsigned int layerByteOffset = layer * bytesLayer;
+    unsigned int cellByteOffset = inRegNumber * bytesCell;
+    unsigned int outStatementOffset = numOutStatement * bytesOutStatement;
+    auto hash_str = std::to_string(0) + "_" + std::to_string(layerByteOffset) + "_" +
+                    std::to_string(cellByteOffset) + "_" + std::to_string(outStatementOffset);
+    auto idx_str = std::to_string(layer) + "_" + std::to_string(outRegNumber);
+
+    int cell_index = VarOutMap[hash_str]++;
+    int routingIdx = IdxOutMap[idx_str]++;
+    assert(VarOutMap[hash_str] <= bytesCell);
+    assert(IdxOutMap[idx_str] <= bytesCell);
+
+    uint8_t write_val = static_cast<uint8_t>(outRegNumber);
+    write_val |= (routingIdx << idxBit);
+    writes.emplace_back(layerByteOffset + cellByteOffset + outStatementOffset + cell_index,
+                        write_val, BYTEW_SIZE::UINT8);
+}
+
+void DTL::AGULayer::AppendControlWrites(std::vector<ByteWrite>& writes, int numOutStmt,
+                                       int layer, AGUHardwareStat* hwstat)
+{
+    for (auto& unit : inputRouting)
+    {
+        hwstat->AppendControlWrite(writes, numOutStmt, layer, unit->InputA, unit->RegAssignment);
+        hwstat->AppendControlWrite(writes, numOutStmt, layer, unit->InputB, unit->RegAssignment);
+    }
+}
+
+void DTL::OutStmtRouting::AppendControlWrites(std::vector<ByteWrite>& writes,
+                                             int numoutstatement) const
+{
+    for (auto& e : LayerRouting)
+        e.second->AppendControlWrites(writes, numoutstatement, e.first, hwStat);
+}
+
+std::vector<DTL::ByteWrite> DTL::ResourceAllocation::GetByteWrites()
+{
+    std::vector<ByteWrite> writes;
+    const uint32_t byte_width = 4;
+
+    for (auto& reg : loopRegisters)
+    {
+        writes.emplace_back(hwStat->GetLoopRegsOffset() + reg.reg_num * byte_width,
+                            static_cast<uint32_t>(reg.init_value), BYTEW_SIZE::UINT32);
+        writes.emplace_back(hwStat->GetLoopIncRegsOffset(byte_width) + reg.reg_num * byte_width,
+                            static_cast<uint32_t>(reg.increment_condition), BYTEW_SIZE::UINT32);
+
+        uint64_t offset = hwStat->GetMagicRegsOffset(byte_width) +
+                         (hwStat->nForLoopRegisters - 1 - reg.reg_num) * hwStat->bytesMagic;
+        writes.emplace_back(offset, reg.hwDivMagic.M, BYTEW_SIZE::UINT64);
+        writes.emplace_back(offset + 0x8, reg.hwDivMagic.s, BYTEW_SIZE::UINT32);
+        writes.emplace_back(offset + 0xc, static_cast<uint8_t>(reg.hwDivMagic.add_indicator),
+                            BYTEW_SIZE::UINT8);
+    }
+
+    for (auto& c : rsrcAnalysis->ConstValueMap)
+        writes.emplace_back(hwStat->GetConstantRegsOffset(byte_width) + c.first * byte_width,
+                            static_cast<uint32_t>(c.second), BYTEW_SIZE::UINT32);
+
+    for (auto& ca : constArrayRegisters)
+    {
+        uint64_t offset = hwStat->GetConstArrayOffset(byte_width);
+        for (size_t i = 0; i < ca.values.size(); i++)
+        {
+            assert(i < hwStat->nConstArraySize);
+            writes.emplace_back(offset + i * byte_width, ca.values[i], BYTEW_SIZE::UINT32);
+        }
+        writes.emplace_back(offset + byte_width * hwStat->nConstArraySize,
+                            static_cast<uint8_t>(ca.index_reg_num), BYTEW_SIZE::UINT8);
+    }
+
+    writes.emplace_back(USING_METADATATASTREAM_REG, !MetadataStreamMMIOInfo.empty(), BYTEW_SIZE::UINT8);
+    for (size_t stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
+    {
+        auto& ms = MetadataStreamMMIOInfo[stream_num];
+        uint64_t offset = hwStat->GetMetaDataStreamRegOffset(byte_width);
+        writes.emplace_back(offset + 8 * stream_num, ms.streamPhysStart, BYTEW_SIZE::UINT64);
+        writes.emplace_back(offset + 8 * hwStat->nMetadataStreams + stream_num,
+                            static_cast<uint8_t>(ForLoopIDToMapping(ms.id_index) - GetForLoopRegOffset()),
+                            BYTEW_SIZE::UINT8);
+    }
+
+    writes.emplace_back(USED_OUTSTMT_REG, static_cast<uint8_t>(OutStatementRouting.size()), BYTEW_SIZE::UINT8);
+    writes.emplace_back(USED_FORLOOP_REG, static_cast<uint8_t>(loopRegisters.size()), BYTEW_SIZE::UINT8);
+    writes.emplace_back(USED_OUT_PERCOND_REG,
+                        static_cast<uint8_t>(CondInfo.conditionalCode != CondCode::DISABLE ?
+                            CondInfo.outStatementsPerCond : rsrcAnalysis->GetResources()->nOutStatements),
+                        BYTEW_SIZE::UINT8);
+    writes.emplace_back(USE_CONDCODE_REG, static_cast<uint8_t>(CondInfo.conditionalCode), BYTEW_SIZE::UINT8);
+    for (size_t i = 0; i < CondInfo.condIndices.size(); i++)
+        writes.emplace_back(USE_CONDITIONAL_IDX_REG + i,
+                            static_cast<uint8_t>(ForLoopIDToMapping(CondInfo.condIndices[i]->getName()) -
+                                hwStat->nConstRegisters - hwStat->nConstArray),
+                            BYTEW_SIZE::UINT8);
+
+    for (size_t i = 0; i < OutStatementRouting.size(); i++)
+    {
+        OutStatementRouting[i]->AppendControlWrites(writes, i);
+        hwStat->VarOutMap.clear();
+        hwStat->IdxOutMap.clear();
+    }
+    return writes;
+}
+
 
 
 void DTL::ProgramNode::resourceAllocation(ResourceAllocation *ralloc, int depth)

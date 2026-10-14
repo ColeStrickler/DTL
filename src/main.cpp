@@ -198,6 +198,25 @@ int main()
 
 		ralloc->PrintControlWrites("regwrites.out", AGU_CONFIG_BASE+0x1000);
 		ralloc->PrintInitStateRegisters("regwrites.out", AGU_CONFIG_BASE+0x1000);
+
+
+
+
+
+
+
+		/*
+			Test BW equivalence
+		*/
+		std::ofstream file("regwrites_bw.out");
+		if (!file) {
+			throw std::runtime_error("Failed to open file");
+		}
+		auto byte_writes = ralloc->GetByteWrites();
+		for (auto& bw: byte_writes)
+		{
+			file << bw.PrintString(AGU_CONFIG_BASE+0x1000);
+		}
 		
 		printf("Successfully parsed %s\n", kernel_id.c_str());
 		boundPhysAddresses.insert({kernel_id, compiled_phys_backing});

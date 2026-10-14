@@ -54,14 +54,6 @@ typedef struct RemapPARequest
 
 
 
-enum BYTEW_SIZE
-{
-    UINT8,
-    UINT16,
-    UINT32,
-    UINT64
-};
-
 enum DTL_API_ERROR
 {
     NO_ERROR_OK,
@@ -77,22 +69,13 @@ enum DTL_KERNEL_DEPENDENCY
 };
 
 
+
+
 /*
     A compiled view is just a vector of ByteWrites
 
     Each ByteWrite configures an MMIO register in the DTU
 */
-struct ByteWrite
-{
-    ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size);
-    ~ByteWrite() = default;
-
-    uint64_t m_Offset;
-    uint64_t m_Value;
-    BYTEW_SIZE m_SizeWrite;
-    void DoWrite(uint64_t base_addr);
-}
-
 struct CompiledView
 {
     CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite>& bytewrites);
@@ -158,7 +141,7 @@ class DTUResourceHandle
         
     void Sync();
     void SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple);
-}
+};
 
 
 
@@ -218,7 +201,7 @@ public:
     /*
         We return {virtual, shadow PA, positional PA}
     */
-    inline std::tuple<uint64_t, uint64_t, uint64> GetAddrMappingTriple() 
+    inline std::tuple<uint64_t, uint64_t, uint64_t> GetAddrMappingTriple() 
     { return std::make_tuple(
         reinterpret_cast<uint64_t>(m_EphemeralRegionAccess),
         m_CurrentEphemeralPhysicalAddr,
