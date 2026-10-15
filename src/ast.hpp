@@ -159,7 +159,7 @@ namespace DTL
 	class DTLKernelNode
 	{
 	public:
-		DTLKernelNode(IDNode* id, std::vector<IDNode*> inputArgs, ProgramNode* prog) 
+		DTLKernelNode(IDNode* id, std::vector<IDNode*> inputArgs, ProgramNode* prog, IntLitNode* backingPhysSize) 
 			: m_ID(id), m_Arguments(inputArgs), m_Program(prog)
 		{
 			myTag = NODETAG::DTLKERNELNODE;
@@ -170,14 +170,16 @@ namespace DTL
 		}
 		NODETAG getTag() const { return myTag; }
 		std::string GetIDString() const;
-		std::vector<DTL::IDNode*> GetArguments() const; 
+		std::vector<DTL::IDNode*> GetArguments() const;
+		std::vector<std::string> GetArgumentStrings() const;
 		ProgramNode* GetProgram() {return m_Program;}
-
+		uint64_t GetBackingPhysSize() {return static_cast<uint64_t>(m_BackingPhysSize->GetVal64());}
 	private:
 		NODETAG myTag;
 		IDNode* m_ID;
 		std::vector<IDNode*> m_Arguments;
 		ProgramNode* m_Program;
+		IntLitNode* m_BackingPhysSize;
 
 	};
 
@@ -284,6 +286,7 @@ namespace DTL
 			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), index_id(""), metadataStreamAddressID(nullptr)
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
+			m_RequiresArgValue = false;
 		}
 
 
@@ -291,6 +294,7 @@ namespace DTL
 			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID)
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
+			m_RequiresArgValue = false;
 		}
 		
 		virtual void typeAnalysis(TypeAnalysis *ta) override;
@@ -313,13 +317,18 @@ namespace DTL
 		bool GetOpt() {return m_Opt;}
 		std::string GetIDString() const;
 		std::string GetIndexIDString() const;
-		
+		std::string GetArgIDString() const;
 
 		void BindIndexNode(std::string index_node_id) {index_id = index_node_id;}
 		
 		int GetDataSize() const;
 		int64_t GetStreamAddress() const;
+
+		bool NeedsArgValue() {return m_RequiresArgValue;}
+
+
 	private:
+		bool m_RequiresArgValue;
 		std::string index_id; 
 		//IDNode* indexNode; // deprecated
 		bool m_Opt;

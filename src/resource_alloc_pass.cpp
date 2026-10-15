@@ -2,7 +2,7 @@
 #include "ast.hpp"
 
 DTL::ByteWrite::ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size)
-    : m_Offset(offset), m_Value(value), m_SizeWrite(size)
+    : m_Offset(offset), m_Value(value), m_SizeWrite(size), m_RequiresArg(false), m_RequiredArgID("")
 {
 }
 
@@ -111,15 +111,28 @@ std::vector<DTL::ByteWrite> DTL::ResourceAllocation::GetByteWrites()
                             static_cast<uint8_t>(ca.index_reg_num), BYTEW_SIZE::UINT8);
     }
 
-    writes.emplace_back(USING_METADATATASTREAM_REG, !MetadataStreamMMIOInfo.empty(), BYTEW_SIZE::UINT8);
+    ByteWrite using_metadata_stream(USING_METADATATASTREAM_REG,
+                                    !MetadataStreamMMIOInfo.empty(),
+                                    BYTEW_SIZE::UINT8);
+    writes.push_back(using_metadata_stream);
+
     for (size_t stream_num = 0; stream_num < MetadataStreamMMIOInfo.size(); stream_num++)
     {
         auto& ms = MetadataStreamMMIOInfo[stream_num];
         uint64_t offset = hwStat->GetMetaDataStreamRegOffset(byte_width);
-        writes.emplace_back(offset + 8 * stream_num, ms.streamPhysStart, BYTEW_SIZE::UINT64);
-        writes.emplace_back(offset + 8 * hwStat->nMetadataStreams + stream_num,
-                            static_cast<uint8_t>(ForLoopIDToMapping(ms.id_index) - GetForLoopRegOffset()),
-                            BYTEW_SIZE::UINT8);
+
+        ByteWrite stream_address(offset + 8 * stream_num,
+                                 ms.streamPhysStart,
+                                 BYTEW_SIZE::UINT64);
+        stream_address.m_RequiresArg = ms.useArgID;
+        stream_address.m_RequiredArgID = ms.argID;
+        writes.push_back(stream_address);
+
+        ByteWrite stream_loop_register(
+            offset + 8 * hwStat->nMetadataStreams + stream_num,
+            static_cast<uint8_t>(ForLoopIDToMapping(ms.id_index) - GetForLoopRegOffset()),
+            BYTEW_SIZE::UINT8);
+        writes.push_back(stream_loop_register);
     }
 
     writes.emplace_back(USED_OUTSTMT_REG, static_cast<uint8_t>(OutStatementRouting.size()), BYTEW_SIZE::UINT8);

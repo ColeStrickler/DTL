@@ -290,6 +290,11 @@ std::string DTL::MetadataStreamDeclNode::GetIndexIDString() const
     return index_id;
 }
 
+std::string DTL::MetadataStreamDeclNode::GetArgIDString() const
+{
+    return metadataStreamAddressID == nullptr ? "" : metadataStreamAddressID->getName();
+}
+
 int DTL::MetadataStreamDeclNode::GetDataSize() const
 {
     {return dataSize->GetVal();}
@@ -310,6 +315,15 @@ std::vector<DTL::IDNode *> DTL::DTLKernelNode::GetArguments() const
     return m_Arguments;
 }
 
+std::vector<std::string> DTL::DTLKernelNode::GetArgumentStrings() const
+{
+	std::vector<std::string> ret;
+	for (auto& arg: m_Arguments)
+		ret.push_back(arg->getName());
+
+    return ret;
+}
+
 void DTL::ProgramNode::PreprocessArgs()
 {
     if (!myArguments.size())
@@ -327,12 +341,22 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
     auto streamID = metadataStreamAddressID;
     if (streamID == nullptr) // initialized with an intlit, no need to preprocess
         return;
-    for (auto& arg: args)
-    {
-        if (arg.id == streamID->getName()) // we have a match, need to sub in node
-        {
-            assert(metadataStreamAddress == nullptr); // lets track this invariant for now
-            metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(arg.bound_address));
-        }
-    }
+
+
+	/*
+		We will process arguments later.
+
+		We will make this node as needing an argument in ByteWrite
+	*/
+	metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(0));
+	m_RequiresArgValue = true;
+
+    //for (auto& arg: args)
+    //{
+    //    if (arg.id == streamID->getName()) // we have a match, need to sub in node
+    //    {
+    //        assert(metadataStreamAddress == nullptr); // lets track this invariant for now
+    //        metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(arg.bound_address));
+    //    }
+    //}
 }

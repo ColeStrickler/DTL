@@ -119,6 +119,7 @@
 %type <DTL::LocNode*> loc
 %type <DTL::TypeNode*> type
 %type <DTL::IntLitNode*> intlit
+%type <DTL::IntLitNode*> backingphyssize
 %type <DTL::IDNode*> id
 %type <DTL::MetadataStreamDeclNode*> metadatastreamdecl
 %type <DTL::TransformGraph*> transformgraph
@@ -153,9 +154,14 @@ kernellist: kernel kernellist
         }
 
 
-kernel: DTL id inputlistwrapper ASSIGN LCURLY program RCURLY
+kernel: DTL backingphyssize id inputlistwrapper ASSIGN LCURLY program RCURLY
         {
-            $$ = new DTLKernelNode($2, $3, $6);
+            $$ = new DTLKernelNode($3, $4, $7, $2);
+        }
+
+backingphyssize: LESS intlit GREATER
+        {
+            $$ = $2;
         }
 
 inputlistwrapper: COLON inputlist

@@ -222,7 +222,6 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     /*
         May want to handle memory management here differently to prevent leaks!
     */
-    return true;
 
     std::istringstream input(dtlProgram);
     DTL::ProgramNode * root = nullptr;
@@ -279,8 +278,82 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     
 }
 
+CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
+{
+    CompiledDTLProgram returnedCompiledProgram;
 
-bool DTL::API::ProgramHardware(EphemeralRegion* region)
+    std::istringstream input(dtlProgram);
+    DTL::TransformGraph* graph;
+    DTL::Scanner scanner(&input);
+	DTL::Parser parser(scanner, &graph);
+    int err = parser.parse();
+	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
+
+    std::unordered_map<std::string, CompiledView*> ViewMap; // to construct dependencies
+    for (auto& node: graph->BeginReverseTopologicalOrder())
+    {
+        auto& kernel = node->m_Kernel;
+		std::string kernel_id = kernel->GetIDString();
+		std::cout <<  kernel_id << "\n";
+		DTL::ProgramNode* prog = kernel->GetProgram();
+        
+        
+        auto na = DTL::NameAnalysis::build(prog);
+		if (na == nullptr) {
+			returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_NAME_ANALYSIS;
+            return returnedCompiledProgram;
+        }
+
+		auto ta = DTL::TypeAnalysis::build(na);
+		if (ta == nullptr) {
+            returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_TYPE_ANALYSIS;
+            return returnedCompiledProgram;
+        }
+
+        prog = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(prog, DTL::DTL_OPTLEVEL::OPTMAX));
+        prog = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(prog, DTL_OPT_MAX));
+		if (prog == nullptr) {     
+            returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_TRANSFORM_PASS;
+            return returnedCompiledProgram;
+		}
+
+        auto ra = DTL::ResourceAnalysis::build(prog, hwStat, ta);
+		if (ra == nullptr)
+		{
+            returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_RESOURCE_ANALYSIS;
+            return returnedCompiledProgram;
+		}
+		ra->GetResources()->GetNeededResourceStats();
+
+        auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
+		if (ralloc == nullptr)
+		{
+            returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_RESOURCE_ALLOCATION;
+            return returnedCompiledProgram;
+		}
+        std::vector<ByteWrite> byteWrites = ralloc->GetByteWrites();
+
+
+        CompiledView* view = new CompiledView(kernel_id, kernel->GetBackingPhysSize(), ralloc->GetViewSize(), byteWrites);
+        /*
+            Set the dependencies up
+        */
+        for (auto& arg: kernel->GetArgumentStrings())
+        {
+            assert(ViewMap.find(arg) != ViewMap.end()); // Should be guaranteed by compiling in reverse topological order
+            view->m_Dependencies.push_back(ViewMap.at(arg));  
+        }
+
+        ViewMap.insert({kernel_id, view});
+        returnedCompiledProgram.m_Views.push_back(view);
+    }
+
+
+
+    return returnedCompiledProgram;
+}
+
+bool DTL::API::ProgramHardware(EphemeralRegion *region)
 {
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());

@@ -40,6 +40,8 @@ struct ByteWrite
     ByteWrite(uint64_t offset, uint64_t value, BYTEW_SIZE size);
     ~ByteWrite() = default;
 
+    std::string m_RequiredArgID;
+    bool m_RequiresArg;
     uint64_t m_Offset;
     uint64_t m_Value;
     BYTEW_SIZE m_SizeWrite;
@@ -100,6 +102,8 @@ struct MetadataStream
     uint64_t streamPhysStart;
     uint32_t dataSize;
     std::string id_index;
+    std::string argID;
+    bool useArgID;
 };
 
 
@@ -949,7 +953,7 @@ public:
         ra->ast->resourceAllocation(resourceAlloc, 0);
 		resourceAlloc->CalculateForLoopMagicValues();
 
-        
+        CalcViewAddressSize();
         //ra->ast->resourceAllocation(resourceAlloc);
         return resourceAlloc;
 		//return resourceAnalysis->GetResources();
@@ -982,6 +986,24 @@ public:
 
     }
 
+
+    void CalcViewAddressSize()
+    {
+        uint64_t view_size = 1;
+        for (auto& nested_for_loop: loopRegisters)
+        {
+            view_size *= nexted_for_loop.increment_condition;
+        }
+
+        printf("Value %d\n", view_size);
+        m_ViewSize = view_size;
+        return;
+    }
+
+    uint64_t GetViewSize()
+    {
+        return m_ViewSize;
+    }
 
 	void AllocLoopRegister(int initVal, int maxVal)
     {
@@ -1018,6 +1040,8 @@ public:
         streamInfo.streamPhysStart = static_cast<uint64_t>(metadataStream->GetStreamAddress());
         streamInfo.dataSize =  static_cast<uint32_t>(metadataStream->GetDataSize());
         streamInfo.id_index = metadataStream->GetIndexIDString();
+        streamInfo.needArgID = metadataStream->NeedsArgValue();
+        streamInfo.argID = metadataStream->GetArgIDString();
         //printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);
     }
@@ -1192,6 +1216,8 @@ private:
     std::unordered_map<std::string, int> idMetadataStreamRegMap;
     std::vector<MetadataStream> MetadataStreamMMIOInfo;
     std::vector<LoopReg> loopRegisters;
+    uint64_t m_ViewSize = 0;
+
 	ResourceAllocation() 
 	{
 

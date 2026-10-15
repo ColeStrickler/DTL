@@ -59,7 +59,13 @@ enum DTL_API_ERROR
     NO_ERROR_OK,
     DEFAULT_ERROR,
     RESOURCES_INSUFFICIENT,
-    COMPILE_ERROR
+    COMPILE_ERROR_SCANNING,
+    COMPILE_ERROR_PARSING,
+    COMPILE_ERROR_NAME_ANALYSIS,
+    COMPILE_ERROR_TYPE_ANALYSIS,
+    COMPILE_ERROR_RESOURCE_ANALYSIS,
+    COMPILE_ERROR_RESOURCE_ALLOCATION,
+    COMPILE_ERROR_TRANSFORM_PASS,
 };
 
 enum DTL_KERNEL_DEPENDENCY
@@ -87,6 +93,7 @@ struct CompiledView
     std::vector<ByteWrite> m_ByteWrites;
     std::string m_ViewName;
     std::vector<CompiledView*> m_Dependencies;
+    std::unordered_map<std::string, uint64_t> m_ArgValue;
 };
 
 
@@ -100,7 +107,7 @@ struct CompiledDTLProgram
     CompiledDTLProgram();
     ~CompiledDTLProgram();
     DTL_API_ERROR m_Error;
-    std::vector<CompiledView> m_Views;
+    std::vector<CompiledView*> m_Views;
 };
 
 class DTUResourceHandle;
@@ -234,56 +241,6 @@ private:
 };
 
 
-/*
-    want to do something like this:
-    
-    dtu_api = new API();
-
-    EphemeralRegion* region = dtu_api->AllocateEphemeralRegion(size = 0x100000)
-    dtu_api->CompileAndProgramHardware(region, dtlProgram); // bind program to region
-
-
-    float* ephemeral_raw = region->GetHeadlessRegion(); // access region raw pointer
-
-    for (int i = 0; i < region->GetRegionSize(); i += increment_size)
-    {
-        read ephemeral_raw[i]
-    }
-
-
-    ///// OR WITH BOUNDS CHECKING //////
-    for (int i = 0; i < nRows; i += increment_size)
-    {
-        region->GuardedRead(i*row_size);
-    }
-
-
-    // 
-
-    // now update region
-    for (int i = 0; i<nWrites; i++)
-    {
-        *((uint64_t)ephemeral_raw +  write_offset) = write_data;
-        ////// OR /////////
-        region->GuardedWrite(write_offset, write_data); // we can have some flagging semantics that notify readers we have performed writes
-    }
-
-    region->Sync(); // now all new packed cache lines will be updated
-
-
-    for (int i = 0; i < nRows; i += increment_size)
-    {
-        region->GuardedRead(i*row_size);
-    }
-
-
-    We can keep synchronization primitives light. Just simple update flags, and let users wrap around it that best fits their paradigm
-
-
-
-
-*/
-
 class BuddyNode
 {
 public:
@@ -360,23 +317,17 @@ public:
     void SetAGUControlRegionBaseAddr(uint64_t newBaseAddr);
     void ReadHardwareInfo();
     bool CompileAndProgramHardware(const std::string& dtlProgram, EphemeralRegion* region);
+    
+    // Deprecated
     bool Compile(const std::string& dtlProgram);
+
+    CompiledDTLProgram CompileProgram(const std::string& dtlProgram);
     bool ProgramHardware(EphemeralRegion* region);
 
     void ResetConfig(int config);
 
     void DebugPrintAllocator();
     
-    /*
-        We want to track allocations of the ephemeral region/support multiple configurations
-
-        We want to track each configuration and have handles to each
-
-        We need an API to remap phys addr based on the handle
-
-        We probably want some sort of concurrency support
-    */
-
     EphemeralRegion* AllocEphemeralRegion(uint64_t size_needed);
     EphemeralRegion* CloneEphemeralRegion(EphemeralRegion* ephemeralRegion);
     void FreeEphemeralRegion(EphemeralRegion* ephemeralRegion);
