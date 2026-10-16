@@ -16,7 +16,6 @@
 
 
 
-
 namespace DTL
 {
 	// Optimization passes
@@ -140,11 +139,15 @@ namespace DTL
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
 
-	private:
+		void AddMetadataDependency(const std::string& metadataIDName);		
 
+		std::vector<std::pair<std::string, uint8_t>> GetMetadataDependencies() {return myMetadataDependencies;};
+	private:
 
 		void PreprocessArgs();
 		std::vector<DTLProgramArg> myArguments; 
+
+		std::vector<std::pair<std::string, uint8_t>> myMetadataDependencies;
 		std::vector<StmtNode *> myStatements;
 	};
 
@@ -174,6 +177,7 @@ namespace DTL
 		std::vector<std::string> GetArgumentStrings() const;
 		ProgramNode* GetProgram() {return m_Program;}
 		uint64_t GetBackingPhysSize() {return static_cast<uint64_t>(m_BackingPhysSize->GetVal64());}
+		std::vector<std::pair<std::string, uint8_t>> GetMetadataDependencies() {return m_Program->GetMetadataDependencies();}
 	private:
 		NODETAG myTag;
 		IDNode* m_ID;
@@ -311,7 +315,7 @@ namespace DTL
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 
 
-		void PreprocessArgs(std::vector<DTLProgramArg>& args);
+		void PreprocessArgs(std::vector<DTLProgramArg>& args, ProgramNode* prog);
 
 		void SetOpt(bool opt) {m_Opt = opt;}
 		bool GetOpt() {return m_Opt;}

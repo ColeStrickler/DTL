@@ -103,6 +103,77 @@ DTL::API::~API() {
     
 }
 
+bool DTL::API::CheckHasAvailableResources(CompiledDTLProgram &dtlProg)
+{
+    int configs_available = 0;
+    for (int i = 0; i < hwStat->nMaxConfigs; i++)
+    {
+        if (((m_ConfigBitmap >> i) & 0x1ULL) == 0)
+            configs_available++;
+    }
+    return configs_available >= dtlProg.m_NeededConfigs;
+}
+
+
+/*
+    We will return only the active handle
+*/
+DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
+{
+    std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
+    /*
+        dtlProg.m_Views is already in topological order
+    */
+   for (auto& view: dtlProg.m_Views)
+   {
+        /*
+            We need to edit the AllocEphemeralRegion api with an overload
+
+            And the EphemeralRegion constructor
+
+            to accept a separate VA size value and a backing positional object value
+
+            Need to make sure the shadow PA size is the same as the VA size
+
+        */
+        DTL::EphemeralRegion* region = AllocEphemeralRegion(view->m_BaseObjectSize, view->m_ViewSize);
+        if (region == nullptr)
+        {
+            // *TODO: ADD CLEANUP*
+            return nullptr;
+        }
+        
+        DTUResourceHandle* handle = new DTUResourceHandle();
+        
+
+        std::string HandleName = view->m_ViewName;;
+        std::unordered_map<std::string, MetadataRegion*> MetaDataRegions; 
+        EphemeralRegion* MainRegion = region;
+        std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
+        std::vector<KernelDependency> DependencyOf; // Track all kernels that are dependent on this one
+        for (auto& dep: view->m_Dependencies)
+        {
+            CompiledView* dependency = dep.m_DownstreamView;
+
+            std::string dependency_name = dependency->m_ViewName;
+            assert(HandleMap.find(dependency_name) != HandleMap.end()); // should never happen
+            DTUResourceHandle* handleDep = HandleMap.at(dependency_name);
+
+            SubHandles.insert({dependency_name, handleDep});
+            handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber);
+
+            if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
+            {
+                MetadataRegion* metadataAccessRegion = new MetaDataRegion();
+            }
+        }
+
+
+
+   }
+    
+}
+
 void DTL::API::ReadHardwareInfo()
 {
     std::cerr << "DTL::API::ReadHardwareInfo() not yet implemented" << std::endl;
@@ -337,18 +408,24 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
         CompiledView* view = new CompiledView(kernel_id, kernel->GetBackingPhysSize(), ralloc->GetViewSize(), byteWrites);
         /*
             Set the dependencies up
+
+
+
         */
-        for (auto& arg: kernel->GetArgumentStrings())
+        for (auto& arg: kernel->GetMetadataDependencies())
         {
-            assert(ViewMap.find(arg) != ViewMap.end()); // Should be guaranteed by compiling in reverse topological order
-            view->m_Dependencies.push_back(ViewMap.at(arg));  
+            std::string argName = arg.first;
+            uint8_t metadataSlotNum = arg.second;
+
+            assert(ViewMap.find(argName) != ViewMap.end()); // Should be guaranteed by compiling in reverse topological order
+            CompiledView* dependencyViewPtr  = ViewMap.at(argName);
+            view->m_Dependencies.push_back({dependencyViewPtr, DTL_KERNEL_DEPENDENCY::METADATA, metadataSlotNum});  
         }
 
         ViewMap.insert({kernel_id, view});
         returnedCompiledProgram.m_Views.push_back(view);
+        returnedCompiledProgram.m_NeededConfigs++;
     }
-
-
 
     return returnedCompiledProgram;
 }
@@ -383,7 +460,6 @@ void DTL::API::DebugPrintAllocator()
 
 DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
 {
-
     /*
         We allocate a region offset from the buddy allocator
     */
@@ -402,8 +478,29 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
         return nullptr;
     }
   // printf("DTL::API::AllocEphemeralRegion() config %d\n", config);
-    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat, AGUControlRegionBaseAddress+AGU_CONFIG_OFFSET(config));
+    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(size_needed), config, m_RealBackingStart, hwStat, AGUControlRegionBaseAddress+AGU_CONFIG_OFFSET(config), next_power_of_two(size_needed));
     return ephemeral;
+}
+
+EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t positional_size_needed, uint64_t logical_size_needed)
+{
+    uint64_t region_offset = AllocateRegion(positional_size_needed);
+    if (region_offset == BUDDY_ALLOC_FAILURE)
+    {
+        SetError(BUDDY_ALLOC_FAILURE);
+        return nullptr;
+    }
+
+    int config = AllocateConfig();
+    if (config == -1)
+    {
+        SetError(CONFIG_ALLOC_FAILURE);
+        return nullptr;
+    }
+
+    auto ephemeral = new EphemeralRegion(region_offset, next_power_of_two(logical_size_needed), config, m_RealBackingStart, hwStat, AGUControlRegionBaseAddress+AGU_CONFIG_OFFSET(config), next_power_of_two(positional_size_needed));
+    return ephemeral;
+
 }
 
 DTL::EphemeralRegion *DTL::API::CloneEphemeralRegion(EphemeralRegion *ephemeralRegion) {
@@ -738,9 +835,9 @@ DTL::BuddyNode *DTL::BuddyAllocator::FindNode(uint64_t offset, BuddyNode* currNo
     return nullptr;
 }
 
-DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base)
-    : m_RegionOffset(region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
-      m_RegionSize(region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base)
+DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_t logical_region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base, uint64_t positional_region_size)
+    : m_PositionalRegionOffset(positional_region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
+      m_LogicalRegionSize(logical_region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base), m_PositionalRegionSize(positional_region_size)
 {
     printf("EphemeralRegion()\n");
     m_Regionfd = open_fd("/dev/mem");
@@ -750,31 +847,29 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
 
     /*
-        Will want to make this per config ?
-
         We need the DTU not the AGU config, because the DTU config is where the address indirection comes from
     */
     m_DTUConfigRegion = mmap(NULL, DTU_CONFIG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, m_Regionfd, DTU_CONFIG_BASE);
     assert(m_DTUConfigRegion != nullptr && m_DTUConfigRegion != MAP_FAILED);
 
-
-    UPDATE_CONFIG_SIZE((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionSize);
+    // We want the logical region size since this will be used to trap shadow PA addresses
+    UPDATE_CONFIG_SIZE((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_LogicalRegionSize);
 
    // printf("m_PhysBackingStart 0x%llx, region_offset 0x%x\n, region_size 0x%x\n", m_PhysBackingStart, region_offset, region_size);
-    UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_RegionOffset + m_PhysBackingStart);
+    UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_PositionalRegionOffset + m_PhysBackingStart);
     /*
         We just allocate a region of adequate size and then remap it
 
         we do not use mmap callback through driver fd because we need to write out the config to the driver,
         if we add this functionality to the driver we can use the mmap callback instead of the remap ioctl
      */
-    m_EphemeralRegionAccess = mmap(NULL,
-                                    region_size,
+    m_LogicalRegionAccess = mmap(NULL,
+                                    m_LogicalRegionSize,
                                     PROT_READ | PROT_WRITE,
                                     MAP_SHARED | MAP_ANONYMOUS,
                                     -1,
                                     0);
-    assert(m_EphemeralRegionAccess != nullptr && m_EphemeralRegionAccess != MAP_FAILED);
+    assert(m_LogicalRegionAccess != nullptr && m_LogicalRegionAccess != MAP_FAILED);
     if(Sync() == -1)
     {
         printf("Failed to initialize EphemeralRegion()\n");
@@ -786,10 +881,10 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
 
 
-    assert(m_EphemeralRegionAccess != nullptr && m_EphemeralRegionAccess != MAP_FAILED);
+    assert(m_LogicalRegionAccess != nullptr && m_LogicalRegionAccess != MAP_FAILED);
 
-    //m_CurrentEphemeralPhysicalAddr = va_to_pa(m_EphemeralRegionAccess);
-    //printf("Got m_EphemeralRegionAccess PA = 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
+    //m_CurrentEphemeralPhysicalAddr = va_to_pa(m_LogicalRegionAccess);
+    //printf("Got m_LogicalRegionAccess PA = 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
     //UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_CurrentEphemeralPhysicalAddr);
 
 
@@ -802,26 +897,20 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t region_offset, uint64_t region_si
 
 
    m_Positionalfd = open("/dev/mem", O_RDWR);
-    m_UncachedRegionAccess =
+    m_PositionalRegionAccess =
         mmap(nullptr,
-            m_RegionSize,
+            m_PositionalRegionSize,
             PROT_READ | PROT_WRITE,
             MAP_SHARED,
             m_Positionalfd,
-            m_PhysBackingStart + m_RegionOffset);
-    assert(m_UncachedRegionAccess != nullptr && m_UncachedRegionAccess != MAP_FAILED);
-
-
-
-
-
-
+            m_PhysBackingStart + m_PositionalRegionOffset);
+    assert(m_PositionalRegionAccess != nullptr && m_PositionalRegionAccess != MAP_FAILED);
 }
 
 DTL::EphemeralRegion::~EphemeralRegion()
 {
-    munmap(m_EphemeralRegionAccess, m_RegionSize);
-    munmap(m_UncachedRegionAccess, m_RegionSize);
+    munmap(m_LogicalRegionAccess, m_LogicalRegionSize);
+    munmap(m_PositionalRegionAccess, m_PositionalRegionSize);
     munmap(m_DTUConfigRegion, DTU_CONFIG_SIZE);
     close(m_Regionfd);
     close(m_DTURuntimeDriverfd);
@@ -841,7 +930,7 @@ void DTL::EphemeralRegion::SetDataSize(uint8_t size)
 int DTL::EphemeralRegion::Sync()
 {
     RemapPARequest req;
-    req.u_VA = m_EphemeralRegionAccess;
+    req.u_VA = m_LogicalRegionAccess;
     int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
     if (ret == 0) // if successful, update config mapping
     {
@@ -872,43 +961,43 @@ void DTL::EphemeralRegion::UpdateMetadataObjectAddr(uint8_t metadataObjectNumber
 }
 
 void *DTL::EphemeralRegion::GetHeadlessReadRegion() {
-  return m_EphemeralRegionAccess;
+  return m_LogicalRegionAccess;
 }
 
 void *DTL::EphemeralRegion::GetHeadlessWriteregion()
 {
-    return m_UncachedRegionAccess;
+    return m_PositionalRegionAccess;
 }
 
 void DTL::EphemeralRegion::GuardedWrite_8(uint64_t offset, uint8_t data)
 {
     assert(offset < m_RegionSize);
-    WRITE_UINT8(m_UncachedRegionAccess + offset, data);
+    WRITE_UINT8(m_PositionalRegionAccess + offset, data);
 }
 
 uint8_t DTL::EphemeralRegion::GuardedRead_8(uint64_t offset) {
   assert(offset < m_RegionSize);
-  return *((uint16_t *)m_EphemeralRegionAccess);
+  return *((uint16_t *)m_LogicalRegionAccess);
 }
 
 uint16_t DTL::EphemeralRegion::GuardedRead_16(uint64_t offset) {
   assert(offset < m_RegionSize);
-  return *((uint16_t *)m_EphemeralRegionAccess);
+  return *((uint16_t *)m_LogicalRegionAccess);
 }
 
 uint32_t DTL::EphemeralRegion::GuardedRead_32(uint64_t offset) {
   assert(offset < m_RegionSize);
-  return *((uint32_t *)m_EphemeralRegionAccess);
+  return *((uint32_t *)m_LogicalRegionAccess);
 }
 
 uint64_t DTL::EphemeralRegion::GuardedRead_64(uint64_t offset) {
   assert(offset < m_RegionSize);
-  return *((uint64_t *)m_EphemeralRegionAccess);
+  return *((uint64_t *)m_LogicalRegionAccess);
 }
 
 float DTL::EphemeralRegion::GuardedRead_Float(uint64_t offset) {
   assert(offset < m_RegionSize);
-  return *((float *)m_EphemeralRegionAccess);
+  return *((float *)m_LogicalRegionAccess);
 }
 
 
@@ -970,10 +1059,20 @@ void DTL::DTUResourceHandle::SyncDependent(KernelDependency dep, std::tuple<uint
             assert(false); // should never happen
     }
 
-
-
     #undef VA_IDX 0 
     #undef SHADOWPA_IDX 1
     #undef POSITIONALPA_IDX 2
 }
 
+void DTL::DTUResourceHandle::AddDependencyOf(DTUResourceHandle *upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum)
+{
+    m_DependencyOf.push_back({upstreamDependency, dependencyType, dependencyNum});
+}
+
+DTL::CompiledDTLProgram::CompiledDTLProgram()
+{
+}
+
+DTL::CompiledDTLProgram::~CompiledDTLProgram()
+{
+}

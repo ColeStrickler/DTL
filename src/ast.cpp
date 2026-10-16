@@ -324,6 +324,15 @@ std::vector<std::string> DTL::DTLKernelNode::GetArgumentStrings() const
     return ret;
 }
 
+void DTL::ProgramNode::AddMetadataDependency(const std::string &metadataIDName)
+{
+	static uint8_t metadataNum = 0;
+
+	myMetadataDependencies.push_back(std::make_pair(metadataIDName, metadataNum));
+	metadataNum++;
+	return;
+}
+
 void DTL::ProgramNode::PreprocessArgs()
 {
     if (!myArguments.size())
@@ -332,11 +341,11 @@ void DTL::ProgramNode::PreprocessArgs()
     for (auto& stmt: myStatements)
     {
         if (stmt->getTag() == NODETAG::METADATASTREAMDECLNODE)
-            static_cast<MetadataStreamDeclNode*>(stmt)->PreprocessArgs(myArguments);
+            static_cast<MetadataStreamDeclNode*>(stmt)->PreprocessArgs(myArguments, this);
     }
 }
 
-void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &args)
+void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &args, ProgramNode* prog)
 {
     auto streamID = metadataStreamAddressID;
     if (streamID == nullptr) // initialized with an intlit, no need to preprocess
@@ -350,6 +359,11 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
 	*/
 	metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(0));
 	m_RequiresArgValue = true;
+	prog->AddMetadataDependency(streamID->getName());
+
+
+
+
 
     //for (auto& arg: args)
     //{
@@ -359,4 +373,7 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
     //        metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(arg.bound_address));
     //    }
     //}
+
+
+
 }

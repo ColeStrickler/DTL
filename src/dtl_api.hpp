@@ -75,7 +75,8 @@ enum DTL_KERNEL_DEPENDENCY
 };
 
 
-
+// Forward declaration
+struct CompiledKernelDependency; 
 
 /*
     A compiled view is just a vector of ByteWrites
@@ -86,17 +87,13 @@ struct CompiledView
 {
     CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite>& bytewrites);
     ~CompiledView() = default;
-
-
     uint64_t m_BaseObjectSize;      // Physical Address space needed
     uint64_t m_ViewSize;            // Virtual Address space needed
     std::vector<ByteWrite> m_ByteWrites;
     std::string m_ViewName;
-    std::vector<CompiledView*> m_Dependencies;
+    std::vector<CompiledKernelDependency> m_Dependencies;
     std::unordered_map<std::string, uint64_t> m_ArgValue;
 };
-
-
 
 /*
     We can save this structure, and pass into MapOntoDTUHardware() later
@@ -106,8 +103,10 @@ struct CompiledDTLProgram
 {
     CompiledDTLProgram();
     ~CompiledDTLProgram();
-    DTL_API_ERROR m_Error;
-    std::vector<CompiledView*> m_Views;
+
+    uint8_t m_NeededConfigs = 0;
+    DTL_API_ERROR m_Error = DTL_API_ERROR::NO_ERROR_OK;
+    std::vector<CompiledView*> m_Views = {};
 };
 
 class DTUResourceHandle;
@@ -119,12 +118,27 @@ struct KernelDependency
     uint8_t m_DependencyNumber;
 };
 
+struct CompiledKernelDependency
+{
+    CompiledView* m_DownstreamView;
+    DTL_KERNEL_DEPENDENCY m_DependencyType;
+    uint8_t m_DependencyNumber;
+};
 
+
+
+
+/*
+    MetadataRegion's allow controlling the metadata portion of a DTU kernel
+
+
+    Upon compilation into a DTUResourceHandle, the MetadataRegion will do one of the following:
+    1. if the metadataregion is another DTU kernel, we just need to ensure the pointers line up
+    2. if the metadataregion is just pure array, we can allocate this region from the normal allocator
+*/
 struct MetadataRegion
 {
     // Basically, we want r/w pointers that are different if this is a 
-
-
     inline bool IsDTURegion() {return isDTURegion;};                // !isNormalMemoryRegion()
     inline bool isNormalMemoryRegion() {return !IsDTURegion();};    // !IsDTURegion()
     bool isDTURegion;
@@ -137,17 +151,23 @@ struct MetadataRegion
 
 class DTUResourceHandle
 {
+public:
+    DTUResourceHandle();
+    ~DTUResourceHandle();
+    std::string m_HandleName;
     std::unordered_map<std::string, MetadataRegion*> m_MetaDataRegions; 
     EphemeralRegion* m_MainRegion;
     std::unordered_map<std::string, DTUResourceHandle*> m_SubHandles; // get kernel by name
     std::vector<KernelDependency> m_DependencyOf; // Track all kernels that are dependent on this one
     
+
     // If we sync the base object, we also have to sync the upstream objects as well
     // This may require either updating the metadata object or base object, depending
     // on what kind of dependency the object is
         
     void Sync();
     void SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple);
+    void AddDependencyOf(DTUResourceHandle* upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum);
 };
 
 
@@ -158,7 +178,7 @@ class DTUResourceHandle
 class EphemeralRegion
 {
 public:
-    EphemeralRegion(uint64_t region_offset, uint64_t region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base);
+    EphemeralRegion(uint64_t positional_region_offset, uint64_t logical_region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base, uint64_t positional_region_size);
     ~EphemeralRegion();
     EphemeralRegion* Clone(int new_config);
     /*
@@ -210,26 +230,25 @@ public:
     */
     inline std::tuple<uint64_t, uint64_t, uint64_t> GetAddrMappingTriple() 
     { return std::make_tuple(
-        reinterpret_cast<uint64_t>(m_EphemeralRegionAccess),
+        reinterpret_cast<uint64_t>(m_LogicalRegionAccess),
         m_CurrentEphemeralPhysicalAddr,
-        m_PhysBackingStart + m_RegionOffset);
+        m_PhysBackingStart + m_PositionalRegionOffset);
     }
 
 private:
-    uint64_t m_RegionOffset;
+    uint64_t m_PositionalRegionOffset;
     uint64_t m_PhysBackingStart;
-    uint64_t m_RegionSize;
+    uint64_t m_LogicalRegionSize;
+    uint64_t m_PositionalRegionSize;
     uint64_t m_AGUControlRegionBase;
     int m_ConfigNum;
-    void* m_EphemeralRegionAccess;
-    void* m_UncachedRegionAccess;
+    void* m_LogicalRegionAccess;
+    void* m_PositionalRegionAccess;
     int m_Regionfd;
     int m_Positionalfd;
     int m_DTURuntimeDriverfd;
     void* m_DTUConfigRegion;
     AGUHardwareStat* hwStat;
-
-
     
     uint64_t m_CurrentEphemeralPhysicalAddr;
 
@@ -311,6 +330,11 @@ public:
         uint64_t realBackingSize = DTU_REGION_SIZE); // if we want to manually configure
     ~API();
 
+
+
+    bool CheckHasAvailableResources(CompiledDTLProgram& dtlProg);
+    DTUResourceHandle* MapTODTUHardware(CompiledDTLProgram& dtlProg);
+
     /*
         Should be a mmap'ed address being passed in
     */
@@ -329,6 +353,8 @@ public:
     void DebugPrintAllocator();
     
     EphemeralRegion* AllocEphemeralRegion(uint64_t size_needed);
+    EphemeralRegion* AllocEphemeralRegion(uint64_t positional_size_needed, uint64_t logical_size_needed);
+
     EphemeralRegion* CloneEphemeralRegion(EphemeralRegion* ephemeralRegion);
     void FreeEphemeralRegion(EphemeralRegion* ephemeralRegion);
 
