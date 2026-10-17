@@ -87,13 +87,14 @@ struct CompiledView
 {
     CompiledView(std::string view_name, uint64_t base_object_size, uint64_t view_size, std::vector<ByteWrite>& bytewrites);
     ~CompiledView() = default;
+
+    void DoByteWrites(std::unordered_map<std::string, uint64_t>& args, uint64_t baseAddr);
     uint64_t m_BaseObjectSize;      // Physical Address space needed
     uint64_t m_ViewSize;            // Virtual Address space needed
     std::vector<ByteWrite> m_ByteWrites;
     std::string m_ViewName;
     std::vector<CompiledKernelDependency> m_Dependencies;
     std::vector<CompiledNonDTUMetadata> m_NonDTURegionMetadata;
-    std::unordered_map<std::string, uint64_t> m_ArgValue;
 };
 
 /*
@@ -108,6 +109,7 @@ struct CompiledDTLProgram
     uint8_t m_NeededConfigs = 0;
     DTL_API_ERROR m_Error = DTL_API_ERROR::NO_ERROR_OK;
     std::vector<CompiledView*> m_Views = {};
+    std::string m_ActiveViewName;
 };
 
 class DTUResourceHandle;
@@ -143,27 +145,40 @@ struct CompiledNonDTUMetadata
 */
 struct MetadataRegion
 {
+    MetadataRegion() = default;
+    ~MetadataRegion();
     // Basically, we want r/w pointers that are different if this is a 
     inline bool IsDTURegion() {return isDTURegion;};                // !isNormalMemoryRegion()
     inline bool isNormalMemoryRegion() {return !IsDTURegion();};    // !IsDTURegion()
+
+    inline void* GetMetadataWriteRegion() const { return m_WriteRegion;}
+    inline void* GetMetadataReadRegion() const {return m_ReadRegion;}
     bool isDTURegion;
     void* m_WriteRegion; // IsDTURegion() ? (!= m_ReadRegion) : (= m_ReadRegion)
-    void* m_ReadRegion; 
+    void* m_ReadRegion;
+    uint64_t m_RegionSize;
     DTUResourceHandle* m_ResourceHandle; // corresponding resource handle
-    int m_MmapFD;
+    //int m_MmapFD; used DTLAPI fd that is already allocated
 };
 
 
 class DTUResourceHandle
 {
 public:
-    DTUResourceHandle();
+    DTUResourceHandle() = default;
     ~DTUResourceHandle();
     std::string m_HandleName;
     std::unordered_map<std::string, MetadataRegion*> m_MetaDataRegions; 
     EphemeralRegion* m_MainRegion;
     std::unordered_map<std::string, DTUResourceHandle*> m_SubHandles; // get kernel by name
     std::vector<KernelDependency> m_DependencyOf; // Track all kernels that are dependent on this one
+    uint64_t m_BaseObjectSize;      // Physical Address space needed
+    uint64_t m_ViewSize;            // Virtual Address space needed
+
+    inline void* GetReadRegion() const {return m_MainRegion->GetHeadlessReadRegion();};
+    inline void* GetWriteRegion() const  {return m_MainRegion->GetHeadlessWriteregion();}
+    uint64_t GetPositionalObjectSize() const {return m_BaseObjectSize;}
+    uint64_t GetLogicalObjectSize() const {return m_ViewSize;}
     
 
     // If we sync the base object, we also have to sync the upstream objects as well
@@ -352,6 +367,7 @@ public:
 
     CompiledDTLProgram CompileProgram(const std::string& dtlProgram);
     bool ProgramHardware(EphemeralRegion* region);
+    void ProgramHardwareByteWrites(EphemeralRegion* region, CompiledView* view, std::unordered_map<std::string, uint64_t>& args);
 
     void ResetConfig(int config);
 
@@ -368,6 +384,9 @@ public:
     AGUHardwareStat* GetHWStat();
 private:
     uint64_t AllocateRegion(uint64_t size);
+    MetadataRegion* GenMetadataRegion(CompiledNonDTUMetadata& metadataDep);
+
+
     int AllocateConfig();
     void FreeConfig(int config);
     void SetError(uint64_t Error);
