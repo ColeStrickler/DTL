@@ -341,8 +341,8 @@ void DTL::ProgramNode::AddNonDTURegionMetadata(const std::string &metadataIDName
 
 void DTL::ProgramNode::PreprocessArgs()
 {
-    if (!myArguments.size())
-        return;
+    //if (!myArguments.size())
+    //    return;
 
     for (auto& stmt: myStatements)
     {

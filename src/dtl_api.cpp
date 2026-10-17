@@ -144,7 +144,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
         EphemeralRegion* MainRegion = region;
         std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
         std::vector<KernelDependency> DependencyOf; // Track all kernels that are dependent on this one
-
+                  std::unordered_map<std::string, uint64_t> byteWriteArgs;
         for (auto& dep: view->m_Dependencies)
         {
             CompiledView* dependency = dep.m_DownstreamView;
@@ -155,7 +155,6 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
 
             SubHandles.insert({dependency_name, handleDep});
             handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber);
-            std::unordered_map<std::string, uint64_t> byteWriteArgs;
             if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
             {
                 MetadataRegion* metadataAccessRegion = new MetaDataRegion();
@@ -167,8 +166,10 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
                 metadataAccessRegion->m_WriteRegion = handleDep->GetWriteRegion();
                 metadataAccessRegion->m_ReadRegion = handleDep->GetReadRegion();
                 metadataAccessRegion->m_RegionSize = handleDep->GetLogicalObjectSize(); // held downstream
+                metadataAccessRegion->m_PhysAddress = handleDep->GetShadowPAAddressStart();
+
                 MetaDataRegions.insert({dependency_name, metadataAccessRegion});
-                byteWriteArgs.insert({dependency_name, reinterpret_cast<uint64_t>(metadataAccessRegion->m_ReadRegion)})
+                byteWriteArgs.insert({dependency_name, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
             }
         }
 
@@ -176,7 +177,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
         {
             MetadataRegion* metadataAccessRegion = GenMetadataRegion(metadatadep);
             MetaDataRegions.insert({metadatadep.m_MetadataID, metadataAccessRegion});
-            byteWriteArgs.insert({metadatadep.m_MetadataID, reinterpret_cast<uint64_t>(metadataAccessRegion->GetMetadataReadRegion())});
+            byteWriteArgs.insert({metadatadep.m_MetadataID, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
         }
 
         handle->m_HandleName = std::move(HandleName);
@@ -186,6 +187,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
         handle->m_MainRegion = std::move(MainRegion);
 
         ProgramHardwareByteWrites(MainRegion, view, byteWriteArgs);
+        HandleMap.insert({HandleName, Handle});
     }
 
     assert(HandleMap.find(dtlProg.m_ActiveViewName) != HandleMap.end());
@@ -604,8 +606,9 @@ MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
     metadataAccessRegion->m_WriteRegion = metadataPtr;
     metadataAccessRegion->m_ReadRegion = metadataPtr;
     metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
+    metadataAccessRegion->m_PhysAddress = 
 
-    return metadataAccessRegion;
+    return metadataAccessRegion = physAddrMetadataRegion;
 }
 
 /*
@@ -952,9 +955,9 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
 
     assert(m_LogicalRegionAccess != nullptr && m_LogicalRegionAccess != MAP_FAILED);
 
-    //m_CurrentEphemeralPhysicalAddr = va_to_pa(m_LogicalRegionAccess);
-    //printf("Got m_LogicalRegionAccess PA = 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
-    //UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_CurrentEphemeralPhysicalAddr);
+    //m_CurrentShadowPhysicalAddr = va_to_pa(m_LogicalRegionAccess);
+    //printf("Got m_LogicalRegionAccess PA = 0x%llx\n", m_CurrentShadowPhysicalAddr);
+    //UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_CurrentShadowPhysicalAddr);
 
 
     //int syncret = Sync();
@@ -1003,12 +1006,12 @@ int DTL::EphemeralRegion::Sync()
     int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
     if (ret == 0) // if successful, update config mapping
     {
-        m_CurrentEphemeralPhysicalAddr = (uint64_t)req.u_NewPA;
+        m_CurrentShadowPhysicalAddr = (uint64_t)req.u_NewPA;
         UPDATE_CONFIG_PHYSMAP(m_DTUConfigRegion,
                               m_ConfigNum,
                               hwStat->nMaxConfigs,
-                              m_CurrentEphemeralPhysicalAddr);
-        // printf("new PA 0x%llx\n", m_CurrentEphemeralPhysicalAddr);
+                              m_CurrentShadowPhysicalAddr);
+        // printf("new PA 0x%llx\n", m_CurrentShadowPhysicalAddr);
     } else
         printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
 
@@ -1100,6 +1103,11 @@ DTL::DTUResourceHandle::~DTUResourceHandle()
 
     for (auto& subhandle: m_SubHandles)
         delete subhandle.second;
+}
+
+uint64_t DTL::DTUResourceHandle::GetShadowPAAddressStart() const
+{
+    return m_MainRegion->GetCurrentShadowPhysicalAddr();
 }
 
 /*

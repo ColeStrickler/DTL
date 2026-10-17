@@ -153,6 +153,7 @@ struct MetadataRegion
 
     inline void* GetMetadataWriteRegion() const { return m_WriteRegion;}
     inline void* GetMetadataReadRegion() const {return m_ReadRegion;}
+    uint64_t m_PhysAddress;
     bool isDTURegion;
     void* m_WriteRegion; // IsDTURegion() ? (!= m_ReadRegion) : (= m_ReadRegion)
     void* m_ReadRegion;
@@ -177,8 +178,9 @@ public:
 
     inline void* GetReadRegion() const {return m_MainRegion->GetHeadlessReadRegion();};
     inline void* GetWriteRegion() const  {return m_MainRegion->GetHeadlessWriteregion();}
-    uint64_t GetPositionalObjectSize() const {return m_BaseObjectSize;}
-    uint64_t GetLogicalObjectSize() const {return m_ViewSize;}
+    inline uint64_t GetPositionalObjectSize() const {return m_BaseObjectSize;}
+    inline uint64_t GetLogicalObjectSize() const {return m_ViewSize;}
+    uint64_t GetShadowPAAddressStart() const;
     
 
     // If we sync the base object, we also have to sync the upstream objects as well
@@ -221,6 +223,7 @@ public:
    
    */
 
+    inline void* GetCurrentShadowPhysicalAddr() const {return m_CurrentShadowPhysicalAddr; }
     void SetDataSize(uint8_t size);
     int Sync(); //
 
@@ -251,7 +254,7 @@ public:
     inline std::tuple<uint64_t, uint64_t, uint64_t> GetAddrMappingTriple() 
     { return std::make_tuple(
         reinterpret_cast<uint64_t>(m_LogicalRegionAccess),
-        m_CurrentEphemeralPhysicalAddr,
+        m_CurrentShadowPhysicalAddr,
         m_PhysBackingStart + m_PositionalRegionOffset);
     }
 
@@ -270,7 +273,7 @@ private:
     void* m_DTUConfigRegion;
     AGUHardwareStat* hwStat;
     
-    uint64_t m_CurrentEphemeralPhysicalAddr;
+    uint64_t m_CurrentShadowPhysicalAddr; // ShadowPA
 
     //int open_fd(const std::string& path);
 

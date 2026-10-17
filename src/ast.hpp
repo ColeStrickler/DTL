@@ -165,7 +165,7 @@ namespace DTL
 	{
 	public:
 		DTLKernelNode(IDNode* id, std::vector<IDNode*> inputArgs, ProgramNode* prog, IntLitNode* backingPhysSize) 
-			: m_ID(id), m_Arguments(inputArgs), m_Program(prog)
+			: m_ID(id), m_Arguments(inputArgs), m_Program(prog), m_BackingPhysSize(backingPhysSize)
 		{
 			myTag = NODETAG::DTLKERNELNODE;
 		}
