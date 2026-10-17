@@ -300,7 +300,7 @@ int DTL::MetadataStreamDeclNode::GetDataSize() const
     {return dataSize->GetVal();}
 }
 
-int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const
+int64_t DTL::MetadataStreamDeclNode::GetStreamAddress() const // deprecated. need to supply at runtime
 {
     {return metadataStreamAddress->GetVal64();}
 }
@@ -324,11 +324,17 @@ std::vector<std::string> DTL::DTLKernelNode::GetArgumentStrings() const
     return ret;
 }
 
-void DTL::ProgramNode::AddMetadataDependency(const std::string &metadataIDName)
+void DTL::ProgramNode::AddKernelMetadataDependency(const std::string &metadataIDName)
 {
-	static uint8_t metadataNum = 0;
+	myKernelMetadataDependencies.push_back(std::make_pair(metadataIDName, metadataNum));
+	metadataNum++;
+	return;
+}
 
-	myMetadataDependencies.push_back(std::make_pair(metadataIDName, metadataNum));
+void DTL::ProgramNode::AddNonDTURegionMetadata(const std::string &metadataIDName, uint64_t metadataRegionSize)
+{
+	std::tuple<std::string, uint64_t, uint8_t> nondtu_metadata{metadataIDName, metadataRegionSize, metadataNum};
+	myNonDTUMetadataDependencies.push_back(nondtu_metadata);
 	metadataNum++;
 	return;
 }
@@ -348,8 +354,13 @@ void DTL::ProgramNode::PreprocessArgs()
 void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &args, ProgramNode* prog)
 {
     auto streamID = metadataStreamAddressID;
-    if (streamID == nullptr) // initialized with an intlit, no need to preprocess
-        return;
+	m_RequiresArgValue = true;
+
+	metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(0));
+    if (streamID == nullptr) 
+		prog->AddNonDTURegionMetadata(streamID->getName(), m_AllocationSizeNeeded);
+	else
+		prog->AddKernelMetadataDependency(streamID->getName());
 
 
 	/*
@@ -357,9 +368,8 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
 
 		We will make this node as needing an argument in ByteWrite
 	*/
-	metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(0));
-	m_RequiresArgValue = true;
-	prog->AddMetadataDependency(streamID->getName());
+
+	
 
 
 

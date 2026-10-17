@@ -139,15 +139,17 @@ namespace DTL
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
 
-		void AddMetadataDependency(const std::string& metadataIDName);		
+		void AddKernelMetadataDependency(const std::string& metadataIDName);		
+		void AddNonDTURegionMetadata(const std::string& metadataIDName, uint64_t metadataRegionSize);
+		std::vector<std::pair<std::string, uint8_t>> GetDTURegionMetadataDependencies() {return myKernelMetadataDependencies;};
+		std::vector<std::tuple<std::string, uint64_t, uint8_t>> GetNonDTURegionMetadataDependencies() {return myNonDTUMetadataDependencies;}
 
-		std::vector<std::pair<std::string, uint8_t>> GetMetadataDependencies() {return myMetadataDependencies;};
 	private:
-
+		uint8_t metadataNum = 0;
 		void PreprocessArgs();
 		std::vector<DTLProgramArg> myArguments; 
-
-		std::vector<std::pair<std::string, uint8_t>> myMetadataDependencies;
+		std::vector<std::tuple<std::string, uint64_t, uint8_t>> myNonDTUMetadataDependencies;
+		std::vector<std::pair<std::string, uint8_t>> myKernelMetadataDependencies;
 		std::vector<StmtNode *> myStatements;
 	};
 
@@ -177,7 +179,9 @@ namespace DTL
 		std::vector<std::string> GetArgumentStrings() const;
 		ProgramNode* GetProgram() {return m_Program;}
 		uint64_t GetBackingPhysSize() {return static_cast<uint64_t>(m_BackingPhysSize->GetVal64());}
-		std::vector<std::pair<std::string, uint8_t>> GetMetadataDependencies() {return m_Program->GetMetadataDependencies();}
+		std::vector<std::pair<std::string, uint8_t>> GetDTURegionMetadataDependencies() {return m_Program->GetDTURegionMetadataDependencies();}
+		std::vector<std::tuple<std::string, uint64_t, uint8_t>> GetNonDTURegionMetadataDependencies() {return m_Program->GetNonDTURegionMetadataDependencies(); }
+
 	private:
 		NODETAG myTag;
 		IDNode* m_ID;
@@ -286,8 +290,8 @@ namespace DTL
 	class MetadataStreamDeclNode : public DeclNode
 	{
 	public:
-		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamAddr) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(metadataStreamAddr), index_id(""), metadataStreamAddressID(nullptr)
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamSize) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), index_id(""), metadataStreamAddressID(nullptr), m_AllocationSizeNeeded(metadataStreamSize->getVal64())
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 			m_RequiresArgValue = false;
@@ -295,7 +299,7 @@ namespace DTL
 
 
 		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IDNode* metadataStreamAddrID) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID)
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID), mAllocationSizeNeeded(0)
 		{
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 			m_RequiresArgValue = false;
@@ -330,8 +334,11 @@ namespace DTL
 
 		bool NeedsArgValue() {return m_RequiresArgValue;}
 
+		uint64_t GetAllocationSizeNeeded()
+
 
 	private:
+		uint64_t m_AllocationSizeNeeded;
 		bool m_RequiresArgValue;
 		std::string index_id; 
 		//IDNode* indexNode; // deprecated

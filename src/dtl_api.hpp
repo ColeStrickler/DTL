@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-
+#include <tuple>
 
 #define Kilobyte            1024
 #define Megabyte            Kilobyte*1024
@@ -77,7 +77,7 @@ enum DTL_KERNEL_DEPENDENCY
 
 // Forward declaration
 struct CompiledKernelDependency; 
-
+struct CompiledNonDTUMetadata;
 /*
     A compiled view is just a vector of ByteWrites
 
@@ -92,6 +92,7 @@ struct CompiledView
     std::vector<ByteWrite> m_ByteWrites;
     std::string m_ViewName;
     std::vector<CompiledKernelDependency> m_Dependencies;
+    std::vector<CompiledNonDTUMetadata> m_NonDTURegionMetadata;
     std::unordered_map<std::string, uint64_t> m_ArgValue;
 };
 
@@ -125,8 +126,12 @@ struct CompiledKernelDependency
     uint8_t m_DependencyNumber;
 };
 
-
-
+struct CompiledNonDTUMetadata
+{
+    std::string m_MetadataID;
+    uint64_t m_MetadataRegionSize;
+    uint8_t m_DependencyNumber;
+};
 
 /*
     MetadataRegion's allow controlling the metadata portion of a DTU kernel

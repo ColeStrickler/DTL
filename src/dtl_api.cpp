@@ -165,9 +165,23 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
             if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
             {
                 MetadataRegion* metadataAccessRegion = new MetaDataRegion();
+                /*
+                    So we also need the non-dtu metadata regions available here
+
+
+                    for the non-dtu regions, we need to have the size of the region for allocation
+
+
+                    We need to pass in a metadata arg every time
+                */
+                metadataAccessRegion->isDTURegion = true;
             }
         }
 
+        for (auto& metadatadep: view->m_NonDTURegionMetadata)
+        {
+        
+        }
 
 
    }
@@ -412,7 +426,7 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
 
 
         */
-        for (auto& arg: kernel->GetMetadataDependencies())
+        for (auto& arg: kernel->GetDTURegionMetadataDependencies())
         {
             std::string argName = arg.first;
             uint8_t metadataSlotNum = arg.second;
@@ -421,6 +435,15 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
             CompiledView* dependencyViewPtr  = ViewMap.at(argName);
             view->m_Dependencies.push_back({dependencyViewPtr, DTL_KERNEL_DEPENDENCY::METADATA, metadataSlotNum});  
         }
+
+        for (auto& arg: kernel->GetNonDTURegionMetadataDependencies())
+        {
+            std::string depName = std::get<0>(arg);
+            uint64_t regionSize = std::get<1>(arg);
+            uint8_t metadataSlotNum = std::get<2>(arg);
+            view->m_NonDTURegionMetadata.push_back({depName, regionSize, metadataSlotNum});
+        }
+
 
         ViewMap.insert({kernel_id, view});
         returnedCompiledProgram.m_Views.push_back(view);
