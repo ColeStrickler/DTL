@@ -9,7 +9,7 @@ using namespace DTL;
 
 bool ProgramNode::nameAnalysis(SymbolTable *symTab)
 {
-    PreprocessArgs(); // replace args with proper input
+
     symTab->enterScope();
     for (auto& stmt: myStatements)
     {
@@ -54,6 +54,18 @@ bool DTL::MetadataStreamDeclNode::nameAnalysis(SymbolTable *symTab)
 {
     auto name = myID->getName();
     auto type = myType->getType();
+    if (metadataStreamAddressID != nullptr)
+    {
+        std::string inputArgID = metadataStreamAddressID->getName();
+        if (symTab->clash(inputArgID))
+            return NameErr::multiDecl(myID->pos());
+        auto sym = new VarSymbol(inputArgID, type, this);// this allows bad behavior, 
+        myID->attachSymbol(sym);
+        symTab->insert(sym);
+    }
+
+
+
     if (symTab->clash(name))
         return NameErr::multiDecl(myID->pos());
 

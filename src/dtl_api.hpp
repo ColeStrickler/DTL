@@ -52,6 +52,91 @@ typedef struct RemapPARequest
 
 
 
+class EphemeralRegion
+{
+public:
+    EphemeralRegion(uint64_t positional_region_offset, uint64_t logical_region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base, uint64_t positional_region_size);
+    ~EphemeralRegion();
+    EphemeralRegion* Clone(int new_config);
+    /*
+        We want methods for: access, delete, locking, update
+
+        We want to enable access by index and by offset
+    */
+
+    // Maybe define some macros? not sure how we want to do this yet
+
+    /*
+        This method remaps the va->pa region and ensures that region pulls in latest data
+    */
+
+
+   /*
+        We need to add methods to write to the uncached backing of these regions and
+        to enable teardown
+
+   
+   */
+
+    inline uint64_t GetCurrentShadowPhysicalAddr() const {return m_CurrentShadowPhysicalAddr; }
+    void SetDataSize(uint8_t size);
+    int Sync(); //
+
+
+    void UpdateBackingObjectAddr(uint64_t addr);
+    void UpdateMetadataObjectAddr(uint8_t metadataObjectNumber, uint64_t addr);
+
+
+    void* GetHeadlessReadRegion(); // get raw pointer to ephemeral region, no bounds checking, writes allowed
+    void* GetHeadlessWriteregion();
+
+    uint64_t GetRegionOffset() {return m_PositionalRegionOffset; }
+
+    void GuardedWrite_8(uint64_t offset, uint8_t data);
+    uint8_t GuardedRead_8(uint64_t offset);
+    uint16_t GuardedRead_16(uint64_t offset);
+    uint32_t GuardedRead_32(uint64_t offset);
+    uint64_t GuardedRead_64(uint64_t offset);
+
+    float GuardedRead_Float(uint64_t offset);
+
+    inline int GetConfig() {return m_ConfigNum;}
+
+
+    /*
+        We return {virtual, shadow PA, positional PA}
+    */
+    inline std::tuple<uint64_t, uint64_t, uint64_t> GetAddrMappingTriple() 
+    { return std::make_tuple(
+        reinterpret_cast<uint64_t>(m_LogicalRegionAccess),
+        m_CurrentShadowPhysicalAddr,
+        m_PhysBackingStart + m_PositionalRegionOffset);
+    }
+
+private:
+    uint64_t m_PositionalRegionOffset;
+    uint64_t m_PhysBackingStart;
+    uint64_t m_LogicalRegionSize;
+    uint64_t m_PositionalRegionSize;
+    uint64_t m_AGUControlRegionBase;
+    int m_ConfigNum;
+    void* m_LogicalRegionAccess;
+    void* m_PositionalRegionAccess;
+    int m_Regionfd;
+    int m_Positionalfd;
+    int m_DTURuntimeDriverfd;
+    void* m_DTUConfigRegion;
+    AGUHardwareStat* hwStat;
+    
+    uint64_t m_CurrentShadowPhysicalAddr; // ShadowPA
+
+    //int open_fd(const std::string& path);
+
+    
+
+
+};
+
 
 
 enum DTL_API_ERROR
@@ -119,6 +204,7 @@ struct KernelDependency
     DTUResourceHandle* m_UpstreamDependency;
     DTL_KERNEL_DEPENDENCY m_DependencyType;
     uint8_t m_DependencyNumber;
+    std::string m_MetadataVarID;
 };
 
 struct CompiledKernelDependency
@@ -126,6 +212,7 @@ struct CompiledKernelDependency
     CompiledView* m_DownstreamView;
     DTL_KERNEL_DEPENDENCY m_DependencyType;
     uint8_t m_DependencyNumber;
+    std::string m_MetadataID; // Local variable name exposed in m_MetaDataRegions.
 };
 
 struct CompiledNonDTUMetadata
@@ -153,6 +240,8 @@ struct MetadataRegion
 
     inline void* GetMetadataWriteRegion() const { return m_WriteRegion;}
     inline void* GetMetadataReadRegion() const {return m_ReadRegion;}
+    void UpdatePhysAddress();
+
     uint64_t m_PhysAddress;
     bool isDTURegion;
     void* m_WriteRegion; // IsDTURegion() ? (!= m_ReadRegion) : (= m_ReadRegion)
@@ -186,101 +275,16 @@ public:
     // If we sync the base object, we also have to sync the upstream objects as well
     // This may require either updating the metadata object or base object, depending
     // on what kind of dependency the object is
-        
+    void SyncFrom(std::string caller, uint8_t dependency_num, std::tuple<uint64_t, uint64_t, uint64_t>& addressTriple);
     void Sync();
-    void SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple);
-    void AddDependencyOf(DTUResourceHandle* upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum);
+    void SyncDependent(KernelDependency dep);
+    void AddDependencyOf(DTUResourceHandle* upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum, std::string metadataVarID);
 };
 
 
 
 
 
-
-class EphemeralRegion
-{
-public:
-    EphemeralRegion(uint64_t positional_region_offset, uint64_t logical_region_size, int config_num, uint64_t physical_backing_start, AGUHardwareStat* hwStat, uint64_t agu_region_base, uint64_t positional_region_size);
-    ~EphemeralRegion();
-    EphemeralRegion* Clone(int new_config);
-    /*
-        We want methods for: access, delete, locking, update
-
-        We want to enable access by index and by offset
-    */
-
-    // Maybe define some macros? not sure how we want to do this yet
-
-    /*
-        This method remaps the va->pa region and ensures that region pulls in latest data
-    */
-
-
-   /*
-        We need to add methods to write to the uncached backing of these regions and
-        to enable teardown
-
-   
-   */
-
-    inline uint64_t GetCurrentShadowPhysicalAddr() const {return m_CurrentShadowPhysicalAddr; }
-    void SetDataSize(uint8_t size);
-    int Sync(); //
-
-
-    void UpdateBackingObjectAddr(uint64_t addr);
-    void UpdateMetadataObjectAddr(uint8_t metadataObjectNumber, uint64_t addr);
-
-
-    void* GetHeadlessReadRegion(); // get raw pointer to ephemeral region, no bounds checking, writes allowed
-    void* GetHeadlessWriteregion();
-
-    uint64_t GetRegionOffset() {return m_RegionOffset; }
-
-    void GuardedWrite_8(uint64_t offset, uint8_t data);
-    uint8_t GuardedRead_8(uint64_t offset);
-    uint16_t GuardedRead_16(uint64_t offset);
-    uint32_t GuardedRead_32(uint64_t offset);
-    uint64_t GuardedRead_64(uint64_t offset);
-
-    float GuardedRead_Float(uint64_t offset);
-
-    inline int GetConfig() {return m_ConfigNum;}
-
-
-    /*
-        We return {virtual, shadow PA, positional PA}
-    */
-    inline std::tuple<uint64_t, uint64_t, uint64_t> GetAddrMappingTriple() 
-    { return std::make_tuple(
-        reinterpret_cast<uint64_t>(m_LogicalRegionAccess),
-        m_CurrentShadowPhysicalAddr,
-        m_PhysBackingStart + m_PositionalRegionOffset);
-    }
-
-private:
-    uint64_t m_PositionalRegionOffset;
-    uint64_t m_PhysBackingStart;
-    uint64_t m_LogicalRegionSize;
-    uint64_t m_PositionalRegionSize;
-    uint64_t m_AGUControlRegionBase;
-    int m_ConfigNum;
-    void* m_LogicalRegionAccess;
-    void* m_PositionalRegionAccess;
-    int m_Regionfd;
-    int m_Positionalfd;
-    int m_DTURuntimeDriverfd;
-    void* m_DTUConfigRegion;
-    AGUHardwareStat* hwStat;
-    
-    uint64_t m_CurrentShadowPhysicalAddr; // ShadowPA
-
-    //int open_fd(const std::string& path);
-
-    
-
-
-};
 
 
 class BuddyNode

@@ -286,13 +286,13 @@ std::string DTL::MetadataStreamDeclNode::GetIDString() const
 
 std::string DTL::MetadataStreamDeclNode::GetIndexIDString() const
 {
-	assert(index_id.size() > 0);
+	//assert(index_id.size() > 0);
     return index_id;
 }
 
 std::string DTL::MetadataStreamDeclNode::GetArgIDString() const
 {
-    return metadataStreamAddressID == nullptr ? "" : metadataStreamAddressID->getName();
+    return metadataStreamAddressID == nullptr ? GetIDString() : metadataStreamAddressID->getName();
 }
 
 int DTL::MetadataStreamDeclNode::GetDataSize() const
@@ -324,9 +324,13 @@ std::vector<std::string> DTL::DTLKernelNode::GetArgumentStrings() const
     return ret;
 }
 
-void DTL::ProgramNode::AddKernelMetadataDependency(const std::string &metadataIDName)
+uint64_t DTL::DTLKernelNode::GetBackingPhysSize()
 {
-	myKernelMetadataDependencies.push_back(std::make_pair(metadataIDName, metadataNum));
+	return static_cast<uint64_t>(m_BackingPhysSize->GetVal64());
+}
+void DTL::ProgramNode::AddKernelMetadataDependency(const std::string &kernelIDName, const std::string &metadataIDName)
+{
+	myKernelMetadataDependencies.push_back({kernelIDName, metadataIDName, metadataNum});
 	metadataNum++;
 	return;
 }
@@ -357,10 +361,10 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
 	m_RequiresArgValue = true;
 
 	metadataStreamAddress = new IntLitNode(new Position(), static_cast<int64_t>(0));
-    if (streamID == nullptr) 
-		prog->AddNonDTURegionMetadata(streamID->getName(), m_AllocationSizeNeeded);
+    if (streamID == nullptr)
+		prog->AddNonDTURegionMetadata(GetIDString(), m_AllocationSizeNeeded);
 	else
-		prog->AddKernelMetadataDependency(streamID->getName());
+		prog->AddKernelMetadataDependency(streamID->getName(), GetIDString());
 
 
 	/*
@@ -386,4 +390,8 @@ void DTL::MetadataStreamDeclNode::PreprocessArgs(std::vector<DTLProgramArg> &arg
 
 
 
+}
+uint64_t DTL::MetadataStreamDeclNode::GetAllocationSizeNeeded()
+{
+	return m_AllocationSizeNeeded;
 }

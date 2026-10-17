@@ -109,6 +109,13 @@ namespace DTL
 		uint64_t bound_address;
 	};
 
+	struct KernelMetadataDependency
+	{
+		std::string m_KernelID;   // Producer used for dependency resolution and address binding.
+		std::string m_MetadataID; // Local metadata variable used for handle lookup.
+		uint8_t m_DependencyNumber;
+	};
+
 	class ProgramNode : public ASTNode
 	{
 	public:
@@ -139,17 +146,17 @@ namespace DTL
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
 
-		void AddKernelMetadataDependency(const std::string& metadataIDName);		
+		void AddKernelMetadataDependency(const std::string& kernelIDName, const std::string& metadataIDName);
 		void AddNonDTURegionMetadata(const std::string& metadataIDName, uint64_t metadataRegionSize);
-		std::vector<std::pair<std::string, uint8_t>> GetDTURegionMetadataDependencies() {return myKernelMetadataDependencies;};
+		std::vector<KernelMetadataDependency> GetDTURegionMetadataDependencies() {return myKernelMetadataDependencies;};
 		std::vector<std::tuple<std::string, uint64_t, uint8_t>> GetNonDTURegionMetadataDependencies() {return myNonDTUMetadataDependencies;}
-
+		void PreprocessArgs();
 	private:
 		uint8_t metadataNum = 0;
-		void PreprocessArgs();
+
 		std::vector<DTLProgramArg> myArguments; 
 		std::vector<std::tuple<std::string, uint64_t, uint8_t>> myNonDTUMetadataDependencies;
-		std::vector<std::pair<std::string, uint8_t>> myKernelMetadataDependencies;
+		std::vector<KernelMetadataDependency> myKernelMetadataDependencies;
 		std::vector<StmtNode *> myStatements;
 	};
 
@@ -178,8 +185,8 @@ namespace DTL
 		std::vector<DTL::IDNode*> GetArguments() const;
 		std::vector<std::string> GetArgumentStrings() const;
 		ProgramNode* GetProgram() {return m_Program;}
-		uint64_t GetBackingPhysSize() {return static_cast<uint64_t>(m_BackingPhysSize->GetVal64());}
-		std::vector<std::pair<std::string, uint8_t>> GetDTURegionMetadataDependencies() {return m_Program->GetDTURegionMetadataDependencies();}
+		uint64_t GetBackingPhysSize();
+		std::vector<KernelMetadataDependency> GetDTURegionMetadataDependencies() {return m_Program->GetDTURegionMetadataDependencies();}
 		std::vector<std::tuple<std::string, uint64_t, uint8_t>> GetNonDTURegionMetadataDependencies() {return m_Program->GetNonDTURegionMetadataDependencies(); }
 
 	private:
@@ -287,68 +294,7 @@ namespace DTL
 	};
 
 
-	class MetadataStreamDeclNode : public DeclNode
-	{
-	public:
-		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamSize) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), index_id(""), metadataStreamAddressID(nullptr), m_AllocationSizeNeeded(metadataStreamSize->getVal64())
-		{
-			myTag = NODETAG::METADATASTREAMDECLNODE;
-			m_RequiresArgValue = false;
-		}
 
-
-		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IDNode* metadataStreamAddrID) : DeclNode(p), \
-			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID), mAllocationSizeNeeded(0)
-		{
-			myTag = NODETAG::METADATASTREAMDECLNODE;
-			m_RequiresArgValue = false;
-		}
-		
-		virtual void typeAnalysis(TypeAnalysis *ta) override;
-		virtual bool nameAnalysis(SymbolTable *symTab) override;
-		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
-		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
-		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
-		virtual int Collapse(ResourceAllocation *ralloc) override;
-		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
-		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth,uint8_t opt_flags);
-		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
-		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
-		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
-		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
-
-
-		void PreprocessArgs(std::vector<DTLProgramArg>& args, ProgramNode* prog);
-
-		void SetOpt(bool opt) {m_Opt = opt;}
-		bool GetOpt() {return m_Opt;}
-		std::string GetIDString() const;
-		std::string GetIndexIDString() const;
-		std::string GetArgIDString() const;
-
-		void BindIndexNode(std::string index_node_id) {index_id = index_node_id;}
-		
-		int GetDataSize() const;
-		int64_t GetStreamAddress() const;
-
-		bool NeedsArgValue() {return m_RequiresArgValue;}
-
-		uint64_t GetAllocationSizeNeeded()
-
-
-	private:
-		uint64_t m_AllocationSizeNeeded;
-		bool m_RequiresArgValue;
-		std::string index_id; 
-		//IDNode* indexNode; // deprecated
-		bool m_Opt;
-		TypeNode *myType;
-		IDNode *myID;
-		IntLitNode *dataSize;
-		IntLitNode *metadataStreamAddress;
-		IDNode* metadataStreamAddressID;
-	};
 
 
 	/*
@@ -764,6 +710,71 @@ namespace DTL
 	private:
 		
 	};
+
+
+		class MetadataStreamDeclNode : public DeclNode
+	{
+	public:
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamSize) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), index_id(""), metadataStreamAddressID(nullptr), m_AllocationSizeNeeded(metadataStreamSize->GetVal64())
+		{
+			myTag = NODETAG::METADATASTREAMDECLNODE;
+			m_RequiresArgValue = false;
+		}
+
+
+		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IDNode* metadataStreamAddrID) : DeclNode(p), \
+			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID), m_AllocationSizeNeeded(0)
+		{
+			myTag = NODETAG::METADATASTREAMDECLNODE;
+			m_RequiresArgValue = false;
+		}
+		
+		virtual void typeAnalysis(TypeAnalysis *ta) override;
+		virtual bool nameAnalysis(SymbolTable *symTab) override;
+		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
+		virtual void resourceAllocation(ResourceAllocation *ralloc, int depth);
+		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
+		virtual int Collapse(ResourceAllocation *ralloc) override;
+		virtual ASTNode *TransformPass(uint8_t opt_flags) override;
+		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth,uint8_t opt_flags);
+		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) override;
+		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
+		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
+
+
+		void PreprocessArgs(std::vector<DTLProgramArg>& args, ProgramNode* prog);
+
+		void SetOpt(bool opt) {m_Opt = opt;}
+		bool GetOpt() {return m_Opt;}
+		std::string GetIDString() const;
+		std::string GetIndexIDString() const;
+		std::string GetArgIDString() const;
+
+		void BindIndexNode(std::string index_node_id) {index_id = index_node_id;}
+		
+		int GetDataSize() const;
+		int64_t GetStreamAddress() const;
+
+		bool NeedsArgValue() {return m_RequiresArgValue;}
+
+		uint64_t GetAllocationSizeNeeded();
+
+
+	private:
+		uint64_t m_AllocationSizeNeeded;
+		bool m_RequiresArgValue;
+		std::string index_id; 
+		//IDNode* indexNode; // deprecated
+		bool m_Opt;
+		TypeNode *myType;
+		IDNode *myID;
+		IntLitNode *dataSize;
+		IntLitNode *metadataStreamAddress;
+		IDNode* metadataStreamAddressID;
+	};
+
 
 	class BinaryExpNode : public ExpNode
 	{

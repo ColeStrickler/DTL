@@ -417,6 +417,7 @@ namespace DTL {
       // ID
       char dummy5[sizeof (DTL::IDToken *)];
 
+      // backingphyssize
       // intlit
       char dummy6[sizeof (DTL::IntLitNode*)];
 
@@ -640,29 +641,30 @@ namespace DTL {
         S_activenode = 41,                       // activenode
         S_kernellist = 42,                       // kernellist
         S_kernel = 43,                           // kernel
-        S_inputlistwrapper = 44,                 // inputlistwrapper
-        S_inputlist = 45,                        // inputlist
-        S_program = 46,                          // program
-        S_constdecls = 47,                       // constdecls
-        S_metadatastreamdecl = 48,               // metadatastreamdecl
-        S_constdecl = 49,                        // constdecl
-        S_intlist = 50,                          // intlist
-        S_forstatement = 51,                     // forstatement
-        S_outstatements = 52,                    // outstatements
-        S_innernest = 53,                        // innernest
-        S_ifstatement = 54,                      // ifstatement
-        S_switchstatement = 55,                  // switchstatement
-        S_casestatements = 56,                   // casestatements
-        S_casestatement = 57,                    // casestatement
-        S_outstatement = 58,                     // outstatement
-        S_type = 59,                             // type
-        S_expr = 60,                             // expr
-        S_unarystmt = 61,                        // unarystmt
-        S_term = 62,                             // term
-        S_factor = 63,                           // factor
-        S_intlit = 64,                           // intlit
-        S_loc = 65,                              // loc
-        S_id = 66                                // id
+        S_backingphyssize = 44,                  // backingphyssize
+        S_inputlistwrapper = 45,                 // inputlistwrapper
+        S_inputlist = 46,                        // inputlist
+        S_program = 47,                          // program
+        S_constdecls = 48,                       // constdecls
+        S_metadatastreamdecl = 49,               // metadatastreamdecl
+        S_constdecl = 50,                        // constdecl
+        S_intlist = 51,                          // intlist
+        S_forstatement = 52,                     // forstatement
+        S_outstatements = 53,                    // outstatements
+        S_innernest = 54,                        // innernest
+        S_ifstatement = 55,                      // ifstatement
+        S_switchstatement = 56,                  // switchstatement
+        S_casestatements = 57,                   // casestatements
+        S_casestatement = 58,                    // casestatement
+        S_outstatement = 59,                     // outstatement
+        S_type = 60,                             // type
+        S_expr = 61,                             // expr
+        S_unarystmt = 62,                        // unarystmt
+        S_term = 63,                             // term
+        S_factor = 64,                           // factor
+        S_intlit = 65,                           // intlit
+        S_loc = 66,                              // loc
+        S_id = 67                                // id
       };
     };
 
@@ -720,6 +722,7 @@ namespace DTL {
         value.move< DTL::IDToken * > (std::move (that.value));
         break;
 
+      case symbol_kind::S_backingphyssize: // backingphyssize
       case symbol_kind::S_intlit: // intlit
         value.move< DTL::IntLitNode* > (std::move (that.value));
         break;
@@ -1113,6 +1116,7 @@ switch (yykind)
         value.template destroy< DTL::IDToken * > ();
         break;
 
+      case symbol_kind::S_backingphyssize: // backingphyssize
       case symbol_kind::S_intlit: // intlit
         value.template destroy< DTL::IntLitNode* > ();
         break;
@@ -2287,8 +2291,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 256,     ///< Last index in yytable_.
-      yynnts_ = 28,  ///< Number of nonterminal symbols.
+      yylast_ = 259,     ///< Last index in yytable_.
+      yynnts_ = 29,  ///< Number of nonterminal symbols.
       yyfinal_ = 7 ///< Termination state number.
     };
 
@@ -2302,7 +2306,7 @@ switch (yykind)
 
 #line 5 "parser.yy"
 } // DTL
-#line 2306 "frontend.hh"
+#line 2310 "frontend.hh"
 
 
 

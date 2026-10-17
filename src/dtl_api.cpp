@@ -118,7 +118,7 @@ bool DTL::API::CheckHasAvailableResources(CompiledDTLProgram &dtlProg)
 /*
     We will return only the active handle
 */
-DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
+DTL::DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
 {
     std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
     /*
@@ -154,10 +154,10 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
             DTUResourceHandle* handleDep = HandleMap.at(dependency_name);
 
             SubHandles.insert({dependency_name, handleDep});
-            handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber);
+            handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber, dep.m_MetadataID);
             if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
             {
-                MetadataRegion* metadataAccessRegion = new MetaDataRegion();
+                MetadataRegion* metadataAccessRegion = new MetadataRegion();
                 /*
                     We need the non-dtu metadata regions available here
                 */
@@ -168,7 +168,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
                 metadataAccessRegion->m_RegionSize = handleDep->GetLogicalObjectSize(); // held downstream
                 metadataAccessRegion->m_PhysAddress = handleDep->GetShadowPAAddressStart();
 
-                MetaDataRegions.insert({dependency_name, metadataAccessRegion});
+                MetaDataRegions.insert({dep.m_MetadataID, metadataAccessRegion});
                 byteWriteArgs.insert({dependency_name, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
             }
         }
@@ -370,7 +370,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     
 }
 
-CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
+DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
 {
     CompiledDTLProgram returnedCompiledProgram;
 
@@ -379,7 +379,9 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
     DTL::Scanner scanner(&input);
 	DTL::Parser parser(scanner, &graph);
     int err = parser.parse();
-	if (err != 0){ printf("parse() errCode: %d\n", err); return false; }
+	if (err != 0){ 
+        returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_PARSING; return returnedCompiledProgram; 
+    }
 
     std::string active_kernel_name = graph->GetActiveKernel()->GetIDString();
     returnedCompiledProgram.m_ActiveViewName = active_kernel_name;
@@ -404,6 +406,7 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
             returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_TYPE_ANALYSIS;
             return returnedCompiledProgram;
         }
+        auto condInfo = ta->GetConditionalInfo();
 
         prog = static_cast<DTL::ProgramNode*>(DTL::DTLOptimizer::OptimizeStatic(prog, DTL::DTL_OPTLEVEL::OPTMAX));
         prog = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(prog, DTL_OPT_MAX));
@@ -411,6 +414,7 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
             returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_TRANSFORM_PASS;
             return returnedCompiledProgram;
 		}
+        prog->PreprocessArgs();
 
         auto ra = DTL::ResourceAnalysis::build(prog, hwStat, ta);
 		if (ra == nullptr)
@@ -419,7 +423,7 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
             return returnedCompiledProgram;
 		}
 		ra->GetResources()->GetNeededResourceStats();
-
+        
         auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
 		if (ralloc == nullptr)
 		{
@@ -435,12 +439,12 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
         */
         for (auto& arg: kernel->GetDTURegionMetadataDependencies())
         {
-            std::string argName = arg.first;
-            uint8_t metadataSlotNum = arg.second;
+            std::string argName = arg.m_KernelID;
+            uint8_t metadataSlotNum = arg.m_DependencyNumber;
 
             assert(ViewMap.find(argName) != ViewMap.end()); // Should be guaranteed by compiling in reverse topological order
             CompiledView* dependencyViewPtr  = ViewMap.at(argName);
-            view->m_Dependencies.push_back({dependencyViewPtr, DTL_KERNEL_DEPENDENCY::METADATA, metadataSlotNum});  
+            view->m_Dependencies.push_back({dependencyViewPtr, DTL_KERNEL_DEPENDENCY::METADATA, metadataSlotNum, arg.m_MetadataID});
         }
 
         for (auto& arg: kernel->GetNonDTURegionMetadataDependencies())
@@ -457,6 +461,9 @@ CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
         returnedCompiledProgram.m_NeededConfigs++;
     }
 
+
+    hwStat->VarOutMap.clear(); // otherwise we we will get subsequent collisions
+    hwStat->IdxOutMap.clear();
     return returnedCompiledProgram;
 }
 
@@ -477,8 +484,6 @@ void DTL::API::ProgramHardwareByteWrites(EphemeralRegion *region, CompiledView *
 {
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
     view->DoByteWrites(args, config_n_base);
-
-    return true;
 }
 
 void DTL::API::ResetConfig(int config)
@@ -520,7 +525,7 @@ DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t size_needed)
     return ephemeral;
 }
 
-EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t positional_size_needed, uint64_t logical_size_needed)
+DTL::EphemeralRegion *DTL::API::AllocEphemeralRegion(uint64_t positional_size_needed, uint64_t logical_size_needed)
 {
     uint64_t region_offset = AllocateRegion(positional_size_needed);
     if (region_offset == BUDDY_ALLOC_FAILURE)
@@ -576,9 +581,9 @@ uint64_t DTL::API::AllocateRegion(uint64_t size)
   return m_BuddyAllocator->AllocNode(size);
 }
 
-MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
+DTL::MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
 {
-    uint64_t size_needed = metadatadep.m_MetadataRegionSize;
+    uint64_t size_needed = metadataDep.m_MetadataRegionSize;
         
     // Allocate the positional memory for the metadata
     uint64_t region_offset = AllocateRegion(size_needed);
@@ -600,13 +605,13 @@ MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
         physAddrMetadataRegion
     );
 
-    MetadataRegion* metadataAccessRegion = new MetaDataRegion();
-    metadataAccessRegion->isDTURegion = true;
+    MetadataRegion* metadataAccessRegion = new MetadataRegion();
+    metadataAccessRegion->isDTURegion = false;
     metadataAccessRegion->m_ResourceHandle = nullptr;
     metadataAccessRegion->m_WriteRegion = metadataPtr;
     metadataAccessRegion->m_ReadRegion = metadataPtr;
     metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
-    metadataAccessRegion->m_PhysAddress = = physAddrMetadataRegion
+    metadataAccessRegion->m_PhysAddress = physAddrMetadataRegion;
 
     return metadataAccessRegion;
 }
@@ -615,7 +620,7 @@ MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
     Sets a bit in the config bitmap, returns -1 on error
 */
 int DTL::API::AllocateConfig() {
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < hwStat->nMaxConfigs; i++)
     {
         if (((m_ConfigBitmap >> i) & 0x1ULL) == 0)
         {
@@ -991,7 +996,7 @@ DTL::EphemeralRegion::~EphemeralRegion()
 
 DTL::EphemeralRegion *DTL::EphemeralRegion::Clone(int new_config)
 {
-    return new EphemeralRegion(GetRegionOffset(), m_RegionSize, new_config, m_PhysBackingStart, hwStat, m_AGUControlRegionBase-AGU_CONFIG_OFFSET(m_ConfigNum)+AGU_CONFIG_OFFSET(new_config));
+    return new EphemeralRegion(GetRegionOffset(), m_LogicalRegionSize, new_config, m_PhysBackingStart, hwStat, m_AGUControlRegionBase-AGU_CONFIG_OFFSET(m_ConfigNum)+AGU_CONFIG_OFFSET(new_config), m_PositionalRegionSize);
 }
 
 void DTL::EphemeralRegion::SetDataSize(uint8_t size)
@@ -1043,32 +1048,32 @@ void *DTL::EphemeralRegion::GetHeadlessWriteregion()
 
 void DTL::EphemeralRegion::GuardedWrite_8(uint64_t offset, uint8_t data)
 {
-    assert(offset < m_RegionSize);
+   // assert(offset < m_RegionSize);
     WRITE_UINT8(m_PositionalRegionAccess + offset, data);
 }
 
 uint8_t DTL::EphemeralRegion::GuardedRead_8(uint64_t offset) {
-  assert(offset < m_RegionSize);
+ // assert(offset < m_RegionSize);
   return *((uint16_t *)m_LogicalRegionAccess);
 }
 
 uint16_t DTL::EphemeralRegion::GuardedRead_16(uint64_t offset) {
-  assert(offset < m_RegionSize);
+  //assert(offset < m_RegionSize);
   return *((uint16_t *)m_LogicalRegionAccess);
 }
 
 uint32_t DTL::EphemeralRegion::GuardedRead_32(uint64_t offset) {
-  assert(offset < m_RegionSize);
+ // assert(offset < m_RegionSize);
   return *((uint32_t *)m_LogicalRegionAccess);
 }
 
 uint64_t DTL::EphemeralRegion::GuardedRead_64(uint64_t offset) {
-  assert(offset < m_RegionSize);
+//  assert(offset < m_RegionSize);
   return *((uint64_t *)m_LogicalRegionAccess);
 }
 
 float DTL::EphemeralRegion::GuardedRead_Float(uint64_t offset) {
-  assert(offset < m_RegionSize);
+  //assert(offset < m_RegionSize);
   return *((float *)m_LogicalRegionAccess);
 }
 
@@ -1099,7 +1104,7 @@ void DTL::CompiledView::DoByteWrites(std::unordered_map<std::string, uint64_t> &
 DTL::DTUResourceHandle::~DTUResourceHandle()
 {
      for (auto& metadata: m_MetaDataRegions)
-        delete metadata;
+        delete metadata.second;
 
     for (auto& subhandle: m_SubHandles)
         delete subhandle.second;
@@ -1115,13 +1120,32 @@ uint64_t DTL::DTUResourceHandle::GetShadowPAAddressStart() const
 */
 void DTL::DTUResourceHandle::Sync()
 {
-    m_MainRegion->Sync();
+    assert(m_MainRegion->Sync() == 0);
     std::tuple<uint64_t, uint64_t, uint64_t> addressTriple = m_MainRegion->GetAddrMappingTriple();
     for (auto& dep: m_DependencyOf)
     {
-        DTL::DTUResourceHandle* dependencyHandle = dep.m_UpstreamDependency;
-        dependencyHandle->SyncDependent(dep, addressTriple);
+        //DTL::DTUResourceHandle* dependencyHandle = dep.m_UpstreamDependency;
+        SyncDependent(dep);
     }
+}
+
+void DTL::DTUResourceHandle::SyncFrom(std::string caller, uint8_t dependency_num, std::tuple<uint64_t, uint64_t, uint64_t>& addressTriple)
+{
+    #define VA_IDX 0 
+    #define SHADOWPA_IDX 1
+    #define POSITIONALPA_IDX 2
+    assert(m_MetaDataRegions.find(caller) != m_MetaDataRegions.end());
+    uint64_t shadow_pa = std::get<SHADOWPA_IDX>(addressTriple);
+
+    m_MetaDataRegions.at(caller)->m_PhysAddress = shadow_pa;
+
+    m_MainRegion->UpdateMetadataObjectAddr(dependency_num, shadow_pa);
+    assert(m_MainRegion->Sync() == 0);
+    for (auto& dep: m_DependencyOf)
+        SyncDependent(dep);
+    #undef VA_IDX 0 
+    #undef SHADOWPA_IDX 1
+    #undef POSITIONALPA_IDX 2
 }
 
 
@@ -1133,43 +1157,38 @@ void DTL::DTUResourceHandle::Sync()
     A will call:
         B->SyncDependent(dep, A's new synced address)
 */
-void DTL::DTUResourceHandle::SyncDependent(KernelDependency dep, std::tuple<uint64_t, uint64_t, uint64_t>& addrTriple)
+void DTL::DTUResourceHandle::SyncDependent(KernelDependency dep)
 {
     /*
         So here, we need to update addresses/MMIOs
 
         We want to avoid recompiling
     */
-    #define VA_IDX 0 
-    #define SHADOWPA_IDX 1
-    #define POSITIONALPA_IDX 2
-    
+
+    std::tuple<uint64_t, uint64_t, uint64_t> addressTriple = m_MainRegion->GetAddrMappingTriple();
     switch (dep.m_DependencyType)
     {
         case DTL_KERNEL_DEPENDENCY::BASE_OBJECT: // we just update the base object addr in MMIO for the config
         {
-            m_MainRegion->UpdateBackingObjectAddr(std::get<SHADOWPA_IDX>(addrTriple));
-            dep.m_UpstreamDependency->Sync();
+            assert(false); // NOT YET IMPLEMENTED
+            dep.m_UpstreamDependency->SyncFrom(dep.m_MetadataVarID, dep.m_DependencyNumber, addressTriple);
             break;
         }
         case DTL_KERNEL_DEPENDENCY::METADATA: // we just update the metadata object addr in MMIO for the config
         {
-            m_MainRegion->UpdateMetadataObjectAddr(dep.m_DependencyNumber, std::get<SHADOWPA_IDX>(addrTriple));
-            dep.m_UpstreamDependency->Sync();
+            dep.m_UpstreamDependency->SyncFrom(dep.m_MetadataVarID,  dep.m_DependencyNumber, addressTriple);
             break;
         }
         default:
             assert(false); // should never happen
     }
 
-    #undef VA_IDX 0 
-    #undef SHADOWPA_IDX 1
-    #undef POSITIONALPA_IDX 2
+
 }
 
-void DTL::DTUResourceHandle::AddDependencyOf(DTUResourceHandle *upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum)
+void DTL::DTUResourceHandle::AddDependencyOf(DTUResourceHandle *upstreamDependency, DTL_KERNEL_DEPENDENCY dependencyType, uint8_t dependencyNum, std::string metadataVarID)
 {
-    m_DependencyOf.push_back({upstreamDependency, dependencyType, dependencyNum});
+    m_DependencyOf.push_back({upstreamDependency, dependencyType, dependencyNum, metadataVarID});
 }
 
 DTL::CompiledDTLProgram::CompiledDTLProgram()

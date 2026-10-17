@@ -171,10 +171,8 @@ int main()
 
 		prog = static_cast<DTL::ProgramNode*>(DTL::ASTTransformPass::Transform(prog, DTL_OPT_MAX));
 		if (prog == nullptr)
-		{     
-
 			return false;
-		}
+		prog->PreprocessArgs();
 		prog->PrintAST("out.ast");
 
 

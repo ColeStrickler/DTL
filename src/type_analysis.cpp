@@ -167,6 +167,17 @@ void DTL::MetadataStreamDeclNode::typeAnalysis(TypeAnalysis *ta)
 void DTL::IfStmtNode::typeAnalysis(TypeAnalysis *ta ) 
 {
 
+	for (auto& trueCase: myTrueCases)
+	{
+		trueCase->typeAnalysis(ta);
+	}
+
+	for (auto& falseCase: myFalseCases)
+	{
+		falseCase->typeAnalysis(ta);
+	}
+
+
 	for (auto& myID: myIDs)
 	{
 		myID->typeAnalysis(ta);
@@ -231,6 +242,9 @@ void DTL::SwitchStmtNode::typeAnalysis(TypeAnalysis *ta)
 			ta->nodeType(this, ErrorType::produce());
 			return;
 		}
+	
+		for (auto& s: c)
+			s->typeAnalysis(ta);
 	}
 
 	ta->SetConditionalInfo(CondCode::SWITCH, outPerCond, {myID});

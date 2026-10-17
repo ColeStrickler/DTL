@@ -78,6 +78,25 @@ ASTNode *DTL::ProgramNode::DeadCodeElimination(DTL::DeadCodeEliminationPass *eli
                     newStmts.push_back(constarraydeclstmt);
                 }
             }
+            else if (tag == NODETAG::METADATASTREAMDECLNODE) 
+            {
+                auto metadatastreamdeclstmt = static_cast<MetadataStreamDeclNode*>(stmt);
+                /*
+                    If the constant is unused, it still exists in the m_UsedConstDecls set
+                
+                    We remove constant variables out of this set when their ID is used
+                */
+
+                if (elim_pass->isInDeclMap(metadatastreamdeclstmt->GetIDString()))
+                {
+                    // not used
+                    delete metadatastreamdeclstmt;
+                }
+                else
+                {
+                    newStmts.push_back(metadatastreamdeclstmt);
+                }
+            }
             else
             {
                 newStmts.push_back(stmt); // handle for loop stmts

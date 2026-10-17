@@ -27,14 +27,16 @@ DTL<4096> kernel_b = {
 DTL<4096> kernel: kernel_a, kernel_b = {
     metadata_stream<4, kernel_a> kc;
     for (int i = 0; i < 1000; i++) {
-        for (int j = 0; j < 1324; j++)
+        for (int j = 0; j < 10; j++)
         {
-              for (int x = 0; x < 1000; x++) {
-                for (int y = 0; y < 1324; y++)
-                {
-                    out = (i+j) * kc[y];
-                }
-              }
+            if (i > j)
+            {
+                out = 1;
+            }
+            else
+            {
+                out = i;
+            }
         }
     }
 }

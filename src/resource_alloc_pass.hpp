@@ -953,7 +953,7 @@ public:
         ra->ast->resourceAllocation(resourceAlloc, 0);
 		resourceAlloc->CalculateForLoopMagicValues();
 
-        CalcViewAddressSize();
+        resourceAlloc->CalcViewAddressSize();
         //ra->ast->resourceAllocation(resourceAlloc);
         return resourceAlloc;
 		//return resourceAnalysis->GetResources();
@@ -992,10 +992,17 @@ public:
         uint64_t view_size = 1;
         for (auto& nested_for_loop: loopRegisters)
         {
-            view_size *= nexted_for_loop.increment_condition;
+            view_size *= nested_for_loop.increment_condition;
         }
 
-        printf("Value %d\n", view_size);
+        const uint64_t outputs =
+            CondInfo.conditionalCode == CondCode::DISABLE
+                ? OutStatementRouting.size()
+                : CondInfo.outStatementsPerCond;
+
+        view_size *= outputs * 4 /* TODO: ADD LANGUAGE SPECIFIED SIZES*/;
+
+        printf("Value 0x%x\n", view_size);
         m_ViewSize = view_size;
         return;
     }
