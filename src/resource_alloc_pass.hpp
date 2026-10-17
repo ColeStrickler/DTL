@@ -1040,7 +1040,7 @@ public:
         streamInfo.streamPhysStart = static_cast<uint64_t>(metadataStream->GetStreamAddress());
         streamInfo.dataSize =  static_cast<uint32_t>(metadataStream->GetDataSize());
         streamInfo.id_index = metadataStream->GetIndexIDString();
-        streamInfo.needArgID = metadataStream->NeedsArgValue();
+        streamInfo.useArgID = metadataStream->NeedsArgValue();
         streamInfo.argID = metadataStream->GetArgIDString();
         //printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);

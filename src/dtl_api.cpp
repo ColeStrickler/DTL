@@ -144,7 +144,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
         EphemeralRegion* MainRegion = region;
         std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
         std::vector<KernelDependency> DependencyOf; // Track all kernels that are dependent on this one
-                  std::unordered_map<std::string, uint64_t> byteWriteArgs;
+        std::unordered_map<std::string, uint64_t> byteWriteArgs;
         for (auto& dep: view->m_Dependencies)
         {
             CompiledView* dependency = dep.m_DownstreamView;
@@ -187,7 +187,7 @@ DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
         handle->m_MainRegion = std::move(MainRegion);
 
         ProgramHardwareByteWrites(MainRegion, view, byteWriteArgs);
-        HandleMap.insert({HandleName, Handle});
+        HandleMap.insert({handle->m_HandleName, handle});
     }
 
     assert(HandleMap.find(dtlProg.m_ActiveViewName) != HandleMap.end());
@@ -606,9 +606,9 @@ MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadataDep)
     metadataAccessRegion->m_WriteRegion = metadataPtr;
     metadataAccessRegion->m_ReadRegion = metadataPtr;
     metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
-    metadataAccessRegion->m_PhysAddress = 
+    metadataAccessRegion->m_PhysAddress = = physAddrMetadataRegion
 
-    return metadataAccessRegion = physAddrMetadataRegion;
+    return metadataAccessRegion;
 }
 
 /*

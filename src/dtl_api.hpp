@@ -223,7 +223,7 @@ public:
    
    */
 
-    inline void* GetCurrentShadowPhysicalAddr() const {return m_CurrentShadowPhysicalAddr; }
+    inline uint64_t GetCurrentShadowPhysicalAddr() const {return m_CurrentShadowPhysicalAddr; }
     void SetDataSize(uint8_t size);
     int Sync(); //
 

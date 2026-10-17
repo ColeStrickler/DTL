@@ -116,7 +116,7 @@ namespace DTL
 			: ASTNode(nullptr), myStatements(globalStatements), myArguments(args)
 		{
 			myTag = NODETAG::PROGRAMNODE;
-			PreprocessArgs(); // basically just sub in metadata
+			//PreprocessArgs(); // basically just sub in metadata
 		}
 		// void unparse(std::ostream&, int) override;
 		virtual bool nameAnalysis(SymbolTable *) override;
