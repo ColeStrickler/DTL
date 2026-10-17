@@ -41,6 +41,7 @@
 *.dwo
 
 # debug files
-.ast
-.out
-.png
+*.ast
+*.out
+*.png
+*.output
