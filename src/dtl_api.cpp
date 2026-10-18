@@ -565,6 +565,17 @@ void DTL::API::FreeEphemeralRegion(EphemeralRegion *ephemeralRegion)
     delete ephemeralRegion;
 }
 
+void DTL::API::FreeDTUResourceHandle(DTUResourceHandle *rsrcHandle)
+{
+    for (auto& metadata: rsrcHandle->m_MetaDataRegions)
+    {
+        if (metadata.second->IsDTURegion())
+            continue;
+            m_BuddyAllocator->FreeNode(metadata.second->m_OffsetPhysAddress);
+    }
+    FreeEphemeralRegion(rsrcHandle->m_MainRegion);
+}
+
 uint64_t DTL::API::GetError()
 {
     return m_ErrorCode;
@@ -612,6 +623,7 @@ DTL::MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadat
     metadataAccessRegion->m_ReadRegion = metadataPtr;
     metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
     metadataAccessRegion->m_PhysAddress = physAddrMetadataRegion;
+    metadataAccessRegion->m_OffsetPhysAddress = region_offset;
 
     return metadataAccessRegion;
 }

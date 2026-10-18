@@ -243,6 +243,7 @@ struct MetadataRegion
     void UpdatePhysAddress();
 
     uint64_t m_PhysAddress;
+    uint64_t m_OffsetPhysAddress; // received from buddy allocator
     bool isDTURegion;
     void* m_WriteRegion; // IsDTURegion() ? (!= m_ReadRegion) : (= m_ReadRegion)
     void* m_ReadRegion;
@@ -385,7 +386,7 @@ public:
 
     EphemeralRegion* CloneEphemeralRegion(EphemeralRegion* ephemeralRegion);
     void FreeEphemeralRegion(EphemeralRegion* ephemeralRegion);
-
+    void FreeDTUResourceHandle(DTUResourceHandle* rsrcHandle);
 
     uint64_t GetError();
     AGUHardwareStat* GetHWStat();
