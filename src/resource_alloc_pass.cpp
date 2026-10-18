@@ -820,6 +820,17 @@ bool DTL::ResourceAllocation::BindArrayIndex(int arrayReg, int ForLoopReg) {
         return true;
     }
 
+void DTL::ResourceAllocation::UpdateMetadataStreamInfo(const std::unordered_map<std::string, uint64_t> &metadata_args)
+{
+    for (auto& mminfo : MetadataStreamMMIOInfo)
+    {
+        if (metadata_args.find(mminfo.varID) != metadata_args.end())
+        {
+            mminfo.streamPhysStart = metadata_args.at(mminfo.varID);
+        }
+    }
+}
+
 void DTL::AGUHardwareStat::DoForLoopWrite(uint64_t baseAddress, LoopReg &reg, uint32_t byte_width) 
 {
     uint64_t addr = baseAddress + GetLoopRegsOffset() + reg.reg_num*byte_width;

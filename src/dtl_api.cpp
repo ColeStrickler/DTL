@@ -467,11 +467,12 @@ DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
     return returnedCompiledProgram;
 }
 
-bool DTL::API::ProgramHardware(EphemeralRegion *region)
+bool DTL::API::ProgramHardware(EphemeralRegion *region, const std::unordered_map<std::string, uint64_t>& metadata_args)
 {
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
-
+    if (metadata_args.size())
+        ralloc->UpdateMetadataStreamInfo(metadata_args);
    // printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
     ralloc->DoInitStateRegisters(config_n_base);
    // printf("FinishInitStateRegs\n");

@@ -104,6 +104,7 @@ struct MetadataStream
     std::string id_index;
     std::string argID;
     bool useArgID;
+    std::string varID;
 };
 
 
@@ -1049,6 +1050,7 @@ public:
         streamInfo.id_index = metadataStream->GetIndexIDString();
         streamInfo.useArgID = metadataStream->NeedsArgValue();
         streamInfo.argID = metadataStream->GetArgIDString();
+        streamInfo.varID = metadataStream->GetIDString();
         //printf("%lld %lld\n", streamInfo.streamPhysStart, streamInfo.dataSize);
         MetadataStreamMMIOInfo.push_back(streamInfo);
     }
@@ -1205,8 +1207,8 @@ public:
 
     bool BindArrayIndex(int arrayReg, int ForLoopReg);
     
-
-
+    // Patch for legacy compilation
+    void UpdateMetadataStreamInfo(const std::unordered_map<std::string, uint64_t>& metadata_args);
 
     AGUHardwareStat* hwStat;
     ConditionalInfo CondInfo;

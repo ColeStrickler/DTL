@@ -374,7 +374,7 @@ public:
     bool Compile(const std::string& dtlProgram);
 
     CompiledDTLProgram CompileProgram(const std::string& dtlProgram);
-    bool ProgramHardware(EphemeralRegion* region);
+    bool ProgramHardware(EphemeralRegion* region, const std::unordered_map<std::string, uint64_t>& metadata_args = {});
     void ProgramHardwareByteWrites(EphemeralRegion* region, CompiledView* view, std::unordered_map<std::string, uint64_t>& args);
 
     void ResetConfig(int config);
