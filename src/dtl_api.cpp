@@ -348,7 +348,8 @@ bool DTL::API::Compile(const std::string &dtlProgram)
         ERR("ASTTransformPass() failed");
         return false;
     }
-		
+	root->PreprocessArgs();
+    
 	auto ra = DTL::ResourceAnalysis::build(root, hwStat, ta);
     if (ra == nullptr)
     {
