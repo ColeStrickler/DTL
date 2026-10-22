@@ -123,9 +123,9 @@ DTL::DTUResourceHandle *DTL::API::MapAndCloneToDTUHardware(CompiledDTLProgram &d
    for (auto& view: dtlProg.m_Views)
    {
         DTL::EphemeralRegion* region = nullptr;
-        if (view.m_ViewName == dtlProg.m_ActiveViewName)
+        if (view->m_ViewName == dtlProg.m_ActiveViewName)
             region = CloneEphemeralRegion(ephemeralRegion);
-        else:
+        else
             region = AllocEphemeralRegion(view->m_BaseObjectSize, view->m_ViewSize);
 
 
