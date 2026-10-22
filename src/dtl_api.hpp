@@ -361,7 +361,8 @@ public:
 
 
     bool CheckHasAvailableResources(CompiledDTLProgram& dtlProg);
-    DTUResourceHandle* MapTODTUHardware(CompiledDTLProgram& dtlProg);
+    DTUResourceHandle* MapToDTUHardware(CompiledDTLProgram& dtlProg);
+    DTUResourceHandle* MapAndCloneToDTUHardware(CompiledDTLProgram& dtlProg, EphemeralRegion* ephemeralRegion);
 
     /*
         Should be a mmap'ed address being passed in
