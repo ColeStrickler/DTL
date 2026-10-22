@@ -114,7 +114,7 @@ bool DTL::API::CheckHasAvailableResources(CompiledDTLProgram &dtlProg)
     return configs_available >= dtlProg.m_NeededConfigs;
 }
 
-DTUResourceHandle *DTL::API::MapAndCloneToDTUHardware(CompiledDTLProgram &dtlProg, EphemeralRegion *ephemeralRegion)
+DTL::DTUResourceHandle *DTL::API::MapAndCloneToDTUHardware(CompiledDTLProgram &dtlProg, EphemeralRegion *ephemeralRegion)
 {
        std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
     /*
