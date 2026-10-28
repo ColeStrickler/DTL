@@ -86,7 +86,6 @@ metadata_stream {return makeBareToken(TokenKind::METADATASTREAM);}
 
 0[xX]{HEXDIGIT}+ {
     uint64_t val = strtoull(yytext, nullptr, 0);
-	printf("LONG LONG %lx\n", val);
     // bool overflow =
     //     (val > INT_MAX) ||
     //     (val < 0);

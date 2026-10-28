@@ -2,6 +2,7 @@
 #include "util.hpp"
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 
 
 #define ERR(msg) (std::cerr << msg << std::endl)
@@ -392,7 +393,6 @@ DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
     {
         auto& kernel = node->m_Kernel;
 		std::string kernel_id = kernel->GetIDString();
-		std::cout <<  kernel_id << "\n";
 		DTL::ProgramNode* prog = kernel->GetProgram();
         
         
@@ -472,6 +472,7 @@ bool DTL::API::ProgramHardware(EphemeralRegion *region, const std::unordered_map
 {
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
+    DeviceMemoryFence();
     if (metadata_args.size())
         ralloc->UpdateMetadataStreamInfo(metadata_args);
    // printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
@@ -479,23 +480,28 @@ bool DTL::API::ProgramHardware(EphemeralRegion *region, const std::unordered_map
    // printf("FinishInitStateRegs\n");
     ralloc->DoControlWrites(config_n_base);
   //  printf("Finished Control Writes\n");
+    DeviceMemoryFence();
     return true;
 }
 
 void DTL::API::ProgramHardwareByteWrites(EphemeralRegion *region, CompiledView *view, std::unordered_map<std::string, uint64_t> &args)
 {
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
+    DeviceMemoryFence();
     view->DoByteWrites(args, config_n_base);
+    DeviceMemoryFence();
 }
 
 void DTL::API::ResetConfig(int config)
 {
     uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(config) + AGU_CONFIG_RST;
+    DeviceMemoryFence();
     WRITE_BOOL(config_n_rst, true);
-    while(READ_BOOL(config_n_rst) != true){
-        
-    };
-   // WRITE_BOOL(config_n_rst, false);
+    DeviceMemoryFence();
+    // The AGU clears this bit after applying the reset.
+    while (READ_BOOL(config_n_rst)) {
+    }
+    DeviceMemoryFence();
 }
 
 void DTL::API::DebugPrintAllocator() 
@@ -569,13 +575,30 @@ void DTL::API::FreeEphemeralRegion(EphemeralRegion *ephemeralRegion)
 
 void DTL::API::FreeDTUResourceHandle(DTUResourceHandle *rsrcHandle)
 {
-    for (auto& metadata: rsrcHandle->m_MetaDataRegions)
+    // A mapped program owns all reachable views. Reset consumers before producers,
+    // and release shared dependencies only once (for example, a diamond graph).
+    std::vector<DTUResourceHandle*> handles;
+    std::unordered_set<DTUResourceHandle*> visited;
+    const auto collect = [&](auto&& self, DTUResourceHandle* handle) -> void {
+        if (!visited.insert(handle).second)
+            return;
+        for (const auto& dependency : handle->m_SubHandles)
+            self(self, dependency.second);
+        handles.push_back(handle);
+    };
+    collect(collect, rsrcHandle);
+
+    for (auto it = handles.rbegin(); it != handles.rend(); ++it)
     {
-        if (metadata.second->IsDTURegion())
-            continue;
+        auto* handle = *it;
+        for (auto& metadata : handle->m_MetaDataRegions)
+        {
+            if (metadata.second->IsDTURegion())
+                continue;
             m_BuddyAllocator->FreeNode(metadata.second->m_OffsetPhysAddress);
+        }
+        FreeEphemeralRegion(handle->m_MainRegion);
     }
-    FreeEphemeralRegion(rsrcHandle->m_MainRegion);
 }
 
 uint64_t DTL::API::GetError()
@@ -623,7 +646,9 @@ DTL::MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadat
     metadataAccessRegion->m_ResourceHandle = nullptr;
     metadataAccessRegion->m_WriteRegion = metadataPtr;
     metadataAccessRegion->m_ReadRegion = metadataPtr;
-    metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
+    // Track the mmap length, not the buddy allocator's larger reservation.
+    // Unmapping the reservation can remove unrelated adjacent VMAs.
+    metadataAccessRegion->m_RegionSize = size_needed;
     metadataAccessRegion->m_PhysAddress = physAddrMetadataRegion;
     metadataAccessRegion->m_OffsetPhysAddress = region_offset;
 
@@ -930,7 +955,6 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
     : m_PositionalRegionOffset(positional_region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
       m_LogicalRegionSize(logical_region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base), m_PositionalRegionSize(positional_region_size)
 {
-    printf("EphemeralRegion()\n");
     m_Regionfd = open_fd("/dev/mem");
     assert(m_Regionfd != -1);
     m_DTURuntimeDriverfd = open_fd(DEVICE_FILE);
