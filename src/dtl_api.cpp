@@ -115,11 +115,93 @@ bool DTL::API::CheckHasAvailableResources(CompiledDTLProgram &dtlProg)
     return configs_available >= dtlProg.m_NeededConfigs;
 }
 
+DTL::DTUResourceHandle *DTL::API::MapAndCloneToDTUHardware(CompiledDTLProgram &dtlProg, EphemeralRegion *ephemeralRegion)
+{
+       std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
+    /*
+        dtlProg.m_Views is already in topological order
+    */
+   for (auto& view: dtlProg.m_Views)
+   {
+        DTL::EphemeralRegion* region = nullptr;
+        if (view->m_ViewName == dtlProg.m_ActiveViewName)
+            region = CloneEphemeralRegion(ephemeralRegion);
+        else
+            region = AllocEphemeralRegion(view->m_BaseObjectSize, view->m_ViewSize);
+
+
+        if (region == nullptr)
+        {
+            exit(-1);
+            // *TODO: ADD CLEANUP*
+            return nullptr;
+        }
+        
+        DTUResourceHandle* handle = new DTUResourceHandle();
+        handle->m_BaseObjectSize = view->m_BaseObjectSize;
+        handle->m_ViewSize = view->m_ViewSize;
+
+        // Will fill these out, then move to the newly created handle
+        std::string HandleName = view->m_ViewName;;
+        std::unordered_map<std::string, MetadataRegion*> MetaDataRegions; 
+        EphemeralRegion* MainRegion = region;
+        std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
+        std::vector<KernelDependency> DependencyOf; // Track all kernels that are dependent on this one
+        std::unordered_map<std::string, uint64_t> byteWriteArgs;
+        for (auto& dep: view->m_Dependencies)
+        {
+            CompiledView* dependency = dep.m_DownstreamView;
+
+            std::string dependency_name = dependency->m_ViewName;
+            assert(HandleMap.find(dependency_name) != HandleMap.end()); // should never happen
+            DTUResourceHandle* handleDep = HandleMap.at(dependency_name);
+
+            SubHandles.insert({dependency_name, handleDep});
+            handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber, dep.m_MetadataID);
+            if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
+            {
+                MetadataRegion* metadataAccessRegion = new MetadataRegion();
+                /*
+                    We need the non-dtu metadata regions available here
+                */
+                metadataAccessRegion->isDTURegion = true;
+                metadataAccessRegion->m_ResourceHandle = handleDep;
+                metadataAccessRegion->m_WriteRegion = handleDep->GetWriteRegion();
+                metadataAccessRegion->m_ReadRegion = handleDep->GetReadRegion();
+                metadataAccessRegion->m_RegionSize = handleDep->GetLogicalObjectSize(); // held downstream
+                metadataAccessRegion->m_PhysAddress = handleDep->GetShadowPAAddressStart();
+
+                MetaDataRegions.insert({dep.m_MetadataID, metadataAccessRegion});
+                byteWriteArgs.insert({dependency_name, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
+            }
+        }
+
+        for (auto& metadatadep: view->m_NonDTURegionMetadata)
+        {
+            MetadataRegion* metadataAccessRegion = GenMetadataRegion(metadatadep);
+            MetaDataRegions.insert({metadatadep.m_MetadataID, metadataAccessRegion});
+            byteWriteArgs.insert({metadatadep.m_MetadataID, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
+        }
+
+        handle->m_HandleName = std::move(HandleName);
+        handle->m_MetaDataRegions = std::move(MetaDataRegions);
+        handle->m_SubHandles = std::move(SubHandles);
+        handle->m_DependencyOf = std::move(DependencyOf);
+        handle->m_MainRegion = std::move(MainRegion);
+
+        ProgramHardwareByteWrites(MainRegion, view, byteWriteArgs);
+        HandleMap.insert({handle->m_HandleName, handle});
+    }
+
+    assert(HandleMap.find(dtlProg.m_ActiveViewName) != HandleMap.end());
+    DTUResourceHandle* activeHandle = HandleMap.at(dtlProg.m_ActiveViewName);
+    return activeHandle;
+}
 
 /*
     We will return only the active handle
 */
-DTL::DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
+DTL::DTUResourceHandle *DTL::API::MapToDTUHardware(CompiledDTLProgram &dtlProg)
 {
     std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
     /*

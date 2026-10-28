@@ -712,7 +712,7 @@ namespace DTL
 	};
 
 
-		class MetadataStreamDeclNode : public DeclNode
+	class MetadataStreamDeclNode : public DeclNode
 	{
 	public:
 		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IntLitNode* metadataStreamSize) : DeclNode(p), \
@@ -721,7 +721,6 @@ namespace DTL
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 			m_RequiresArgValue = false;
 		}
-
 
 		MetadataStreamDeclNode(const Position *p, TypeNode *type, IDNode *id, IntLitNode *dataSize, IDNode* metadataStreamAddrID) : DeclNode(p), \
 			myType(type), myID(id), dataSize(dataSize), metadataStreamAddress(0), index_id(""), metadataStreamAddressID(metadataStreamAddrID), m_AllocationSizeNeeded(0)
