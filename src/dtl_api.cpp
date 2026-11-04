@@ -1080,8 +1080,6 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
     : m_PositionalRegionOffset(positional_region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
       m_LogicalRegionSize(logical_region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base), m_PositionalRegionSize(positional_region_size)
 {
-<<<<<<< HEAD
-=======
     // Pad the allocated shadow region and its DTU trap range to full huge
     // pages. The resource handle still records the original view size.
     const uint64_t max_size =
@@ -1092,7 +1090,6 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
     m_LogicalRegionSize = (m_LogicalRegionSize + DTU_HUGE_PAGE_SIZE - 1) &
                          ~(uint64_t(DTU_HUGE_PAGE_SIZE) - 1);
 
->>>>>>> codex/firesim-agent
     m_Regionfd = open_fd("/dev/mem");
     assert(m_Regionfd != -1);
     m_DTURuntimeDriverfd = open_fd(DEVICE_FILE);
