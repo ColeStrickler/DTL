@@ -932,7 +932,8 @@ private:
 
 class ResourceAllocation{
 public:
-	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat, ConditionalInfo condInfo)
+	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat, ConditionalInfo condInfo,
+                                     uint8_t element_bytes = 4)
     {
 		ResourceAllocation * resourceAlloc = new ResourceAllocation;
 		if (!resourceAlloc) return nullptr;
@@ -964,7 +965,7 @@ public:
         ra->ast->resourceAllocation(resourceAlloc, 0);
 		resourceAlloc->CalculateForLoopMagicValues();
 
-        resourceAlloc->CalcViewAddressSize();
+        resourceAlloc->CalcViewAddressSize(element_bytes);
         //ra->ast->resourceAllocation(resourceAlloc);
         return resourceAlloc;
 		//return resourceAnalysis->GetResources();
@@ -998,7 +999,7 @@ public:
     }
 
 
-    void CalcViewAddressSize()
+    void CalcViewAddressSize(uint8_t element_bytes = 4)
     {
         uint64_t view_size = 1;
         for (auto& nested_for_loop: loopRegisters)
@@ -1011,7 +1012,7 @@ public:
                 ? OutStatementRouting.size()
                 : CondInfo.outStatementsPerCond;
 
-        view_size *= outputs * 4 /* TODO: ADD LANGUAGE SPECIFIED SIZES*/;
+        view_size *= outputs * element_bytes;
 
         m_ViewSize = view_size;
         return;

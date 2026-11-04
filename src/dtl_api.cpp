@@ -3,6 +3,13 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
+<<<<<<< HEAD
+=======
+#include <cerrno>
+#include <limits>
+#include <stdexcept>
+#include <system_error>
+>>>>>>> codex/firesim-agent
 
 
 #define ERR(msg) (std::cerr << msg << std::endl)
@@ -19,6 +26,42 @@ static int open_fd(const std::string& path) {
 #define PAGE_SHIFT 12
 #define PAGE_SIZE (1ULL << PAGE_SHIFT)
 #define PFN_MASK ((1ULL << 55) - 1)
+
+static constexpr size_t DTU_HUGE_PAGE_SIZE = 2ULL * 1024 * 1024;
+
+static void* map_dtu_logical_region(int fd, size_t length)
+{
+    // Own the entire reservation before replacing its aligned middle.
+    const size_t reservation_size = length + DTU_HUGE_PAGE_SIZE;
+    void* reservation = mmap(nullptr, reservation_size, PROT_NONE,
+                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (reservation == MAP_FAILED)
+        throw std::system_error(errno, std::generic_category(),
+                                "DTU virtual reservation");
+
+    const uintptr_t begin = reinterpret_cast<uintptr_t>(reservation);
+    const uintptr_t aligned = (begin + DTU_HUGE_PAGE_SIZE - 1) &
+                               ~(uintptr_t(DTU_HUGE_PAGE_SIZE) - 1);
+    const size_t prefix = aligned - begin;
+    const size_t suffix = reservation_size - prefix - length;
+    if ((prefix && munmap(reservation, prefix)) ||
+        (suffix && munmap(reinterpret_cast<void*>(aligned + length), suffix))) {
+        const int error = errno;
+        munmap(reservation, reservation_size);
+        throw std::system_error(error, std::generic_category(),
+                                "DTU virtual reservation trimming");
+    }
+
+    void* mapping = mmap(reinterpret_cast<void*>(aligned), length,
+                         PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+    if (mapping == MAP_FAILED) {
+        const int error = errno;
+        munmap(reinterpret_cast<void*>(aligned), length);
+        throw std::system_error(error, std::generic_category(),
+                                "DTU huge-page device mapping");
+    }
+    return mapping;
+}
 
 
 static uint64_t va_to_pa(void *va) {
@@ -454,7 +497,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     
 }
 
-DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
+DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram, uint8_t element_bytes)
 {
     CompiledDTLProgram returnedCompiledProgram;
 
@@ -507,7 +550,7 @@ DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
 		}
 		ra->GetResources()->GetNeededResourceStats();
         
-        auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
+        auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo, element_bytes);
 		if (ralloc == nullptr)
 		{
             returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_RESOURCE_ALLOCATION;
@@ -1037,6 +1080,19 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
     : m_PositionalRegionOffset(positional_region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
       m_LogicalRegionSize(logical_region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base), m_PositionalRegionSize(positional_region_size)
 {
+<<<<<<< HEAD
+=======
+    // Pad the allocated shadow region and its DTU trap range to full huge
+    // pages. The resource handle still records the original view size.
+    const uint64_t max_size =
+        (std::numeric_limits<size_t>::max() - DTU_HUGE_PAGE_SIZE) &
+        ~(uint64_t(DTU_HUGE_PAGE_SIZE) - 1);
+    if (!m_LogicalRegionSize || m_LogicalRegionSize > max_size)
+        throw std::invalid_argument("DTU logical size must be nonzero and fit a huge-page allocation");
+    m_LogicalRegionSize = (m_LogicalRegionSize + DTU_HUGE_PAGE_SIZE - 1) &
+                         ~(uint64_t(DTU_HUGE_PAGE_SIZE) - 1);
+
+>>>>>>> codex/firesim-agent
     m_Regionfd = open_fd("/dev/mem");
     assert(m_Regionfd != -1);
     m_DTURuntimeDriverfd = open_fd(DEVICE_FILE);
@@ -1054,23 +1110,21 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
 
    // printf("m_PhysBackingStart 0x%llx, region_offset 0x%x\n, region_size 0x%x\n", m_PhysBackingStart, region_offset, region_size);
     UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_PositionalRegionOffset + m_PhysBackingStart);
-    /*
-        We just allocate a region of adequate size and then remap it
-
-        we do not use mmap callback through driver fd because we need to write out the config to the driver,
-        if we add this functionality to the driver we can use the mmap callback instead of the remap ioctl
-     */
-    m_LogicalRegionAccess = mmap(NULL,
-                                    m_LogicalRegionSize,
-                                    PROT_READ | PROT_WRITE,
-                                    MAP_SHARED | MAP_ANONYMOUS,
-                                    -1,
-                                    0);
-    assert(m_LogicalRegionAccess != nullptr && m_LogicalRegionAccess != MAP_FAILED);
-    if(Sync() == -1)
-    {
-        printf("Failed to initialize EphemeralRegion()\n");
-        return;
+    m_LogicalRegionAccess = MAP_FAILED;
+    try {
+        m_LogicalRegionAccess = map_dtu_logical_region(m_DTURuntimeDriverfd,
+                                                     m_LogicalRegionSize);
+        // No accesses are permitted until the shadow PA is configured in MMIO.
+        if (Sync() != 0)
+            throw std::system_error(errno, std::generic_category(),
+                                    "DTU initial shadow mapping");
+    } catch (...) {
+        if (m_LogicalRegionAccess != MAP_FAILED)
+            munmap(m_LogicalRegionAccess, m_LogicalRegionSize);
+        munmap(m_DTUConfigRegion, DTU_CONFIG_SIZE);
+        close(m_DTURuntimeDriverfd);
+        close(m_Regionfd);
+        throw;
     }
 
     
@@ -1126,6 +1180,8 @@ void DTL::EphemeralRegion::SetDataSize(uint8_t size)
 
 int DTL::EphemeralRegion::Sync()
 {
+    // The caller must quiesce all users of this view until the ioctl and MMIO
+    // update have both completed; the driver only synchronizes page faults.
     RemapPARequest req;
     req.u_VA = m_LogicalRegionAccess;
     int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
@@ -1137,8 +1193,11 @@ int DTL::EphemeralRegion::Sync()
                               hwStat->nMaxConfigs,
                               m_CurrentShadowPhysicalAddr);
         // printf("new PA 0x%llx\n", m_CurrentShadowPhysicalAddr);
-    } else
+    } else {
+        const int error = errno;
         printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
+        errno = error;
+    }
 
   return ret;
 }
