@@ -51,6 +51,8 @@ $(LIB_NAME): $(OBJ_RISCV)
 parser.o: parser.cc frontend.hh
 	$(CXX_RISCV) $(CFLAGS_RISCV) -MMD -MP -c $< -o $@
 
+dtl_api.o: dtl_api.hpp resource_alloc_pass.hpp
+
 lexer.o: lexer.yy.cc
 	$(CXX_RISCV) $(CFLAGS_RISCV) -Wno-sign-compare -Wno-sign-conversion \
 	    -Wno-old-style-cast -Wno-switch-default -Wno-strict-overflow \

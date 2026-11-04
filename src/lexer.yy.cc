@@ -879,7 +879,6 @@ YY_RULE_SETUP
 #line 88 "lexer.l"
 {
     uint64_t val = strtoull(yytext, nullptr, 0);
-	printf("LONG LONG %lx\n", val);
     // bool overflow =
     //     (val > INT_MAX) ||
     //     (val < 0);
@@ -902,7 +901,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 111 "lexer.l"
+#line 110 "lexer.l"
 {
 					  double asDouble = std::stod(yytext);
 			          int intVal = atoi(yytext);
@@ -935,17 +934,17 @@ YY_RULE_SETUP
 case 38:
 /* rule 38 can match eol */
 YY_RULE_SETUP
-#line 142 "lexer.l"
+#line 141 "lexer.l"
 { lineNum++; colNum = 1; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 145 "lexer.l"
+#line 144 "lexer.l"
 { colNum += yyleng; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 147 "lexer.l"
+#line 146 "lexer.l"
 { 
 		
 		    Position pos(lineNum,colNum,lineNum,colNum+yyleng);
@@ -958,10 +957,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 156 "lexer.l"
+#line 155 "lexer.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 964 "lexer.yy.cc"
+#line 963 "lexer.yy.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1924,5 +1923,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 156 "lexer.l"
+#line 155 "lexer.l"
 

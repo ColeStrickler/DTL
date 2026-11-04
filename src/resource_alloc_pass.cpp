@@ -284,7 +284,6 @@ void DTL::ArrayIndexNode::resourceAllocation(ResourceAllocation *ralloc, int dep
     int array_id = ra->GetConstArrayRegRoutingIndex(myID->getName());
     assert(array_id != -1);
 
-    printf("array_id %d index_id %d\n", array_id, index_id);
 
     auto hwStat = ralloc->hwStat;
     // Ensure we do not already have a binding

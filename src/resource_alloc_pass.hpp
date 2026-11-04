@@ -14,18 +14,28 @@ namespace DTL
 
 
 
-#define WRITE_BOOL(addr, value)(*(bool*)(addr) = value)
-#define WRITE_UINT8(addr, value)(*(uint8_t*)(addr) = value)
-#define WRITE_UINT16(addr, value)(*(uint16_t*)(addr) = value)
-#define WRITE_UINT32(addr, value)(*(uint32_t*)(addr) = value)
-#define WRITE_UINT64(addr, value)(*(uint64_t*)(addr) = value)
+#define WRITE_BOOL(addr, value)(*(volatile bool*)(addr) = value)
+#define WRITE_UINT8(addr, value)(*(volatile uint8_t*)(addr) = value)
+#define WRITE_UINT16(addr, value)(*(volatile uint16_t*)(addr) = value)
+#define WRITE_UINT32(addr, value)(*(volatile uint32_t*)(addr) = value)
+#define WRITE_UINT64(addr, value)(*(volatile uint64_t*)(addr) = value)
 
-#define READ_BOOL(addr)(*(bool*)(addr))
-#define READ_UINT8(addr)(*(uint8_t*)(addr))
-#define READ_UINT16(addr)(*(uint16_t*)(addr))
-#define READ_UINT32(addr)(*(uint32_t*)(addr))
-#define READ_UINT64(addr)(*(uint64_t*)(addr))
-#define READ_INT32(addr)(*(int*)(addr))
+#define READ_BOOL(addr)(*(volatile const bool*)(addr))
+#define READ_UINT8(addr)(*(volatile const uint8_t*)(addr))
+#define READ_UINT16(addr)(*(volatile const uint16_t*)(addr))
+#define READ_UINT32(addr)(*(volatile const uint32_t*)(addr))
+#define READ_UINT64(addr)(*(volatile const uint64_t*)(addr))
+#define READ_INT32(addr)(*(volatile const int*)(addr))
+
+// Order CPU memory and device accesses at configuration/data handoff boundaries.
+inline void DeviceMemoryFence()
+{
+#if defined(__riscv)
+    asm volatile ("fence iorw, iorw" ::: "memory");
+#else
+    __atomic_thread_fence(__ATOMIC_SEQ_CST);
+#endif
+}
 
 enum BYTEW_SIZE
 {
@@ -922,7 +932,8 @@ private:
 
 class ResourceAllocation{
 public:
-	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat, ConditionalInfo condInfo)
+	static ResourceAllocation* build(ResourceAnalysis* ra, AGUHardwareStat* hwStat, ConditionalInfo condInfo,
+                                     uint8_t element_bytes = 4)
     {
 		ResourceAllocation * resourceAlloc = new ResourceAllocation;
 		if (!resourceAlloc) return nullptr;
@@ -954,7 +965,7 @@ public:
         ra->ast->resourceAllocation(resourceAlloc, 0);
 		resourceAlloc->CalculateForLoopMagicValues();
 
-        resourceAlloc->CalcViewAddressSize();
+        resourceAlloc->CalcViewAddressSize(element_bytes);
         //ra->ast->resourceAllocation(resourceAlloc);
         return resourceAlloc;
 		//return resourceAnalysis->GetResources();
@@ -988,7 +999,7 @@ public:
     }
 
 
-    void CalcViewAddressSize()
+    void CalcViewAddressSize(uint8_t element_bytes = 4)
     {
         uint64_t view_size = 1;
         for (auto& nested_for_loop: loopRegisters)
@@ -1001,9 +1012,8 @@ public:
                 ? OutStatementRouting.size()
                 : CondInfo.outStatementsPerCond;
 
-        view_size *= outputs * 4 /* TODO: ADD LANGUAGE SPECIFIED SIZES*/;
+        view_size *= outputs * element_bytes;
 
-        printf("Value 0x%x\n", view_size);
         m_ViewSize = view_size;
         return;
     }
@@ -1080,7 +1090,6 @@ public:
     int ForLoopIDToMapping(std::string idName)
     {
         auto it = idForLoopRegMap.find(idName);
-        std::cout << idName << "\n";
         // should always be mapped
 
         assert(it != idForLoopRegMap.end());

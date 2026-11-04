@@ -2,6 +2,11 @@
 #include "util.hpp"
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
+#include <cerrno>
+#include <limits>
+#include <stdexcept>
+#include <system_error>
 
 
 #define ERR(msg) (std::cerr << msg << std::endl)
@@ -18,6 +23,42 @@ static int open_fd(const std::string& path) {
 #define PAGE_SHIFT 12
 #define PAGE_SIZE (1ULL << PAGE_SHIFT)
 #define PFN_MASK ((1ULL << 55) - 1)
+
+static constexpr size_t DTU_HUGE_PAGE_SIZE = 2ULL * 1024 * 1024;
+
+static void* map_dtu_logical_region(int fd, size_t length)
+{
+    // Own the entire reservation before replacing its aligned middle.
+    const size_t reservation_size = length + DTU_HUGE_PAGE_SIZE;
+    void* reservation = mmap(nullptr, reservation_size, PROT_NONE,
+                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (reservation == MAP_FAILED)
+        throw std::system_error(errno, std::generic_category(),
+                                "DTU virtual reservation");
+
+    const uintptr_t begin = reinterpret_cast<uintptr_t>(reservation);
+    const uintptr_t aligned = (begin + DTU_HUGE_PAGE_SIZE - 1) &
+                               ~(uintptr_t(DTU_HUGE_PAGE_SIZE) - 1);
+    const size_t prefix = aligned - begin;
+    const size_t suffix = reservation_size - prefix - length;
+    if ((prefix && munmap(reservation, prefix)) ||
+        (suffix && munmap(reinterpret_cast<void*>(aligned + length), suffix))) {
+        const int error = errno;
+        munmap(reservation, reservation_size);
+        throw std::system_error(error, std::generic_category(),
+                                "DTU virtual reservation trimming");
+    }
+
+    void* mapping = mmap(reinterpret_cast<void*>(aligned), length,
+                         PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+    if (mapping == MAP_FAILED) {
+        const int error = errno;
+        munmap(reinterpret_cast<void*>(aligned), length);
+        throw std::system_error(error, std::generic_category(),
+                                "DTU huge-page device mapping");
+    }
+    return mapping;
+}
 
 
 static uint64_t va_to_pa(void *va) {
@@ -114,11 +155,93 @@ bool DTL::API::CheckHasAvailableResources(CompiledDTLProgram &dtlProg)
     return configs_available >= dtlProg.m_NeededConfigs;
 }
 
+DTL::DTUResourceHandle *DTL::API::MapAndCloneToDTUHardware(CompiledDTLProgram &dtlProg, EphemeralRegion *ephemeralRegion)
+{
+       std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
+    /*
+        dtlProg.m_Views is already in topological order
+    */
+   for (auto& view: dtlProg.m_Views)
+   {
+        DTL::EphemeralRegion* region = nullptr;
+        if (view->m_ViewName == dtlProg.m_ActiveViewName)
+            region = CloneEphemeralRegion(ephemeralRegion);
+        else
+            region = AllocEphemeralRegion(view->m_BaseObjectSize, view->m_ViewSize);
+
+
+        if (region == nullptr)
+        {
+            exit(-1);
+            // *TODO: ADD CLEANUP*
+            return nullptr;
+        }
+        
+        DTUResourceHandle* handle = new DTUResourceHandle();
+        handle->m_BaseObjectSize = view->m_BaseObjectSize;
+        handle->m_ViewSize = view->m_ViewSize;
+
+        // Will fill these out, then move to the newly created handle
+        std::string HandleName = view->m_ViewName;;
+        std::unordered_map<std::string, MetadataRegion*> MetaDataRegions; 
+        EphemeralRegion* MainRegion = region;
+        std::unordered_map<std::string, DTUResourceHandle*> SubHandles; // get kernel by name
+        std::vector<KernelDependency> DependencyOf; // Track all kernels that are dependent on this one
+        std::unordered_map<std::string, uint64_t> byteWriteArgs;
+        for (auto& dep: view->m_Dependencies)
+        {
+            CompiledView* dependency = dep.m_DownstreamView;
+
+            std::string dependency_name = dependency->m_ViewName;
+            assert(HandleMap.find(dependency_name) != HandleMap.end()); // should never happen
+            DTUResourceHandle* handleDep = HandleMap.at(dependency_name);
+
+            SubHandles.insert({dependency_name, handleDep});
+            handleDep->AddDependencyOf(handle, dep.m_DependencyType, dep.m_DependencyNumber, dep.m_MetadataID);
+            if (dep.m_DependencyType == DTL_KERNEL_DEPENDENCY::METADATA)
+            {
+                MetadataRegion* metadataAccessRegion = new MetadataRegion();
+                /*
+                    We need the non-dtu metadata regions available here
+                */
+                metadataAccessRegion->isDTURegion = true;
+                metadataAccessRegion->m_ResourceHandle = handleDep;
+                metadataAccessRegion->m_WriteRegion = handleDep->GetWriteRegion();
+                metadataAccessRegion->m_ReadRegion = handleDep->GetReadRegion();
+                metadataAccessRegion->m_RegionSize = handleDep->GetLogicalObjectSize(); // held downstream
+                metadataAccessRegion->m_PhysAddress = handleDep->GetShadowPAAddressStart();
+
+                MetaDataRegions.insert({dep.m_MetadataID, metadataAccessRegion});
+                byteWriteArgs.insert({dependency_name, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
+            }
+        }
+
+        for (auto& metadatadep: view->m_NonDTURegionMetadata)
+        {
+            MetadataRegion* metadataAccessRegion = GenMetadataRegion(metadatadep);
+            MetaDataRegions.insert({metadatadep.m_MetadataID, metadataAccessRegion});
+            byteWriteArgs.insert({metadatadep.m_MetadataID, reinterpret_cast<uint64_t>(metadataAccessRegion->m_PhysAddress)});
+        }
+
+        handle->m_HandleName = std::move(HandleName);
+        handle->m_MetaDataRegions = std::move(MetaDataRegions);
+        handle->m_SubHandles = std::move(SubHandles);
+        handle->m_DependencyOf = std::move(DependencyOf);
+        handle->m_MainRegion = std::move(MainRegion);
+
+        ProgramHardwareByteWrites(MainRegion, view, byteWriteArgs);
+        HandleMap.insert({handle->m_HandleName, handle});
+    }
+
+    assert(HandleMap.find(dtlProg.m_ActiveViewName) != HandleMap.end());
+    DTUResourceHandle* activeHandle = HandleMap.at(dtlProg.m_ActiveViewName);
+    return activeHandle;
+}
 
 /*
     We will return only the active handle
 */
-DTL::DTUResourceHandle *DTL::API::MapTODTUHardware(CompiledDTLProgram &dtlProg)
+DTL::DTUResourceHandle *DTL::API::MapToDTUHardware(CompiledDTLProgram &dtlProg)
 {
     std::unordered_map<std::string, DTUResourceHandle*> HandleMap;
     /*
@@ -371,7 +494,7 @@ bool DTL::API::Compile(const std::string &dtlProgram)
     
 }
 
-DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
+DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram, uint8_t element_bytes)
 {
     CompiledDTLProgram returnedCompiledProgram;
 
@@ -392,7 +515,6 @@ DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
     {
         auto& kernel = node->m_Kernel;
 		std::string kernel_id = kernel->GetIDString();
-		std::cout <<  kernel_id << "\n";
 		DTL::ProgramNode* prog = kernel->GetProgram();
         
         
@@ -425,7 +547,7 @@ DTL::CompiledDTLProgram DTL::API::CompileProgram(const std::string &dtlProgram)
 		}
 		ra->GetResources()->GetNeededResourceStats();
         
-        auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo);
+        auto ralloc = DTL::ResourceAllocation::build(ra, hwStat, condInfo, element_bytes);
 		if (ralloc == nullptr)
 		{
             returnedCompiledProgram.m_Error = DTL_API_ERROR::COMPILE_ERROR_RESOURCE_ALLOCATION;
@@ -472,6 +594,7 @@ bool DTL::API::ProgramHardware(EphemeralRegion *region, const std::unordered_map
 {
     // because we map each config region in the TLRegisterNode I think we can just calculate a new base offset
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
+    DeviceMemoryFence();
     if (metadata_args.size())
         ralloc->UpdateMetadataStreamInfo(metadata_args);
    // printf("DTU_CONFIG_OFFSET(0x%x)\n", AGU_CONFIG_OFFSET(region->GetConfig()));
@@ -479,23 +602,28 @@ bool DTL::API::ProgramHardware(EphemeralRegion *region, const std::unordered_map
    // printf("FinishInitStateRegs\n");
     ralloc->DoControlWrites(config_n_base);
   //  printf("Finished Control Writes\n");
+    DeviceMemoryFence();
     return true;
 }
 
 void DTL::API::ProgramHardwareByteWrites(EphemeralRegion *region, CompiledView *view, std::unordered_map<std::string, uint64_t> &args)
 {
     uint64_t config_n_base = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(region->GetConfig());
+    DeviceMemoryFence();
     view->DoByteWrites(args, config_n_base);
+    DeviceMemoryFence();
 }
 
 void DTL::API::ResetConfig(int config)
 {
     uint64_t config_n_rst = AGUControlRegionBaseAddress + AGU_CONFIG_OFFSET(config) + AGU_CONFIG_RST;
+    DeviceMemoryFence();
     WRITE_BOOL(config_n_rst, true);
-    while(READ_BOOL(config_n_rst) != true){
-        
-    };
-   // WRITE_BOOL(config_n_rst, false);
+    DeviceMemoryFence();
+    // The AGU clears this bit after applying the reset.
+    while (READ_BOOL(config_n_rst)) {
+    }
+    DeviceMemoryFence();
 }
 
 void DTL::API::DebugPrintAllocator() 
@@ -569,13 +697,30 @@ void DTL::API::FreeEphemeralRegion(EphemeralRegion *ephemeralRegion)
 
 void DTL::API::FreeDTUResourceHandle(DTUResourceHandle *rsrcHandle)
 {
-    for (auto& metadata: rsrcHandle->m_MetaDataRegions)
+    // A mapped program owns all reachable views. Reset consumers before producers,
+    // and release shared dependencies only once (for example, a diamond graph).
+    std::vector<DTUResourceHandle*> handles;
+    std::unordered_set<DTUResourceHandle*> visited;
+    const auto collect = [&](auto&& self, DTUResourceHandle* handle) -> void {
+        if (!visited.insert(handle).second)
+            return;
+        for (const auto& dependency : handle->m_SubHandles)
+            self(self, dependency.second);
+        handles.push_back(handle);
+    };
+    collect(collect, rsrcHandle);
+
+    for (auto it = handles.rbegin(); it != handles.rend(); ++it)
     {
-        if (metadata.second->IsDTURegion())
-            continue;
+        auto* handle = *it;
+        for (auto& metadata : handle->m_MetaDataRegions)
+        {
+            if (metadata.second->IsDTURegion())
+                continue;
             m_BuddyAllocator->FreeNode(metadata.second->m_OffsetPhysAddress);
+        }
+        FreeEphemeralRegion(handle->m_MainRegion);
     }
-    FreeEphemeralRegion(rsrcHandle->m_MainRegion);
 }
 
 uint64_t DTL::API::GetError()
@@ -623,7 +768,9 @@ DTL::MetadataRegion *DTL::API::GenMetadataRegion(CompiledNonDTUMetadata &metadat
     metadataAccessRegion->m_ResourceHandle = nullptr;
     metadataAccessRegion->m_WriteRegion = metadataPtr;
     metadataAccessRegion->m_ReadRegion = metadataPtr;
-    metadataAccessRegion->m_RegionSize = next_power_of_two(size_needed);
+    // Track the mmap length, not the buddy allocator's larger reservation.
+    // Unmapping the reservation can remove unrelated adjacent VMAs.
+    metadataAccessRegion->m_RegionSize = size_needed;
     metadataAccessRegion->m_PhysAddress = physAddrMetadataRegion;
     metadataAccessRegion->m_OffsetPhysAddress = region_offset;
 
@@ -930,7 +1077,16 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
     : m_PositionalRegionOffset(positional_region_offset), m_ConfigNum(config_num), m_PhysBackingStart(physical_backing_start),
       m_LogicalRegionSize(logical_region_size), hwStat(hwStat), m_AGUControlRegionBase(agu_region_base), m_PositionalRegionSize(positional_region_size)
 {
-    printf("EphemeralRegion()\n");
+    // Pad the allocated shadow region and its DTU trap range to full huge
+    // pages. The resource handle still records the original view size.
+    const uint64_t max_size =
+        (std::numeric_limits<size_t>::max() - DTU_HUGE_PAGE_SIZE) &
+        ~(uint64_t(DTU_HUGE_PAGE_SIZE) - 1);
+    if (!m_LogicalRegionSize || m_LogicalRegionSize > max_size)
+        throw std::invalid_argument("DTU logical size must be nonzero and fit a huge-page allocation");
+    m_LogicalRegionSize = (m_LogicalRegionSize + DTU_HUGE_PAGE_SIZE - 1) &
+                         ~(uint64_t(DTU_HUGE_PAGE_SIZE) - 1);
+
     m_Regionfd = open_fd("/dev/mem");
     assert(m_Regionfd != -1);
     m_DTURuntimeDriverfd = open_fd(DEVICE_FILE);
@@ -948,23 +1104,21 @@ DTL::EphemeralRegion::EphemeralRegion(uint64_t positional_region_offset, uint64_
 
    // printf("m_PhysBackingStart 0x%llx, region_offset 0x%x\n, region_size 0x%x\n", m_PhysBackingStart, region_offset, region_size);
     UPDATE_CONFIG_START((uint64_t)m_DTUConfigRegion, m_ConfigNum, hwStat->nMaxConfigs, m_PositionalRegionOffset + m_PhysBackingStart);
-    /*
-        We just allocate a region of adequate size and then remap it
-
-        we do not use mmap callback through driver fd because we need to write out the config to the driver,
-        if we add this functionality to the driver we can use the mmap callback instead of the remap ioctl
-     */
-    m_LogicalRegionAccess = mmap(NULL,
-                                    m_LogicalRegionSize,
-                                    PROT_READ | PROT_WRITE,
-                                    MAP_SHARED | MAP_ANONYMOUS,
-                                    -1,
-                                    0);
-    assert(m_LogicalRegionAccess != nullptr && m_LogicalRegionAccess != MAP_FAILED);
-    if(Sync() == -1)
-    {
-        printf("Failed to initialize EphemeralRegion()\n");
-        return;
+    m_LogicalRegionAccess = MAP_FAILED;
+    try {
+        m_LogicalRegionAccess = map_dtu_logical_region(m_DTURuntimeDriverfd,
+                                                     m_LogicalRegionSize);
+        // No accesses are permitted until the shadow PA is configured in MMIO.
+        if (Sync() != 0)
+            throw std::system_error(errno, std::generic_category(),
+                                    "DTU initial shadow mapping");
+    } catch (...) {
+        if (m_LogicalRegionAccess != MAP_FAILED)
+            munmap(m_LogicalRegionAccess, m_LogicalRegionSize);
+        munmap(m_DTUConfigRegion, DTU_CONFIG_SIZE);
+        close(m_DTURuntimeDriverfd);
+        close(m_Regionfd);
+        throw;
     }
 
     
@@ -1020,6 +1174,8 @@ void DTL::EphemeralRegion::SetDataSize(uint8_t size)
 
 int DTL::EphemeralRegion::Sync()
 {
+    // The caller must quiesce all users of this view until the ioctl and MMIO
+    // update have both completed; the driver only synchronizes page faults.
     RemapPARequest req;
     req.u_VA = m_LogicalRegionAccess;
     int ret = ioctl(m_DTURuntimeDriverfd, IOCTL_REMAP_PA, &req);
@@ -1031,8 +1187,11 @@ int DTL::EphemeralRegion::Sync()
                               hwStat->nMaxConfigs,
                               m_CurrentShadowPhysicalAddr);
         // printf("new PA 0x%llx\n", m_CurrentShadowPhysicalAddr);
-    } else
+    } else {
+        const int error = errno;
         printf("DTL::EphemeralRegion::Sync() ioctl(IOCTL_REMAP_PA) failed!\n");
+        errno = error;
+    }
 
   return ret;
 }

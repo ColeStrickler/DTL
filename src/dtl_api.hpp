@@ -361,7 +361,8 @@ public:
 
 
     bool CheckHasAvailableResources(CompiledDTLProgram& dtlProg);
-    DTUResourceHandle* MapTODTUHardware(CompiledDTLProgram& dtlProg);
+    DTUResourceHandle* MapToDTUHardware(CompiledDTLProgram& dtlProg);
+    DTUResourceHandle* MapAndCloneToDTUHardware(CompiledDTLProgram& dtlProg, EphemeralRegion* ephemeralRegion);
 
     /*
         Should be a mmap'ed address being passed in
@@ -373,7 +374,8 @@ public:
     // Deprecated
     bool Compile(const std::string& dtlProgram);
 
-    CompiledDTLProgram CompileProgram(const std::string& dtlProgram);
+    // One element width for all compiled views; hardware SetDataSize is separate.
+    CompiledDTLProgram CompileProgram(const std::string& dtlProgram, uint8_t element_bytes = 4);
     bool ProgramHardware(EphemeralRegion* region, const std::unordered_map<std::string, uint64_t>& metadata_args = {});
     void ProgramHardwareByteWrites(EphemeralRegion* region, CompiledView* view, std::unordered_map<std::string, uint64_t>& args);
 
