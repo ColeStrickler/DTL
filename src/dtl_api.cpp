@@ -724,6 +724,7 @@ void DTL::API::FreeDTUResourceHandle(DTUResourceHandle *rsrcHandle)
         }
         FreeEphemeralRegion(handle->m_MainRegion);
     }
+    delete rsrcHandle;
 }
 
 uint64_t DTL::API::GetError()
