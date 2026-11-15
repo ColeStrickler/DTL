@@ -290,6 +290,63 @@ active root;
     */
 
 
+    {
+        int channels_in = 2;
+        int ksize = 3;
+        int height = 400;
+        int width = 500;
+        int stride = 1;
+        int pad = 0;
+
+        int out_height = (height + 2 * pad - ksize) / stride + 1;
+        int out_width = (width + 2 * pad - ksize) / stride + 1;
+        uint32_t in_data_size = height * width * channels_in;
+        uint32_t im2col_matsize =
+            channels_in * (height - ksize + 1) * (width - ksize + 1) * ksize * ksize;
+        std::vector<Element> in_data(in_data_size);
+        std::vector<Element> im2col_cpu_matrix(im2col_matsize);
+        std::iota(in_data.begin(), in_data.end(), 0);
+
+        // CPU reference from im2col_cpu, with stride = 1 and pad = 0.
+        for (int c = 0; c < channels_in * ksize * ksize; ++c) {
+            int w_offset = c % ksize;
+            int h_offset = (c / ksize) % ksize;
+            int c_im = c / ksize / ksize;
+            for (int h = 0; h < out_height; ++h) {
+                for (int w = 0; w < out_width; ++w) {
+                    int im_row = h_offset + h * stride;
+                    int im_col = w_offset + w * stride;
+                    int col_index = (c * out_height + h) * out_width + w;
+                    im2col_cpu_matrix[col_index] = in_data[im_col + width*(im_row + height*c_im)];
+                }
+            }
+        }
+
+        // Same stencil as bench_wrapper_im2col, with hardcoded parameters.
+        std::string im2col_kernel = R"(
+        DTL<1600000> kernel = {
+            int height = 400;
+            int width = 500;
+            int data_size = 4;
+                for (int c_im = 0; c_im < 2; c_im++) {
+                    for (int kh = 0; kh < 3; kh++) {
+                        for (int kw = 0; kw < 3; kw++) {
+                            for (int h = 0; h < 398; h++) {
+                                for (int w = 0; w < 498; w++) {
+                                    out = c_im*(height*width) + (h + kh)*(width) + (w + kw);
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+        active kernel;
+        )";
+
+        passed += RunTest("im2col_test", im2col_kernel, in_data, im2col_cpu_matrix);
+        total++;
+    }
+
     std::cout << passed << " / " << total << " tests passed\n";
     return passed == total ? 0 : 1;
 }
