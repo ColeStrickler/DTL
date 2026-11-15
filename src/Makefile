@@ -67,6 +67,21 @@ lexer.o: lexer.yy.cc
 dtlcompiler: $(OBJ_X86)
 	$(CXX_X86) $(CFLAGS_X86) -o $@ $(OBJ_X86)
 
+# Host simulator harness; reuse the compiler objects without its main().
+.PHONY: software_sim_test test-software-sim test-run
+software_sim_test: ../tests/software_sim_test
+
+../tests/software_sim_test: $(filter-out main.x86.o,$(OBJ_X86)) ../tests/software_sim_test.o
+	$(CXX_X86) $(CFLAGS_X86) -o $@ $^
+
+../tests/software_sim_test.o: ../tests/software_sim_test.cpp software_sim.hpp
+	$(CXX_X86) $(CFLAGS_X86) -MMD -MP -c $< -o $@
+
+test-software-sim: software_sim_test
+	../tests/software_sim_test
+
+test-run: test-software-sim
+
 parser.x86.o: parser.cc frontend.hh
 	$(CXX_X86) $(CFLAGS_X86) -MMD -MP -c $< -o $@
 
@@ -96,5 +111,8 @@ lexer.yy.cc: lexer.l
 # ============================================================
 clean:
 	rm -rf *.o *.x86.o *.d *.output *.cc *.hh parser.dot parser.png optimizations/*.o optimizations/*.d \
-	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh 
-	
+	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh \
+	       ../tests/software_sim_test ../tests/software_sim_test.o ../tests/software_sim_test.d
+
+# Rebuild host objects when simulator or AST headers change.
+-include $(OBJ_X86:.o=.d) ../tests/software_sim_test.d

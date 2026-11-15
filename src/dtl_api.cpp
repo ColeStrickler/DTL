@@ -3,13 +3,10 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
-<<<<<<< HEAD
-=======
 #include <cerrno>
 #include <limits>
 #include <stdexcept>
 #include <system_error>
->>>>>>> codex/firesim-agent
 
 
 #define ERR(msg) (std::cerr << msg << std::endl)

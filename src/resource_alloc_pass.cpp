@@ -392,6 +392,8 @@ int DTL::ForStmtNode::Collapse(ResourceAllocation* ralloc)
     return 0;
 }
 
+
+
 int DTL::MinusNode::Collapse(ResourceAllocation *ralloc)
 {
     assert(false);

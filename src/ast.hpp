@@ -18,6 +18,11 @@
 
 namespace DTL
 {
+	// Software Sim passes
+	class OutStmtSimNode;
+	class ExpressionSimNode;
+	struct SimEnvironmentStore;
+
 	// Optimization passes
 	class ConstantFoldPass;
 	class ConstantPropagationPass;
@@ -84,6 +89,7 @@ namespace DTL
 		virtual ASTNode *ConstPropagation(DTL::ConstantPropagationPass* prop_pass) = 0;
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) = 0;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) = 0;
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) {return;}
 		// Note that there is no ASTNode::typeAnalysis. To allow
 		//  for different type signatures, type analysis is
 		//  implemented as needed in various subclasses
@@ -145,6 +151,14 @@ namespace DTL
 		void SetInputArguments(const std::vector<DTLProgramArg>& args) {myArguments = args;}
 		// IRProgram * to3AC(TypeAnalysis * ta);
 		virtual ~ProgramNode() {}
+
+
+
+		// Simulation
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
+
+
 
 		void AddKernelMetadataDependency(const std::string& kernelIDName, const std::string& metadataIDName);
 		void AddNonDTURegionMetadata(const std::string& metadataIDName, uint64_t metadataRegionSize);
@@ -221,6 +235,12 @@ namespace DTL
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) = 0;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) = 0;
 
+		virtual ExpressionSimNode* SimViewPass2(
+			std::vector<uint32_t>& LogicalDimensions,
+			OutStmtSimNode** OutStmtNode,
+			std::unordered_map<std::string, SimEnvironmentStore>& environment,
+			std::unordered_map<std::string, uint8_t>& idToDimIndex
+		) { return nullptr; }
 		// virtual Opd * flatten(Procedure * proc) = 0;
 	};
 
@@ -308,6 +328,10 @@ namespace DTL
 			myTag = NODETAG::CONSTDECLNODE;
 			m_Opt = true;
 		}
+
+
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
 		// void unparse(std::ostream& out, int indent) override;
 		virtual void typeAnalysis(TypeAnalysis *) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
@@ -340,6 +364,10 @@ namespace DTL
 		{
 			myTag = NODETAG::CONSTARRAYDECLNODE;
 		}
+
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
+
 		// void unparse(std::ostream& out, int indent) override;
 		virtual void typeAnalysis(TypeAnalysis *) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
@@ -410,6 +438,7 @@ namespace DTL
 		virtual int Collapse(ResourceAllocation *ralloc) override;
 		std::string GetInitVar() const {return static_cast<ConstDeclNode*>(myInit)->GetIDString();}
 		// virtual void to3AC(Procedure * prog) override;
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
 
 	private:
 		int RegInitValue;
@@ -440,6 +469,10 @@ namespace DTL
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual std::string PrintAST(int &node_num, std::ofstream &outfile) override;
 		virtual int GetMaxDepth();
+
+
+
+		virtual OutStmtSimNode* SimViewPass2(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex);
 
 		int maxDepth; // calling GetMaxDepth() will also set this value
 
@@ -610,6 +643,9 @@ namespace DTL
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth();
 		void SetIsMetaStreamIndex() {isMetaStreamIndex = true;}
+
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
 		// virtual Opd * flatten(Procedure * proc) override;
 	private:
 		bool isMetaStreamIndex;
@@ -641,6 +677,10 @@ namespace DTL
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth();
+
+
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
 		// virtual Opd * flatten(Procedure * proc) override;
 	private:
 		std::string name;
@@ -688,6 +728,10 @@ namespace DTL
 		// virtual void unparseNested(std::ostream& out) override{
 		//	unparse(out, 0);
 		// }
+
+
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;;
+
 		virtual bool nameAnalysis(SymbolTable *symTab) override { return true; }
 		virtual void resourceAnalysis(ResourceAnalysis *ra, int layer);
 		// void unparse(std::ostream& out, int indent) override;
@@ -728,6 +772,9 @@ namespace DTL
 			myTag = NODETAG::METADATASTREAMDECLNODE;
 			m_RequiresArgValue = false;
 		}
+
+		virtual void SimViewPass(std::vector<uint32_t>& LogicalDimensions, OutStmtSimNode** OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore>& environment, std::unordered_map<std::string, uint8_t>& idToDimIndex) override;
+
 		
 		virtual void typeAnalysis(TypeAnalysis *ta) override;
 		virtual bool nameAnalysis(SymbolTable *symTab) override;
@@ -793,6 +840,9 @@ namespace DTL
 		virtual ASTNode *ConstCoalesce(DTL::ConstantCoalescePass* coalesce_pass, int pass) override;
 		virtual ASTNode *DeadCodeElimination(DTL::DeadCodeEliminationPass* elim_pass, int pass) override;
 		virtual int GetMaxDepth() = 0;
+
+
+		
 		// virtual Opd * flatten(Procedure * prog) override = 0;
 	protected:
 		ExpNode *myExp1;
@@ -822,6 +872,7 @@ namespace DTL
 		bool isPassThrough();
 		void setPassThrough() { IsPassThrough = true; }
 
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t> &LogicalDimensions, OutStmtSimNode **OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore> &environment, std::unordered_map<std::string, uint8_t>& idToDimIndex);
 	private:
 		bool IsPassThrough;
 		// virtual Opd * flatten(Procedure * prog) override;
@@ -842,6 +893,8 @@ namespace DTL
 		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) override;
 		virtual int GetMaxDepth();
 		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t> &LogicalDimensions, OutStmtSimNode **OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore> &environment, std::unordered_map<std::string, uint8_t>& idToDimIndex);
 		// virtual Opd * flatten(Procedure * prog) override;
 	};
 
@@ -861,6 +914,9 @@ namespace DTL
 		virtual ASTNode *TransformPass(int currDepth, int RequiredDepth, uint8_t opt_flags) override;
 		virtual int GetMaxDepth();
 		virtual ASTNode *ConstFold(DTL::ConstantFoldPass* foldpass) override;
+
+
+		virtual ExpressionSimNode* SimViewPass2(std::vector<uint32_t> &LogicalDimensions, OutStmtSimNode **OutStmtNode, std::unordered_map<std::string, SimEnvironmentStore> &environment, std::unordered_map<std::string, uint8_t>& idToDimIndex);
 		// virtual Opd * flatten(Procedure * prog) override;
 	};
 

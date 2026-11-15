@@ -119,7 +119,7 @@ void DTL::PostIncStmtNode::typeAnalysis(TypeAnalysis *ta)
 
 
 
-void DTL::ConstArrayDeclNode::typeAnalysis(TypeAnalysis * ta)
+void DTL::ConstArrayDeclNode::typeAnalysis(TypeAnalysis *ta)
 {
 		
 	/*
@@ -132,8 +132,7 @@ void DTL::ConstArrayDeclNode::typeAnalysis(TypeAnalysis * ta)
 }
 
 
-
-void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
+void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis *ta)
 {
 	
 	auto res = checkAssign(myID, myVal, ta);
@@ -153,6 +152,7 @@ void DTL::ConstDeclNode::typeAnalysis(TypeAnalysis* ta)
 	}
 	return;	
 }
+
 
 void DTL::MetadataStreamDeclNode::typeAnalysis(TypeAnalysis *ta)
 {

@@ -193,6 +193,7 @@ ASTNode *DTL::TimesNode::ConstFold(ConstantFoldPass* foldpass)
     return this;
 }
 
+
 ASTNode *DTL::MinusNode::ConstFold(DTL::ConstantFoldPass *foldpass) {
     auto left = myExp1->ConstFold(foldpass);
     auto right = myExp2->ConstFold(foldpass);
@@ -227,7 +228,6 @@ ASTNode *DTL::MinusNode::ConstFold(DTL::ConstantFoldPass *foldpass) {
     myExp2 = (ExpNode*)right;
     return this;
 }
-
 
 
 
