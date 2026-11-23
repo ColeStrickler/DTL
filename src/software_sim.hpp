@@ -320,8 +320,6 @@ inline DTUSimulatedView<DataType>::DTUSimulatedView(const std::string &kernel)
         }
     }
 
-
-
 }
 
 /*

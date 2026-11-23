@@ -79,8 +79,7 @@ int main()
 {
     // Add tests here: DTL source, backing values, and independently known output.
     // DTL<N> declares backing bytes; RunTest compares element values via view[i].
-    // Build: make -C src/dtl/src software_sim_test
-    // Run:   ./src/dtl/tests/software_sim_test
+    // Build and run from the DTL repository root: make test-run
     unsigned passed = 0;
     unsigned total = 0;
 
