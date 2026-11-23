@@ -58,6 +58,11 @@ int main()
     view.SwapBackingStore(table);
 
 
+
+    /*
+        We can now iterate over the declared logical object, and ensure that
+        we get back the correct data
+    */
     for (int row = 0; row < row_count; row++)
     {
         for (int col = 0; col < columns_of_interest.size(); col++)

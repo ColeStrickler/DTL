@@ -11,7 +11,8 @@
 - make test-run
 
 ## Run the Walkthrough
-- 
+- make example-run
+
 ## Architecture
 - `test/example.cpp` is a basic example/walkthrough of how to use the software simulator
 - `tests/software_sim_test.cpp` contains the basic test suite and more examples
