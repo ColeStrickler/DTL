@@ -3,6 +3,7 @@
 
 
 #include "dtl_api.hpp"
+#include "optimizations/optimization_passes.hpp"
 #include <cstring>
 #include <functional>
 #include <limits>
@@ -104,6 +105,10 @@ public:
     ~DTUSimulatedView() = default;
     DTUSimulatedView(const DTUSimulatedView&) = delete;
     DTUSimulatedView& operator=(const DTUSimulatedView&) = delete;
+
+    void SwapBackingStore(void* new_store) {
+        m_PositionalObjectStorage.reset(static_cast<DataType*>(new_store));
+    }
 
     DataType* GetBackingRegion() { return m_PositionalObjectStorage.get(); }
     uint64_t GetBackingSize() const { return m_PositionalObjectSize; }
@@ -238,6 +243,10 @@ inline DTUSimulatedView<DataType>::DTUSimulatedView(const std::string &kernel)
         if (ta == nullptr) {
             throw std::runtime_error("DTL simulator type analysis failed");
         }
+
+        // Resolve named constants and fold bounds before constructing the view.
+        prog = static_cast<DTL::ProgramNode*>(
+            DTL::DTLOptimizer::OptimizeStatic(prog, DTL::DTL_OPTLEVEL::OPTMAX));
 
         const std::string id = node->m_Kernel->GetIDString();
         DTUSimulatedView* simView = this;

@@ -82,6 +82,16 @@ test-software-sim: software_sim_test
 
 test-run: test-software-sim
 
+.PHONY: example-run
+example-run: ../tests/example
+	../tests/example
+
+../tests/example: $(filter-out main.x86.o,$(OBJ_X86)) ../tests/example.o
+	$(CXX_X86) $(CFLAGS_X86) -o $@ $^
+
+../tests/example.o: ../tests/example.cpp software_sim.hpp
+	$(CXX_X86) $(CFLAGS_X86) -MMD -MP -c $< -o $@
+
 parser.x86.o: parser.cc frontend.hh
 	$(CXX_X86) $(CFLAGS_X86) -MMD -MP -c $< -o $@
 
@@ -112,7 +122,8 @@ lexer.yy.cc: lexer.l
 clean:
 	rm -rf *.o *.x86.o *.d *.output *.cc *.hh parser.dot parser.png optimizations/*.o optimizations/*.d \
 	       $(LIB_NAME) $(DTL_COMPILER) lexer.yy.cc frontend.hh \
-	       ../tests/software_sim_test ../tests/software_sim_test.o ../tests/software_sim_test.d
+	       ../tests/software_sim_test ../tests/software_sim_test.o ../tests/software_sim_test.d \
+	       ../tests/example ../tests/example.o ../tests/example.d
 
 # Rebuild host objects when simulator or AST headers change.
--include $(OBJ_X86:.o=.d) ../tests/software_sim_test.d
+-include $(OBJ_X86:.o=.d) ../tests/software_sim_test.d ../tests/example.d

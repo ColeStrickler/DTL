@@ -96,6 +96,23 @@ active stride;
                       {100, 101, 102, 103, 104, 105, 106, 107},
                       {100, 102, 104, 106});
 
+    const std::string constantBoundsKernel = R"(
+DTL<32> constant_bounds = {
+    int row_count = 2;
+    int column_count = 4;
+    for (int row = 0; row < row_count; row++) {
+        for (int col = 0; col < column_count - 2; col++) {
+            out = row * column_count + col;
+        }
+    }
+}
+active constant_bounds;
+)";
+    ++total;
+    passed += RunTest("named and folded loop bounds", constantBoundsKernel,
+                      {100, 101, 102, 103, 104, 105, 106, 107},
+                      {100, 101, 104, 105});
+
     const std::string nestedKernel = R"(
 DTL<32> indices = {
     for (int i = 0; i < 4; i++) {

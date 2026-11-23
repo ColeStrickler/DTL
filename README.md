@@ -23,6 +23,14 @@ test returns a nonzero exit status. To select another host compiler:
 make test-run CXX_X86=clang++
 ```
 
+To build and run `tests/example.cpp` separately:
+
+```sh
+make example-run
+```
+
+This uses the same host compiler and builds the executable at `tests/example`.
+
 Add simulator tests in `tests/software_sim_test.cpp`. To rebuild from scratch:
 
 ```sh
